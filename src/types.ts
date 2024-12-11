@@ -19,3 +19,8 @@ export interface ObsidianRenderer {
     scale: number;
 }
 
+export interface kn {
+    alpha: number;
+    children: any[];
+    _text: string;
+}

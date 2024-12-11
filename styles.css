@@ -11,8 +11,13 @@
     gap: var(--size-4-4);
 }
 
-.legend-tag {
+button.legend-tag {
     background-color: rgba(var(--tag-color-rgb), 0.5);
     padding: var(--size-4-2);
     border-radius: var(--radius-s);
+}
+
+button.legend-tag.is-hidden {
+    background-color: rgba(var(--tag-color-rgb), 0.1);
+    color: var(--text-muted);
 }

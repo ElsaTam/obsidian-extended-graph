@@ -2,6 +2,7 @@ import { Plugin, WorkspaceLeaf, CachedMetadata, TFile } from 'obsidian';
 import { ObsidianRenderer } from 'src/types';
 import { GraphicsManager } from 'src/graphicsManager';
 import { MapAddEvent, MapChangeEvent, MapRemoveEvent } from './tagsManager';
+import { Legend } from './legend';
 
 // https://pixijs.download/v7.4.2/docs/index.html
 
@@ -9,7 +10,7 @@ export default class GraphExtendedPlugin extends Plugin {
     
     firstRenderer: ObsidianRenderer | null = null;
     firstLeaf: WorkspaceLeaf | null = null;
-    animationFrameId: number | null = null;
+    legend: Legend | null = null;
     graphicsManager: GraphicsManager | null = null;
     waitingTime: number = 0;
 
@@ -23,12 +24,6 @@ export default class GraphExtendedPlugin extends Plugin {
     }
     
     async handleLayoutChange() {
-        // Cancel the current animation
-        if (this.animationFrameId) {
-            cancelAnimationFrame(this.animationFrameId);
-            this.animationFrameId = null;
-        }
-
         // If we are already waiting for a renderer, don't check a second time
         if (this.waitingTime > 0) return;
 
@@ -38,8 +33,9 @@ export default class GraphExtendedPlugin extends Plugin {
         // Get the first renderer
         // TODO: get all renderer and iterate through them
         const newRenderer = this.getFirstRenderer();
-        if (!newRenderer) {
+        if (!newRenderer || !this.firstLeaf) {
             this.firstRenderer = null;
+            this.firstLeaf = null;
             return;
         }
         this.firstRenderer = newRenderer;
@@ -51,24 +47,14 @@ export default class GraphExtendedPlugin extends Plugin {
         }
 
         // Initialize the Graphics Manager
-        this.graphicsManager = new GraphicsManager(this.firstRenderer, this.app);
+        const canvas: Element = this.firstLeaf.containerEl.getElementsByTagName("canvas")[0];
+        this.graphicsManager = new GraphicsManager(this.firstRenderer, this.app, canvas);
 
         // Add legend
-        this.createLegendElement();
-        this.graphicsManager.tagsManager.on('add', (event: MapAddEvent) => {
-            this.addTagLegend(event.tagType, event.tagColor);
-        });
-        this.graphicsManager.tagsManager.on('change', (event: MapChangeEvent) => {
-            this.updateTagLegend(event.tagType, event.tagColor);
-        });
-        this.graphicsManager.tagsManager.on('remove', (event: MapRemoveEvent) => {
-            this.removeTagLegend(event.tagTypes);
-        });
+        this.legend = new Legend(this.graphicsManager, this.firstLeaf);
 
         // Initialize graphics
         this.graphicsManager.init();
-
-        requestAnimationFrame(this.updateGraphics.bind(this));
     }
 
     async handleMetadataCacheChange(file: TFile, data: string, cache: CachedMetadata) {
@@ -143,22 +129,6 @@ export default class GraphExtendedPlugin extends Plugin {
         return null;
     }
 
-    updateGraphics(): void {
-        if (!this.graphicsManager) return;
-        
-        if (!this.firstRenderer) {
-            this.graphicsManager.clear();
-            this.graphicsManager = null;
-            return;
-        }
-
-        if (this.animationFrameId) {
-            this.graphicsManager.updateAll();
-        }
-        
-        this.animationFrameId = requestAnimationFrame(this.updateGraphics.bind(this));
-    }
-
     private isObsidianRenderer(renderer: any): renderer is ObsidianRenderer {
         return renderer 
             && renderer.px 
@@ -168,71 +138,6 @@ export default class GraphExtendedPlugin extends Plugin {
             && typeof renderer.px.stage.addChild === 'function' 
             && typeof renderer.px.stage.removeChild === 'function'
             && Array.isArray(renderer.links);
-    }
-
-
-    private createLegendElement() {
-        let viewContent = this.firstLeaf?.containerEl.getElementsByClassName("view-content")[0];
-        let legend = viewContent?.createDiv();
-        legend?.addClass("legend-graph");
-        let tagsContainer = legend?.createDiv();
-        tagsContainer?.addClass("legend-tags-container");
-    }
-
-    //private resetTagLegend() {
-    //    let tagsContainer = this.firstLeaf?.containerEl.getElementsByClassName("legend-tags-container")[0];
-    //    if (!tagsContainer) return;
-    //    tagsContainer.innerHTML = '';
-    //    this.graphicsManager?.tagsManager.getTags().forEach(tag => {
-    //        const color = this.graphicsManager?.tagsManager.getColor(tag);
-    //        if (color) this.updateTagLegend(tag, color);
-    //    })
-    //}
-
-
-
-    private updateTagLegend(type: string, color: Uint8Array) {
-        let tagsContainer = this.firstLeaf?.containerEl.getElementsByClassName("legend-tags-container")[0];
-        if (!tagsContainer) return;
-
-        let className = "legend-tag-" + type;
-        const legendTagCollection = tagsContainer.getElementsByClassName(className);
-        if (legendTagCollection.length == 0) {
-            this.addTagLegend(type, color)
-        }
-        else {
-            Array.from(legendTagCollection as HTMLCollectionOf<HTMLElement>).forEach(tagBox => {
-                tagBox.style.setProperty("--tag-color-rgb", `${color[0]}, ${color[1]}, ${color[2]}`);
-            });
-        }
-    }
-
-    private addTagLegend(type: string, color: Uint8Array) {
-        let tagsContainer = this.firstLeaf?.containerEl.getElementsByClassName("legend-tags-container")[0];
-        if (!tagsContainer) return;
-
-        let className = "legend-tag-" + type;
-        const legendTagCollection = tagsContainer.getElementsByClassName(className);
-        if (legendTagCollection.length == 0) {
-            let tagBox = tagsContainer.createDiv();
-            tagBox.addClass(className);
-            tagBox.addClass("legend-tag");
-            tagBox.setText(type);
-            tagBox.style.setProperty("--tag-color-rgb", `${color[0]}, ${color[1]}, ${color[2]}`);
-        }
-    }
-
-    private removeTagLegend(types: string[]) {
-        let tagsContainer = this.firstLeaf?.containerEl.getElementsByClassName("legend-tags-container")[0];
-        if (!tagsContainer) return;
-
-        types.forEach(type => {
-            let className = "legend-tag-" + type;
-            let legendTagCollection = tagsContainer.getElementsByClassName(className);
-            while(legendTagCollection.length > 0){
-                legendTagCollection[0].parentNode?.removeChild(legendTagCollection[0]);
-            }
-        })
     }
 }
 

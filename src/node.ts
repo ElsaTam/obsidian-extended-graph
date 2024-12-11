@@ -1,5 +1,4 @@
 import { App, TFile } from 'obsidian';
-import { int2rgb } from './colors';
 
 export interface ObsidianNode {
     circle: {
@@ -12,6 +11,10 @@ export interface ObsidianNode {
         a: number;
         rgb: number;
     }
+    text: {
+        alpha: number;
+        _text: string;
+    }
     id: string;
     weight: number;
     x: number;
@@ -23,7 +26,6 @@ export class GraphNode {
     _file: TFile;
     _imageUri: string | null;
     _tags: string[];
-    _color: Uint8Array;
 
     constructor(obsidianNode: ObsidianNode, app: App) {
         this.obsidianNode = obsidianNode;
@@ -63,23 +65,6 @@ export class GraphNode {
 
     getImageUri() : string | null {
         return this._imageUri;
-    }
-
-    updateColor() : void {
-        if (this.obsidianNode.color.rgb) {
-            this._color = int2rgb(this.obsidianNode.color.rgb);
-        }
-        else {
-            this._color = new Uint8Array([255, 0, 0]);
-        }
-    }
-
-    getColor() : Uint8Array {
-        return this._color;
-    }
-
-    setAlpha(a: number) : void {
-        this.obsidianNode.color.a = a;
     }
 
     getID() : string {
