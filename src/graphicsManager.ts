@@ -14,6 +14,7 @@ export class GraphicsManager {
     tagsManager: TagsManager;
     app: App;
     canvas: Element;
+    currentTheme: string;
 
     constructor(renderer: ObsidianRenderer, app: App, canvas: Element) {
         this.containersMap = new Map<string, GraphNodeContainer>();
@@ -22,6 +23,7 @@ export class GraphicsManager {
         this.tagsManager = new TagsManager();
         this.app = app;
         this.canvas = canvas;
+        this.currentTheme = this.app.vault.getConfig('theme');
     }
 
     init() {
@@ -65,10 +67,38 @@ export class GraphicsManager {
             this.tagsManager.on('change', (event: MapChangeEvent) => {
                 this.containersMap.forEach((container: GraphNodeContainer) => {
                     container.updateArc(event.tagType, this.tagsManager);
-                    container.updateAlpha(this.tagsManager, this.getBackgroundColor());
+                    container.updateBackgroundColor(this.getBackgroundColor());
+                    container.updateAlpha(this.tagsManager);
                     this.renderer.changed();
                 });
             });
+
+
+            const body = document.getElementsByTagName("body")[0];
+            const mutationObserver = new MutationObserver((mutationList) => {
+                for (const item of mutationList) {
+                    if (item.attributeName === "class") {
+                        const classes = body.classList.toString().split(" ");
+                        if (classes.contains("theme-dark") && this.currentTheme == "moonstone") {
+                            //callback(mutationObserver);
+                            this.currentTheme = "obsidian";
+                            this.containersMap.forEach((container: GraphNodeContainer) => {
+                                container.updateBackgroundColor(this.getBackgroundColor());
+                            });
+                            this.renderer.changed();
+                        }
+                        else if (classes.contains("theme-light") && this.currentTheme == "obsidian") {
+                            //callback(mutationObserver);
+                            this.currentTheme = "moonstone";
+                            this.containersMap.forEach((container: GraphNodeContainer) => {
+                                container.updateBackgroundColor(this.getBackgroundColor());
+                            });
+                            this.renderer.changed();
+                        }
+                    }
+                }
+            });
+            mutationObserver.observe(body, { attributes: true });
         });
     }
 

@@ -26,6 +26,7 @@ export class GraphNodeContainer extends Container {
             .drawCircle(0, 0, 0.5 * this._size)
             .endFill();
         this._background.alpha = 0;
+        this._background.scale.set(1.01);
         this.addChild(this._background);
 
         // Sprite
@@ -94,7 +95,14 @@ export class GraphNodeContainer extends Container {
         })
     }
 
-    updateAlpha(tagsManager: TagsManager, backgroundColor: Uint8Array) : void {
+    updateBackgroundColor(backgroundColor: Uint8Array) : void {
+        this._background.clear();
+        this._background.beginFill(backgroundColor)
+            .drawCircle(0, 0, 0.5 * this._size)
+            .endFill();
+    }
+
+    updateAlpha(tagsManager: TagsManager) : void {
         let isFaded = true;
         this._tagArcs.forEach((arc: Graphics, type: string) => {
             if (tagsManager.isActive(type)) {
@@ -107,7 +115,6 @@ export class GraphNodeContainer extends Container {
         })
 
         if (isFaded) {
-            this._background.tint = backgroundColor;
             this.children.forEach((child: Graphics) => {
                 child.alpha = 0.1;
             })
