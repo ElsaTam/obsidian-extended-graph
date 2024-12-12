@@ -25,10 +25,23 @@ export class ExtendedGraphSettingTab extends PluginSettingTab {
             .setName('Color palette')
             .setDesc('Toggle to enable or disable link type names in the graph view.')
             .addDropdown(cb => cb.addOptions({
-                hsv: "hsv",
-                rainbow: "rainbow",
+                RdYlBu: "RdYlBu",
+                RdYlGn: "RdYlGn",
                 Spectral: "Spectral",
+                brg: "brg",
+                cividis: "cividis",
+                cool: "cool",
+                hsv: "hsv",
+                gnuplot: "gnuplot",
+                jet: "jet",
+                magma: "magma",
+                plasma: "plasma",
+                rainbow: "rainbow",
+                spring: "spring",
+                summer: "summer",
+                turbo: "turbo",
                 viridis: "viridis",
+                winter: "winter"
             }).setValue(this.plugin.settings.colormap)
             .onChange(async (value) => {
                 this.plugin.settings.colormap = value;
