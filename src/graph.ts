@@ -18,6 +18,7 @@ export class Graph extends Component {
     currentTheme: string;
     classObserver: MutationObserver;
     leaf: WorkspaceLeaf;
+    settings: ExtendedGraphSettings;
 
     constructor(renderer: Renderer, leaf: WorkspaceLeaf, app: App, canvas: Element, settings: ExtendedGraphSettings) {
         super();
@@ -25,7 +26,8 @@ export class Graph extends Component {
         this.spritesSize = 200;
         this.renderer = renderer;
         this.leaf = leaf;
-        this.tagsManager = new TagsManager(this.leaf, settings);
+        this.settings = settings;
+        this.tagsManager = new TagsManager(this.leaf, this.settings);
         this.addChild(this.tagsManager);
         this.app = app;
         this.canvas = canvas;
@@ -39,7 +41,7 @@ export class Graph extends Component {
         // Create the graphics
         this.renderer.nodes.forEach((node: ObsidianNode) => {
             // Create a graph node
-            let graphNode = new GraphNode(node, this.app);
+            let graphNode = new GraphNode(node, this.app, this.settings.imageProperty);
             let image_uri = graphNode.getImageUri();
             if (image_uri) {
                 requestList.push(this.initNode(graphNode, image_uri));

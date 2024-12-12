@@ -3,10 +3,12 @@ import GraphExtendedPlugin from "./main";
 
 export interface ExtendedGraphSettings {
     colormap: string;
+    imageProperty: string;
 }
 
 export const DEFAULT_SETTINGS: ExtendedGraphSettings = {
     colormap: "hsv",
+    imageProperty: "image"
 };
 
 export class ExtendedGraphSettingTab extends PluginSettingTab {
@@ -22,8 +24,18 @@ export class ExtendedGraphSettingTab extends PluginSettingTab {
         containerEl.empty();
 
         new Setting(containerEl)
+            .setName('Image property')
+            .setDesc('Name of the propery used to query the image of the node\'s note.')
+            .addText(cb => cb
+                .setValue(this.plugin.settings.imageProperty)
+                .onChange(async (value) => {
+                    this.plugin.settings.imageProperty = value;
+                    await this.plugin.saveSettings();
+            }))
+
+        new Setting(containerEl)
             .setName('Color palette')
-            .setDesc('Toggle to enable or disable link type names in the graph view.')
+            .setDesc('Choose the color palette for the tags arc visualizations')
             .addDropdown(cb => cb.addOptions({
                 RdYlBu: "RdYlBu",
                 RdYlGn: "RdYlGn",

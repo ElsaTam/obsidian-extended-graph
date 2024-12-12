@@ -27,7 +27,7 @@ export class GraphNode {
     _imageUri: string | null;
     _tags: string[];
 
-    constructor(obsidianNode: ObsidianNode, app: App) {
+    constructor(obsidianNode: ObsidianNode, app: App, keyProperty: string) {
         this.obsidianNode = obsidianNode;
         if (app) {
             const file = app.vault.getFileByPath(obsidianNode.id);
@@ -35,7 +35,7 @@ export class GraphNode {
             this._file = file;
         }
         this.updateTags(app);
-        this.updateImageUri(app);
+        this.updateImageUri(app, keyProperty);
     }
 
     updateTags(app: App) : void {
@@ -53,12 +53,12 @@ export class GraphNode {
         return this._tags;
     }
 
-    updateImageUri(app: App) : void {
+    updateImageUri(app: App, keyProperty: string) : void {
         if (!this._file) return;
 
         const metadata = app.metadataCache.getFileCache(this._file);
         const frontmatter = metadata?.frontmatter;
-        const image_link = frontmatter ? frontmatter['image'].replace("[[", "").replace("]]", "") : null;
+        const image_link = frontmatter ? frontmatter[keyProperty]?.replace("[[", "").replace("]]", "") : null;
         const image_file = image_link ? app.metadataCache.getFirstLinkpathDest(image_link, ".") : null;
         this._imageUri = image_file ? app.vault.getResourcePath(image_file) : null;
     }

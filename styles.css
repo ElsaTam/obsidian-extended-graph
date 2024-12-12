@@ -15,9 +15,11 @@ button.legend-tag {
     background-color: rgba(var(--tag-color-rgb), 0.5);
     padding: var(--size-4-2);
     border-radius: var(--radius-s);
+    font-weight: var(--font-bold);
 }
 
 button.legend-tag.is-hidden {
     background-color: rgba(var(--tag-color-rgb), 0.1);
-    color: var(--text-muted);
+    color: var(--text-faint);
+    font-weight: unset;
 }
