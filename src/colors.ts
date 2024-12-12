@@ -1,12 +1,7 @@
 import * as cm from './colormaps';
 
-export function getColor(x?: number) : Uint8Array {
-    if (x !== undefined) {
-        return new Uint8Array(cm.evaluate_cmap(x, 'hsv', false));
-    }
-    else {
-        return randomColor();
-    }
+export function getColor(palette: string, x: number) : Uint8Array {
+    return new Uint8Array(cm.evaluate_cmap(x, palette, false));
 }
 
 export function int2rgb(int: number): Uint8Array {
@@ -62,6 +57,11 @@ export function hsv2rgb(hsv: {h: number, s: number, v: number}) : Uint8Array {
     }
   
     return new Uint8Array([ r * 255, g * 255, b * 255 ]);
+}
+
+export function rgb2hex(rgb: Uint8Array) : number {
+    const binaryRGB = rgb[0] << 16 | rgb[1] << 8 | rgb[2];      
+    return binaryRGB;
 }
 
 export function randomColor(baseColor?: {h: number, s: number, v: number}) {

@@ -1,27 +1,25 @@
-import { WorkspaceLeaf } from "obsidian";
-import { GraphicsManager } from "./graphicsManager";
-import { MapAddEvent, MapChangeEvent, MapRemoveEvent } from "./tagsManager";
+import { Component, WorkspaceLeaf } from "obsidian";
+import { Graph } from "./graph";
 
-export class Legend {
+export class Legend extends Component {
     viewContent: HTMLElement;
-    graphicsManager: GraphicsManager;
+    graphicsManager: Graph;
+    leaf: WorkspaceLeaf;
 
-    constructor(graphicsManager: GraphicsManager, leaf: WorkspaceLeaf) {
+    constructor(graphicsManager: Graph, leaf: WorkspaceLeaf) {
+        super();
         this.graphicsManager = graphicsManager;
-
-        // @ts-ignore
-        this.viewContent = leaf.containerEl.getElementsByClassName("view-content")[0];
-        
+        this.leaf = leaf;
+        this.viewContent = this.leaf.containerEl.getElementsByClassName("view-content")[0] as HTMLElement;
         this.createLegendElement();
-        this.graphicsManager.tagsManager.on('add', (event: MapAddEvent) => {
-            this.addTagLegend(event.tagType, event.tagColor);
-        });
-        this.graphicsManager.tagsManager.on('change', (event: MapChangeEvent) => {
-            this.updateTagLegend(event.tagType, event.tagColor);
-        });
-        this.graphicsManager.tagsManager.on('remove', (event: MapRemoveEvent) => {
-            this.removeTagLegend(event.tagTypes);
-        });
+    }
+
+    onload(): void {
+        console.log("Loading Legend");
+    }
+
+    onunload(): void {
+        console.log("Unload Legend");
     }
 
 
@@ -32,7 +30,7 @@ export class Legend {
         tagsContainer?.addClass("legend-tags-container");
     }
 
-    private updateTagLegend(type: string, color: Uint8Array) {
+    updateTagLegend(type: string, color: Uint8Array) {
         let tagsContainer = this.viewContent.getElementsByClassName("legend-tags-container")[0];
         if (!tagsContainer) return;
 
@@ -48,7 +46,7 @@ export class Legend {
         }
     }
 
-    private addTagLegend(type: string, color: Uint8Array) {
+    addTagLegend(type: string, color: Uint8Array) {
         let tagsContainer = this.viewContent.getElementsByClassName("legend-tags-container")[0];
         if (!tagsContainer) return;
 
@@ -66,7 +64,7 @@ export class Legend {
         }
     }
 
-    private removeTagLegend(types: string[]) {
+    removeTagLegend(types: string[]) {
         let tagsContainer = this.viewContent.getElementsByClassName("legend-tags-container")[0];
         if (!tagsContainer) return;
 

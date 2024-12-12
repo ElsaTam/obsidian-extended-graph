@@ -1,32 +1,39 @@
 
-import { kn, ObsidianRenderer } from 'src/types';
-import { ObsidianNode, GraphNode } from 'src/node';
-import { GraphNodeContainer } from 'src/container';
 import { Assets, Texture }  from 'pixi.js';
-import { App, TFile } from 'obsidian';
-import { MapChangeEvent, TagsManager } from 'src/tagsManager';
+import { App, Component, TFile, WorkspaceLeaf } from 'obsidian';
+import { Renderer } from './types';
+import { ObsidianNode, GraphNode } from './node';
+import { GraphNodeContainer } from './container';
+import { TagsManager } from './tagsManager';
+import { ExtendedGraphSettings } from './settings';
 
 
-export class GraphicsManager {
+export class Graph extends Component {
     containersMap: Map<string, GraphNodeContainer>;
     spritesSize: number;
-    renderer: ObsidianRenderer;
+    renderer: Renderer;
     tagsManager: TagsManager;
     app: App;
     canvas: Element;
     currentTheme: string;
+    classObserver: MutationObserver;
+    leaf: WorkspaceLeaf;
 
-    constructor(renderer: ObsidianRenderer, app: App, canvas: Element) {
+    constructor(renderer: Renderer, leaf: WorkspaceLeaf, app: App, canvas: Element, settings: ExtendedGraphSettings) {
+        super();
         this.containersMap = new Map<string, GraphNodeContainer>();
         this.spritesSize = 200;
         this.renderer = renderer;
-        this.tagsManager = new TagsManager();
+        this.leaf = leaf;
+        this.tagsManager = new TagsManager(this.leaf, settings);
+        this.addChild(this.tagsManager);
         this.app = app;
         this.canvas = canvas;
-        this.currentTheme = this.app.vault.getConfig('theme');
+        this.currentTheme = this.app.vault.getConfig('theme') as string;
     }
 
-    init() {
+    onload() {
+        console.log("Loading Graph");
         let requestList: Promise<void>[] = [];
 
         // Create the graphics
@@ -42,64 +49,32 @@ export class GraphicsManager {
         Promise.all(requestList).then(res => {
             // Initialize color for the tags of each node
             this.tagsManager.update(this.getAllTagTypesFromCache());
-            
-            // Create arcs
-            this.containersMap.forEach((container: GraphNodeContainer) => {
-                container.addArcs(this.tagsManager);
-            });
 
-            this.tagsManager.on('add', event => {
-                this.containersMap.forEach((container: GraphNodeContainer) => {
-                    container.removeArcs();
-                    container.addArcs(this.tagsManager);
-                    this.renderer.changed();
-                });
-            });
-
-            this.tagsManager.on('remove', event => {
-                this.containersMap.forEach((container: GraphNodeContainer) => {
-                    container.removeArcs();
-                    container.addArcs(this.tagsManager);
-                    this.renderer.changed();
-                });
-            });
-
-            this.tagsManager.on('change', (event: MapChangeEvent) => {
-                this.containersMap.forEach((container: GraphNodeContainer) => {
-                    container.updateArc(event.tagType, this.tagsManager);
-                    container.updateBackgroundColor(this.getBackgroundColor());
-                    container.updateAlpha(this.tagsManager);
-                    this.renderer.changed();
-                });
-            });
-
+            this.leaf.trigger('extended-graph:graph-ready');
 
             const body = document.getElementsByTagName("body")[0];
-            const mutationObserver = new MutationObserver((mutationList) => {
-                for (const item of mutationList) {
-                    if (item.attributeName === "class") {
-                        const classes = body.classList.toString().split(" ");
-                        if (classes.contains("theme-dark") && this.currentTheme == "moonstone") {
-                            //callback(mutationObserver);
-                            this.currentTheme = "obsidian";
-                            this.containersMap.forEach((container: GraphNodeContainer) => {
-                                container.updateBackgroundColor(this.getBackgroundColor());
-                            });
-                            this.renderer.changed();
-                        }
-                        else if (classes.contains("theme-light") && this.currentTheme == "obsidian") {
-                            //callback(mutationObserver);
-                            this.currentTheme = "moonstone";
-                            this.containersMap.forEach((container: GraphNodeContainer) => {
-                                container.updateBackgroundColor(this.getBackgroundColor());
-                            });
-                            this.renderer.changed();
-                        }
-                    }
+            this.classObserver = new MutationObserver((mutationList) => {
+                let item = mutationList.find(i => i.attributeName === "class");
+                if (!item) return;
+                const classes = body.classList.toString().split(" ");
+                if (classes.contains("theme-dark") && this.currentTheme == "moonstone") {
+                    this.currentTheme = "obsidian";
+                    this.leaf.trigger('extended-graph:theme-change', this.currentTheme);
+                }
+                else if (classes.contains("theme-light") && this.currentTheme == "obsidian") {
+                    this.currentTheme = "moonstone";
+                    this.leaf.trigger('extended-graph:theme-change', this.currentTheme);
                 }
             });
-            mutationObserver.observe(body, { attributes: true });
+            this.classObserver.observe(body, { attributes: true });
         });
+    }
+
+    onunload(): void {
+        console.log("Unload Graph");
+        if (this.classObserver) {
+            this.classObserver.disconnect();
+        }
     }
 
     private getBackgroundColor() : Uint8Array {
@@ -124,6 +99,7 @@ export class GraphicsManager {
                 
                 // create the container
                 let container = new GraphNodeContainer(graphNode, texture, shape.radius);
+                container.updateBackgroundColor(this.getBackgroundColor());
     
                 // add the container to the stage
                 // @ts-ignore
@@ -176,5 +152,44 @@ export class GraphicsManager {
         });
         
         return types;
+    }
+
+
+
+    resetArcs() : void {
+        this.containersMap.forEach((container: GraphNodeContainer) => {
+            container.removeArcs();
+            container.addArcs(this.tagsManager);
+        });
+    }
+
+    removeArcs() : void {
+        this.containersMap.forEach((container: GraphNodeContainer) => {
+            container.removeArcs();
+        });
+    }
+
+    updateArcsColor(type: string, color: Uint8Array) : void {
+        this.containersMap.forEach((container: GraphNodeContainer) => {
+            container.updateArc(type, color, this.tagsManager);
+        });
+    }
+
+    disableTag(type: string) : void {
+        this.containersMap.forEach((container: GraphNodeContainer) => {
+            container.updateAlpha(type, false, this.tagsManager);
+        });
+    }
+
+    enableTag(type: string) : void {
+        this.containersMap.forEach((container: GraphNodeContainer) => {
+            container.updateAlpha(type, true, this.tagsManager);
+        });
+    }
+
+    updateBackground(theme: string) : void {
+        this.containersMap.forEach((container: GraphNodeContainer) => {
+            container.updateBackgroundColor(this.getBackgroundColor());
+        });
     }
 }

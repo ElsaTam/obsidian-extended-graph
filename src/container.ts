@@ -1,23 +1,29 @@
 import { Container, Sprite, Texture, Graphics }  from 'pixi.js';
-import { GraphNode }  from 'src/node';
-import { ObsidianNode } from 'types';
+import { GraphNode, ObsidianNode }  from './node';
 import { TagsManager } from './tagsManager';
-import { kn } from './types';
+import { rgb2hex } from './colors';
+
+class Arc extends Graphics {
+    thickness: number = 0.09;
+    inset: number = 0.03;
+    gap: number = 0.2;
+}
 
 export class GraphNodeContainer extends Container {
     _node: GraphNode;
     _sprite: Sprite | null;
     _size: number;
-    _tagArcs: Map<string, Graphics>;
+    _tagArcs: Map<string, Arc>;
     _background: Graphics;
     borderFactor: number = 0.06;
+    maxArcSize: number = Math.PI / 2;
     name: string;
 
     constructor(node: GraphNode, texture: Texture, radius: number) {
         super();
         this._size = Math.min(texture.width, texture.height);
         this._node = node;
-        this._tagArcs = new Map<string, Graphics>();
+        this._tagArcs = new Map<string, Arc>();
         this.name = node.getID();
 
         // Background
@@ -57,42 +63,50 @@ export class GraphNodeContainer extends Container {
     }
 
     addArcs(tagsManager: TagsManager) {
-        const thickness = 0.09;
-        const inset = 0.03;
-        const gap = 0.2;
-        const maxArcSize = Math.PI / 2;
         const nTags = tagsManager.getNumberOfTags();
-        const arcSize = Math.min(2 * Math.PI / nTags, maxArcSize);
+        const arcSize = Math.min(2 * Math.PI / nTags, this.maxArcSize);
     
         this._node.getTags()?.forEach(type => {
             const color = tagsManager.getColor(type);
             if (!color) return;
         
             const tagIndex = tagsManager.getTagIndex(type);
-        
-            const arc = new Graphics()
-                .lineStyle(thickness * this._size, color)
-                .arc(
-                    0, 0,
-                    (0.5 + thickness + inset) * this._size,
-                    arcSize * tagIndex + gap * 0.5,
-                    arcSize * (tagIndex + 1) - gap * 0.5
-                )
-                .endFill();
-            // @ts-ignore
-            arc.name = "arc-" + type;
+            const arc = this.createArc(type, color, arcSize, tagIndex);
             this.addChild(arc);
             this._tagArcs.set(type, arc);
         });
     }
 
-    updateArc(type: string, tagsManager: TagsManager) : void {
-        this._tagArcs.forEach((arc: Graphics, currentType: string) => {
-            if (currentType == type) {
-                // @ts-ignore
-                arc.lineColor = tagsManager.getColor(type);
-            }
-        })
+    createArc(type: string, color: Uint8Array, arcSize: number, index: number) : Arc {
+        const arc = new Arc();
+
+        arc.lineStyle(arc.thickness * this._size, color)
+            .arc(
+                0, 0,
+                (0.5 + arc.thickness + arc.inset) * this._size,
+                arcSize * index + arc.gap * 0.5,
+                arcSize * (index + 1) - arc.gap * 0.5
+            )
+            .endFill();
+        
+        // @ts-ignore
+        arc.name = "arc-" + type;
+        return arc;
+    }
+
+    updateArc(type: string, color: Uint8Array, tagsManager: TagsManager) : void {
+        let arc = this._tagArcs.get(type);
+        if (!arc) return;
+
+        this.removeChild(arc);
+        this._tagArcs.delete(type);
+
+        const tagIndex = tagsManager.getTagIndex(type);
+        const nTags = tagsManager.getNumberOfTags();
+        const arcSize = Math.min(2 * Math.PI / nTags, this.maxArcSize);
+        arc = this.createArc(type, color, arcSize, tagIndex);
+        this.addChild(arc);
+        this._tagArcs.set(type, arc);
     }
 
     updateBackgroundColor(backgroundColor: Uint8Array) : void {
@@ -102,26 +116,21 @@ export class GraphNodeContainer extends Container {
             .endFill();
     }
 
-    updateAlpha(tagsManager: TagsManager) : void {
-        let isFaded = true;
-        this._tagArcs.forEach((arc: Graphics, type: string) => {
-            if (tagsManager.isActive(type)) {
-                isFaded = isFaded && false;
-                arc.alpha = 1;
-            }
-            else {
-                arc.alpha = 0.1;
-            }
-        })
+    updateAlpha(type: string, isEnable: boolean, tagsManager: TagsManager) : void {
+        const arc = this._tagArcs.get(type);
+        if (!arc) return;
+
+        arc.alpha = isEnable ? 1 : 0.1;
+
+        let isFaded = !Array.from(this._tagArcs.keys()).some((type: string) => tagsManager.isActive(type));
 
         if (isFaded) {
             this.children.forEach((child: Graphics) => {
                 child.alpha = 0.1;
             })
-            this._background.alpha = 0.8;
+            this._background.alpha = 1;
         }
         else {
-            this.alpha = 1;
             this.children.forEach((child: Graphics) => {
                 if (!child.name?.startsWith("arc-")) child.alpha = 1;
             })

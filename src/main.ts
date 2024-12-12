@@ -1,26 +1,38 @@
-import { Plugin, WorkspaceLeaf, CachedMetadata, TFile } from 'obsidian';
-import { ObsidianRenderer } from 'src/types';
-import { GraphicsManager } from 'src/graphicsManager';
-import { MapAddEvent, MapChangeEvent, MapRemoveEvent } from './tagsManager';
-import { Legend } from './legend';
+import { Plugin, WorkspaceLeaf } from 'obsidian';
+import { GraphsManager } from './graphsManager';
+import { WorkspaceLeafExt } from './graphEventsDispatcher';
+import { DEFAULT_SETTINGS, ExtendedGraphSettings, ExtendedGraphSettingTab } from './settings';
 
 // https://pixijs.download/v7.4.2/docs/index.html
 
 export default class GraphExtendedPlugin extends Plugin {
-    
-    firstRenderer: ObsidianRenderer | null = null;
-    firstLeaf: WorkspaceLeaf | null = null;
-    legend: Legend | null = null;
-    graphicsManager: GraphicsManager | null = null;
+    settings: ExtendedGraphSettings;
+    graphsManager: GraphsManager;
     waitingTime: number = 0;
 
     async onload(): Promise<void> {
+        await this.loadSettings();
+        this.addSettingTab(new ExtendedGraphSettingTab(this.app, this));
+
+        this.graphsManager = new GraphsManager(this.app);
+        this.addChild(this.graphsManager);
+        this.graphsManager.load();
+
         this.registerEvent(this.app.workspace.on('layout-change', () => {
             this.handleLayoutChange();
         }));
-        this.registerEvent(this.app.metadataCache.on('changed', (file: TFile, data: string, cache: CachedMetadata) => {
-            this.handleMetadataCacheChange(file, data, cache);
+
+        this.registerEvent(this.app.workspace.on('extended-graph:settings-colorpalette-changed', () => {
+            this.handleColorPaletteChange();
         }));
+    }
+
+    async loadSettings() {
+        this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    }
+
+    async saveSettings() {
+        await this.saveData(this.settings);
     }
     
     async handleLayoutChange() {
@@ -30,50 +42,14 @@ export default class GraphExtendedPlugin extends Plugin {
         // Check if a renderer (a graph) is active
         await this.waitForRenderer();
 
-        // Get the first renderer
-        // TODO: get all renderer and iterate through them
-        const newRenderer = this.getFirstRenderer();
-        if (!newRenderer || !this.firstLeaf) {
-            this.firstRenderer = null;
-            this.firstLeaf = null;
-            return;
-        }
-        this.firstRenderer = newRenderer;
-
-        // Clean the previous Graphics Manager, if any
-        if (this.graphicsManager) {
-            this.graphicsManager.clear();
-            this.graphicsManager = null;
-        }
-
-        // Initialize the Graphics Manager
-        const canvas: Element = this.firstLeaf.containerEl.getElementsByTagName("canvas")[0];
-        this.graphicsManager = new GraphicsManager(this.firstRenderer, this.app, canvas);
-
-        // Add legend
-        this.legend = new Legend(this.graphicsManager, this.firstLeaf);
-
-        // Initialize graphics
-        this.graphicsManager.init();
-    }
-
-    async handleMetadataCacheChange(file: TFile, data: string, cache: CachedMetadata) {
-        if (!(this.graphicsManager && this.firstRenderer && this.firstLeaf && this.waitingTime == 0)) return;
-
-        const container = this.graphicsManager?.getGraphNodeContainerFromFile(file);
-        if (!container) return;
-
-        let newTypes: string[] = [];
-        cache?.tags?.forEach(tagCache => {
-            const type = tagCache.tag.replace('#', '');
-            newTypes.push(type);
+        const leaves = this.getAllGraphLeaves();
+        leaves.forEach(leaf => {
+            this.graphsManager.addGraph(leaf, this.settings);
         });
-
-        const needsUpdate = !container.matchesTypes(newTypes);
-
-        if (needsUpdate) {
-            this.graphicsManager.tagsManager.update(this.graphicsManager.getAllTagTypesFromCache());
-        }
+    }
+    
+    async handleColorPaletteChange() {
+        this.graphsManager.updatePalette();
     }
     
     waitForRenderer(): Promise<void> {
@@ -90,51 +66,25 @@ export default class GraphExtendedPlugin extends Plugin {
     }
 
     isGraphOpen() : boolean {
-        for (const leaf of this.app.workspace.getLeavesOfType('graph')) {
-            // @ts-ignore
-            if (this.isObsidianRenderer(leaf.view.renderer)) {
-                return true;
-            }
-        }
-        for (const leaf of this.app.workspace.getLeavesOfType('localgraph')) {
-            // @ts-ignore
-            if (this.isObsidianRenderer(leaf.view.renderer)) {
-                return true;
-            }
-        }
+        if (this.app.workspace.getLeavesOfType('graph').find(l => this.hasObsidianRenderer((l)))) return true;
+        if (this.app.workspace.getLeavesOfType('localgraph').find(l => this.hasObsidianRenderer(l))) return true;
         return false;
     }
 
-    getFirstRenderer(): ObsidianRenderer | null {
-        let graphLeaves: WorkspaceLeaf[] = this.app.workspace.getLeavesOfType('graph');
-        for (const leaf of graphLeaves) {
-            // @ts-ignore
-            const renderer = leaf.view.renderer;
-            if (this.isObsidianRenderer(renderer)) {
-                this.firstLeaf = leaf;
-                return renderer;
-            }
-        }
-
-        graphLeaves = this.app.workspace.getLeavesOfType('localgraph');
-        for (const leaf of graphLeaves) {
-            // @ts-ignore
-            const renderer = leaf.view.renderer;
-            if (this.isObsidianRenderer(renderer)) {
-                this.firstLeaf = leaf;
-                return renderer;
-            }
-        }
-        this.firstLeaf = null;
-        return null;
+    getAllGraphLeaves() : WorkspaceLeaf[] {
+        let leaves: WorkspaceLeaf[] = [];
+        leaves = leaves.concat(this.app.workspace.getLeavesOfType('graph').filter(l => this.hasObsidianRenderer(l)));
+        leaves = leaves.concat(this.app.workspace.getLeavesOfType('localgraph').filter(l => this.hasObsidianRenderer(l)));
+        return leaves;
     }
 
-    private isObsidianRenderer(renderer: any): renderer is ObsidianRenderer {
+    private hasObsidianRenderer(leaf: WorkspaceLeaf) : boolean {
+        const renderer = (leaf as WorkspaceLeafExt).view.renderer;
         return renderer 
             && renderer.px 
             && renderer.px.stage 
-            && renderer.panX
-            && renderer.panY
+            && (renderer.panX !== undefined)
+            && (renderer.panY !== undefined)
             && typeof renderer.px.stage.addChild === 'function' 
             && typeof renderer.px.stage.removeChild === 'function'
             && Array.isArray(renderer.links);

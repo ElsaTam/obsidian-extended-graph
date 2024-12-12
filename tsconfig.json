@@ -11,13 +11,22 @@
     "importHelpers": true,
     "isolatedModules": true,
     "strictNullChecks": true,
+    "allowSyntheticDefaultImports": true,
     "lib": [
       "DOM",
       "ES5",
       "ES6",
       "ES7"
     ],
-    "types": [ ]
+    "types": [
+      "obsidian-typings"
+    ],
+    "paths": {
+        "obsidian-typings/implementations": [
+            "./node_modules/obsidian-typings/dist/implementations.d.ts",
+            "./node_modules/obsidian-typings/dist/implementations.cjs"
+        ]
+    }
   },
   "include": [
     "**/*.ts"

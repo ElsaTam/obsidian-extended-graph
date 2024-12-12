@@ -1,8 +1,6 @@
 import { Container }  from 'pixi.js';
-import { GraphNode } from './node';
-import { GraphNodeContainer } from './container';
 
-export interface ObsidianRenderer {
+export interface Renderer {
     colors: {
         fillTag: {
             rgb: number;
@@ -17,10 +15,6 @@ export interface ObsidianRenderer {
     panX: number;
     panY: number;
     scale: number;
-}
-
-export interface kn {
-    alpha: number;
-    children: any[];
-    _text: string;
+    links: any[];
+    changed(): void;
 }

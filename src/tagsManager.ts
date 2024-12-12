@@ -1,4 +1,6 @@
+import { Component, WorkspaceLeaf } from 'obsidian';
 import { getColor } from './colors';
+import { ExtendedGraphSettings } from './settings';
 
 export class Tag {
     type: string;
@@ -16,21 +18,30 @@ export class Tag {
     }
 }
 
-export class TagsManager {
+export class TagsManager extends Component {
     tags: Map<string, Tag>;
-    sVariation: number = 0.2;
-    vVariation: number = 0.3;
-    _eventTarget: EventTarget;
+    leaf: WorkspaceLeaf;
+    settings: ExtendedGraphSettings;
     
-    constructor() {
-        this._eventTarget = new EventTarget();
+    constructor(leaf: WorkspaceLeaf, settings: ExtendedGraphSettings) {
+        super();
         this.tags = new Map<string, Tag>();
+        this.leaf = leaf;
+        this.settings = settings;
+    }
+
+    onload(): void {
+        console.log("Loading Tags Manager");
+    }
+
+    onunload(): void {
+        console.log("Unload Tags Manager");
     }
 
     clear() : void {
         const types = this.getTypes();
         this.tags.clear();
-        this._eventTarget.dispatchEvent(new MapRemoveEvent(types));
+        this.leaf.trigger('extended-graph:clear-tag-types', types);
     }
 
     disable(type: string) : void {
@@ -38,7 +49,7 @@ export class TagsManager {
         if (!tag) return;
 
         tag.isActive = false;
-        this._eventTarget.dispatchEvent(new MapChangeEvent(type, tag.color));
+        this.leaf.trigger('extended-graph:disable-tag', type);
     }
 
     enable(type: string) : void {
@@ -46,7 +57,7 @@ export class TagsManager {
         if (!tag) return;
 
         tag.isActive = true;
-        this._eventTarget.dispatchEvent(new MapChangeEvent(type, tag.color));
+        this.leaf.trigger('extended-graph:enable-tag', type);
     }
 
     isActive(type: string) : boolean {
@@ -61,13 +72,13 @@ export class TagsManager {
         if (!tag) return;
 
         tag.setColor(color);
-        this._eventTarget.dispatchEvent(new MapChangeEvent(type, color));
+        this.leaf.trigger('extended-graph:change-tag-color', type, color);
     }
 
-    addType(type: string, x? : number) : void {
-        const color = getColor(x);
+    addType(type: string, x: number) : void {
+        const color = getColor(this.settings.colormap, x);
         this.tags.set(type, new Tag(type, color));
-        this._eventTarget.dispatchEvent(new MapAddEvent(type, color));
+        this.leaf.trigger('extended-graph:add-tag-type', type, color);
     }
 
     getTag(type: string) : Tag | null {
@@ -112,38 +123,12 @@ export class TagsManager {
         });
     }
 
-    on(type: string, callback: EventListenerOrEventListenerObject | null, options?: AddEventListenerOptions | boolean) {
-        this._eventTarget.addEventListener(type, callback, options);
-    }
-}
-
-export class MapChangeEvent extends Event {
-    tagType: string;
-    tagColor: Uint8Array;
-
-    constructor(type: string, color: Uint8Array) {
-        super('change');
-        this.tagType = type;
-        this.tagColor = color;
-    }
-}
-
-export class MapAddEvent extends Event {
-    tagType: string;
-    tagColor: Uint8Array;
-
-    constructor(type: string, color: Uint8Array) {
-        super('add');
-        this.tagType = type;
-        this.tagColor = color;
-    }
-}
-
-export class MapRemoveEvent extends Event {
-    tagTypes: string[];
-
-    constructor(types: string[]) {
-        super('remove');
-        this.tagTypes = types;
+    recomputeColors() : void {
+        let i = 0;
+        this.tags.forEach((tag, type) => {
+            const color = getColor(this.settings.colormap, i / this.tags.size);
+            this.setColor(type, color);
+            ++i;
+        });
     }
 }
