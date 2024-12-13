@@ -1,21 +1,21 @@
 import { App, Component, EventRef, WorkspaceLeaf } from "obsidian";
 import { Graph } from "./graph";
-import { Legend } from "./legendContainer";
-import { Renderer } from "./types";
-import { ExtendedGraphSettings } from "./settings";
-import { Link, LinkWrapper } from "./link";
+import { LegendUI } from "./ui/legendUI";
+import { GraphViewsUI } from "./ui/viewsUI";
+import { Renderer } from "./renderer";
+import { ExtendedGraphSettings } from "../settings";
 
 export type WorkspaceLeafExt = WorkspaceLeaf & {
     on(name: "extended-graph:graph-ready",      callback: ( ) => any) : EventRef;
     on(name: "extended-graph:add-tag-type",     callback: (type: string, color: Uint8Array) => any) : EventRef;
     on(name: "extended-graph:clear-tag-types",  callback: (types: string[]) => any)                 : EventRef;
     on(name: "extended-graph:change-tag-color", callback: (type: string, color: Uint8Array) => any) : EventRef;
-    on(name: "extended-graph:disable-tag",      callback: (type: string) => any)                    : EventRef;
+    on(name: "extended-graph:disable-tags",     callback: (type: string[]) => any)                  : EventRef;
     on(name: "extended-graph:enable-tag",       callback: (type: string) => any)                    : EventRef;
     on(name: "extended-graph:add-relationship-type",     callback: (type: string, color: Uint8Array) => any) : EventRef;
     on(name: "extended-graph:clear-relationship-types",  callback: (types: string[]) => any)                 : EventRef;
     on(name: "extended-graph:change-relationship-color", callback: (type: string, color: Uint8Array) => any) : EventRef;
-    on(name: "extended-graph:disable-relationship",      callback: (type: string) => any)                    : EventRef;
+    on(name: "extended-graph:disable-relationships",     callback: (type: string[]) => any)                  : EventRef;
     on(name: "extended-graph:enable-relationship",       callback: (type: string) => any)                    : EventRef;
 
     view: {
@@ -30,7 +30,8 @@ export class GraphEventsDispatcher extends Component {
     canvas: HTMLCanvasElement;
     renderer: Renderer;
     graph: Graph;
-    legend: Legend;
+    legendUI: LegendUI;
+    viewsUI: GraphViewsUI;
 
     constructor(leaf: WorkspaceLeaf, app: App, settings: ExtendedGraphSettings) {
         super();
@@ -40,9 +41,12 @@ export class GraphEventsDispatcher extends Component {
         this.renderer = this.leaf.view.renderer;
         this.canvas = leaf.containerEl.getElementsByTagName("canvas")[0];
         this.graph = new Graph(this.renderer, leaf, app, this.canvas, this.settings);
-        this.legend = new Legend(this.graph, leaf);
 
-        console.log(this.renderer);
+        this.legendUI = new LegendUI(this.graph, leaf);
+        this.addChild(this.legendUI);
+        this.viewsUI = new GraphViewsUI(this.graph, leaf);
+        this.addChild(this.viewsUI);
+        this.viewsUI.updateViewsList(settings.views);
     }
 
     onload(): void {
@@ -51,17 +55,14 @@ export class GraphEventsDispatcher extends Component {
         this.registerEvent(this.leaf.on('extended-graph:add-tag-type', this.onTagTypeAdded.bind(this)));
         this.registerEvent(this.leaf.on('extended-graph:clear-tag-types', this.onTagsCleared.bind(this)));
         this.registerEvent(this.leaf.on('extended-graph:change-tag-color', this.onTagColorChanged.bind(this)));
-        this.registerEvent(this.leaf.on('extended-graph:disable-tag', this.onTagDisabled.bind(this)));
+        this.registerEvent(this.leaf.on('extended-graph:disable-tags', this.onTagsDisabled.bind(this)));
         this.registerEvent(this.leaf.on('extended-graph:enable-tag', this.onTagEnabled.bind(this)));
         
         this.registerEvent(this.leaf.on('extended-graph:add-relationship-type', this.onRelationshipTypeAdded.bind(this)));
         this.registerEvent(this.leaf.on('extended-graph:clear-relationship-types', this.onRelationshipsCleared.bind(this)));
         this.registerEvent(this.leaf.on('extended-graph:change-relationship-color', this.onRelationshipColorChanged.bind(this)));
-        this.registerEvent(this.leaf.on('extended-graph:disable-relationship', this.onRelationshipDisabled.bind(this)));
+        this.registerEvent(this.leaf.on('extended-graph:disable-relationships', this.onRelationshipsDisabled.bind(this)));
         this.registerEvent(this.leaf.on('extended-graph:enable-relationship', this.onRelationshipEnabled.bind(this)));
-        
-        // @ts-ignore
-        this.registerEvent(this.leaf.workspace.on('extended-graph:theme-change', this.onThemeChange.bind(this)));
     }
 
     onunload() : void {
@@ -76,24 +77,26 @@ export class GraphEventsDispatcher extends Component {
 
     onTagTypeAdded(type: string, color: Uint8Array) {
         this.graph.resetArcs();
-        this.legend.addLegend("tag", type, color);
+        this.legendUI.addLegend("tag", type, color);
         this.renderer.changed();
     }
 
     onTagsCleared(types: string[]) {
         this.graph.resetArcs();
-        this.legend.removeLegend("tag", types);
+        this.legendUI.removeLegend("tag", types);
         this.renderer.changed();
     }
 
     onTagColorChanged(type: string, color: Uint8Array) {
         this.graph.updateArcsColor(type, color);
-        this.legend.updateLegend("tag", type, color);
+        this.legendUI.updateLegend("tag", type, color);
         this.renderer.changed();
     }
 
-    onTagDisabled(type: string) {
-        this.graph.disableTag(type);
+    onTagsDisabled(types: string[]) {
+        types.forEach(type => {
+            this.graph.disableTag(type);
+        });
         this.renderer.changed();
     }
 
@@ -106,34 +109,31 @@ export class GraphEventsDispatcher extends Component {
 
     onRelationshipTypeAdded(type: string, color: Uint8Array) {
         this.graph.updateLinksColor(type, color);
-        this.legend.addLegend("relationship", type, color);
+        this.legendUI.addLegend("relationship", type, color);
         this.renderer.changed();
     }
 
     onRelationshipsCleared(types: string[]) {
         //this.graph.resetArcs();
-        this.legend.removeLegend("relationship", types);
+        this.legendUI.removeLegend("relationship", types);
         this.renderer.changed();
     }
 
     onRelationshipColorChanged(type: string, color: Uint8Array) {
         this.graph.updateLinksColor(type, color);
-        this.legend.updateLegend("relationship", type, color);
+        this.legendUI.updateLegend("relationship", type, color);
         this.renderer.changed();
     }
 
-    onRelationshipDisabled(type: string) {
-        this.graph.disableRelationship(type);
+    onRelationshipsDisabled(types: string[]) {
+        types.forEach(type => {
+            this.graph.disableRelationship(type);
+        });
         this.renderer.changed();
     }
 
     onRelationshipEnabled(type: string) {
         this.graph.enableRelationship(type);
-        this.renderer.changed();
-    }
-
-    onThemeChange(theme: string) {
-        this.graph.updateBackground(theme);
         this.renderer.changed();
     }
 }

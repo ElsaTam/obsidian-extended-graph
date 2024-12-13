@@ -8,7 +8,7 @@ class Arc extends Graphics {
     gap: number = 0.2;
 }
 
-export class GraphNodeContainer extends Container {
+export class NodeContainer extends Container {
     _nodeWrapper: NodeWrapper;
     _sprite: Sprite | null;
     _size: number;

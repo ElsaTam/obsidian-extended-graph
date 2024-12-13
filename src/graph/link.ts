@@ -1,7 +1,5 @@
 import { Graphics, Container } from "pixi.js";
 import { Node, NodeWrapper } from './node';
-import { rgb2int } from "./colors";
-import { App } from "obsidian";
 import { InteractiveManager } from "./interactiveManager";
 
 

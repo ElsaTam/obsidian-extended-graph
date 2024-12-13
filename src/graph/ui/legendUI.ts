@@ -1,8 +1,8 @@
 import { Component, WorkspaceLeaf } from "obsidian";
-import { Graph } from "./graph";
-import { InteractiveManager } from "./interactiveManager";
+import { Graph } from "../graph";
+import { InteractiveManager } from "../interactiveManager";
 
-class LegendContainer {
+class LegendRow {
     name: string;
     container: Element;
     cssColorVariable: string;
@@ -12,24 +12,24 @@ class LegendContainer {
         this.name = name;
         this.manager = manager;
         this.container = root.createDiv();
-        this.container.addClass(`legend-container`);
-        this.container.addClass(`legend-${name}s-container`);
+        this.container.addClass(`graph-legend-row`);
+        this.container.addClass(`graph-legend-${name}s-row`);
         this.cssColorVariable = "--legend-color-rgb";
 
         
         let title = this.container.createSpan();
         title.innerText = this.name + "s";
-        title.addClass("legend-title");
+        title.addClass("graph-legend-title");
     }
 
     private getClassName(type: string) : string {
-        return "legend-" + type;
+        return "graph-legend-" + type;
     }
 
     addLegend(type: string, color: Uint8Array) : void {
         if (!this.container.getElementsByClassName(this.getClassName(type))[0]) {
             let button = this.container.createEl("button");
-            button.addClasses([this.getClassName(type), "legend"]);
+            button.addClasses([this.getClassName(type), "graph-legend"]);
             button.setText(type);
             button.addEventListener('click', event => {
                 this.toggle(type);
@@ -62,7 +62,7 @@ class LegendContainer {
         let button = this.container.getElementsByClassName(this.getClassName(type))[0];
 
         if (interactive.isActive) {
-            this.manager.disable(type);
+            this.manager.disable([type]);
             button.addClass("is-hidden");
         }
         else {
@@ -72,52 +72,46 @@ class LegendContainer {
     }
 }
 
-export class Legend extends Component {
+export class LegendUI extends Component {
     viewContent: HTMLElement;
     graph: Graph;
     leaf: WorkspaceLeaf;
-    legendContainers: Map<string, LegendContainer>;
+    legendRows: Map<string, LegendRow>;
 
     constructor(graphicsManager: Graph, leaf: WorkspaceLeaf) {
         super();
         this.graph = graphicsManager;
         this.leaf = leaf;
-        this.legendContainers = new Map<string, LegendContainer>();
         this.viewContent = this.leaf.containerEl.getElementsByClassName("view-content")[0] as HTMLElement;
-        this.createLegendElement();
     }
 
     onload(): void {
-        
+        this.legendRows = new Map<string, LegendRow>();
+        let legend = this.viewContent.createDiv();
+        legend?.addClass("graph-legend-container");
+        for (const name of ["tag", "relationship"]) {
+            const manager = this.graph.interactiveManagers.get(name);
+            (manager) && this.legendRows.set(name, new LegendRow(name, manager, legend));
+        }
     }
 
     onunload(): void {
         
     }
 
-
-    createLegendElement() {
-        let legend = this.viewContent.createDiv();
-        legend?.addClass("legend-graph");
-        for (const name of ["tag", "relationship"]) {
-            const manager = this.graph.interactiveManagers.get(name);
-            (manager) && this.legendContainers.set(name, new LegendContainer(name, manager, legend));
-        }
+    updateLegend(row: string, type: string, color: Uint8Array) {
+        this.legendRows.get(row)?.updateLegend(type, color);
     }
 
-    updateLegend(name: string, type: string, color: Uint8Array) {
-        this.legendContainers.get(name)?.updateLegend(type, color);
+    addLegend(row: string, type: string, color: Uint8Array) {
+        this.legendRows.get(row)?.addLegend(type, color);
     }
 
-    addLegend(name: string, type: string, color: Uint8Array) {
-        this.legendContainers.get(name)?.addLegend(type, color);
+    removeLegend(row: string, types: string[]) {
+        this.legendRows.get(row)?.removeLegend(types);
     }
 
-    removeLegend(name: string, types: string[]) {
-        this.legendContainers.get(name)?.removeLegend(types);
-    }
-
-    toggle(name: string, type: string) {
-        this.legendContainers.get(name)?.toggle(type);
+    toggle(row: string, type: string) {
+        this.legendRows.get(row)?.toggle(type);
     }
 }

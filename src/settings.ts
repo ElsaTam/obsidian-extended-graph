@@ -1,9 +1,12 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
 import GraphExtendedPlugin from "./main";
+import { GraphViewData } from "./views/viewData";
 
 export interface ExtendedGraphSettings {
     colormaps: { [interactive: string] : string };
     imageProperty: string;
+
+    views: GraphViewData[];
 }
 
 export const DEFAULT_SETTINGS: ExtendedGraphSettings = {
@@ -11,7 +14,9 @@ export const DEFAULT_SETTINGS: ExtendedGraphSettings = {
         "tag": "hsv",
         "relationship": "rainbow"
     },
-    imageProperty: "image"
+    imageProperty: "image",
+
+    views: [],
 };
 
 export class ExtendedGraphSettingTab extends PluginSettingTab {

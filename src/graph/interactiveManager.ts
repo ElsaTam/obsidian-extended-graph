@@ -1,7 +1,7 @@
 
 import { Component, WorkspaceLeaf } from "obsidian";
-import { ExtendedGraphSettings } from "./settings";
-import { getColor } from "./colors";
+import { ExtendedGraphSettings } from "../settings";
+import { getColor } from "../colors/colors";
 
 export class Interactive {
     type: string;
@@ -47,12 +47,13 @@ export class InteractiveManager extends Component {
         this.leaf.trigger(`extended-graph:clear-${this.name}-types`, types);
     }
 
-    disable(type: string) : void {
-        let interactive = this.interactives.get(type);
-        if (!interactive) return;
-
-        interactive.isActive = false;
-        this.leaf.trigger(`extended-graph:disable-${this.name}`, type);
+    disable(types: string[]) : void {
+        let disabledTypes: string[] = [];
+        types.forEach(type => {
+            let interactive = this.interactives.get(type);
+            (interactive) && (interactive.isActive = false, disabledTypes.push(type));
+        });
+        (disabledTypes.length > 0) && (this.leaf.trigger(`extended-graph:disable-${this.name}s`, disabledTypes));
     }
 
     enable(type: string) : void {

@@ -1,7 +1,7 @@
 import { Plugin, WorkspaceLeaf } from 'obsidian';
 import { GraphsManager } from './graphsManager';
-import { WorkspaceLeafExt } from './graphEventsDispatcher';
 import { DEFAULT_SETTINGS, ExtendedGraphSettings, ExtendedGraphSettingTab } from './settings';
+import { WorkspaceLeafExt } from './graph/graphEventsDispatcher';
 
 // https://pixijs.download/v7.4.2/docs/index.html
 
@@ -14,7 +14,7 @@ export default class GraphExtendedPlugin extends Plugin {
         await this.loadSettings();
         this.addSettingTab(new ExtendedGraphSettingTab(this.app, this));
 
-        this.graphsManager = new GraphsManager(this.app);
+        this.graphsManager = new GraphsManager(this, this.app);
         this.addChild(this.graphsManager);
         this.graphsManager.load();
 
@@ -33,6 +33,7 @@ export default class GraphExtendedPlugin extends Plugin {
     }
 
     async saveSettings() {
+        console.log(this.settings);
         await this.saveData(this.settings);
     }
     

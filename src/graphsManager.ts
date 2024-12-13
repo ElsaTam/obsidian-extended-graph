@@ -1,6 +1,8 @@
 import { App, CachedMetadata, Component, TFile, WorkspaceLeaf } from "obsidian";
-import { GraphEventsDispatcher } from "./graphEventsDispatcher";
+import { GraphEventsDispatcher } from "./graph/graphEventsDispatcher";
 import { ExtendedGraphSettings } from "./settings";
+import GraphExtendedPlugin from "./main";
+import { GraphViewData } from "./views/viewData";
 
 
 export class GraphsManager extends Component {
@@ -9,10 +11,13 @@ export class GraphsManager extends Component {
     themeObserver: MutationObserver;
     currentTheme: string;
     currentStyleSheetHref: string | null | undefined;
+    plugin: GraphExtendedPlugin;
 
-    constructor(app: App) {
+
+    constructor(plugin: GraphExtendedPlugin, app: App) {
         super();
         this._dispatchers = new Map<WorkspaceLeaf, GraphEventsDispatcher>();
+        this.plugin = plugin;
         this.app = app;
         this.currentTheme = this.getTheme();
         this.currentStyleSheetHref = this.getStyleSheetHref();
@@ -24,12 +29,46 @@ export class GraphsManager extends Component {
         }));
 
         this.listenToThemeChange();
+        
+        // @ts-ignore
+        this.registerEvent(this.app.workspace.on('extended-graph:theme-change', this.onThemeChange.bind(this)));
+        // @ts-ignore
+        this.registerEvent(this.app.workspace.on('extended-graph:view-needs-saving', this.onViewNeedsSaving.bind(this)));
+        // @ts-ignore
+        this.registerEvent(this.app.workspace.on('extended-graph:view-saved', this.onViewSaved.bind(this)));
     }
 
     onunload(): void {
         if (this.themeObserver) {
             this.themeObserver.disconnect();
         }
+    }
+
+    onThemeChange(theme: string) {
+        this._dispatchers.forEach(dispatcher => {
+            dispatcher.graph.updateBackground(theme);
+            dispatcher.renderer.changed();
+        });
+    }
+
+    async onViewNeedsSaving(viewData: GraphViewData) {
+        console.log(viewData);
+        console.log(this.plugin.settings.views);
+        let currentViewData = this.plugin.settings.views.find(v => v.name === viewData.name);
+        if (currentViewData) {
+            this.plugin.settings.views[this.plugin.settings.views.indexOf(currentViewData)] = viewData;
+        }
+        else {
+            this.plugin.settings.views.push(viewData);
+        }
+        this.app.workspace.trigger('extended-graph:view-saved', viewData.name);
+        await this.plugin.saveSettings();
+    }
+
+    onViewSaved(name: string) {
+        this._dispatchers.forEach(dispatcher => {
+            dispatcher.viewsUI.updateViewsList(this.plugin.settings.views);
+        });
     }
     
     private listenToThemeChange(): void {
@@ -63,7 +102,7 @@ export class GraphsManager extends Component {
 
         this._dispatchers.set(leaf, dispatcher);
         dispatcher.addChild(dispatcher.graph);
-        dispatcher.addChild(dispatcher.legend);
+        dispatcher.addChild(dispatcher.legendUI);
         dispatcher.load();
         leaf.view.addChild(dispatcher);
 

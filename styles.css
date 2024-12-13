@@ -1,4 +1,6 @@
-.legend-graph {
+/* LEGEND */
+
+.graph-legend-container {
     position: absolute;
     padding: var(--size-4-6) var(--size-4-3);
     bottom: 0; left: 0; right: 0;
@@ -8,26 +10,57 @@
     z-index: 10;
 }
 
-.legend-container {
+.graph-legend-row {
     display: flex;
     justify-content: center;
     align-items: center;
     gap: var(--size-4-4);
 }
 
-.legend-container button {
+.graph-legend-row button {
     background-color: rgba(var(--legend-color-rgb), 0.5);
     padding: var(--size-4-2);
     border-radius: var(--radius-s);
     font-weight: var(--font-bold);
 }
 
-.legend-container button.is-hidden {
+.graph-legend-row button.is-hidden {
     background-color: rgba(var(--legend-color-rgb), 0.1);
     color: var(--text-faint);
     font-weight: unset;
 }
 
-.legend-container .legend-title {
+.graph-legend-title {
     font-variant: small-caps;
+}
+
+/* VIEWS */
+
+.graph-views-container {
+    position: absolute;
+    padding: var(--size-4-6) var(--size-4-3);
+    top: 0; left: 0; right: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--size-4-3);
+    z-index: 10;
+}
+
+.graph-views-container select {
+    width: 200px;
+    appearance: auto;
+}
+
+.graph-views-title {
+    font-variant: small-caps;
+}
+
+.graph-modal-new-view .modal-content {
+    display: flex;
+    gap: var(--size-4-4);
+}
+.graph-modal-new-view input {
+    flex: 1 0 0;
+    font-size: var(--font-ui-medium);
+    padding: var(--size-4-1) var(--size-4-3);
 }

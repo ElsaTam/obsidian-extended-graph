@@ -1,22 +1,27 @@
 
 import { Assets, Texture }  from 'pixi.js';
 import { App, Component, TFile, WorkspaceLeaf } from 'obsidian';
-import { Renderer } from './types';
+import { Renderer } from './renderer';
 import { Node, NodeWrapper } from './node';
-import { GraphNodeContainer } from './graphNodeContainer';
-import { ExtendedGraphSettings } from './settings';
+import { NodeContainer } from './nodeContainer';
+import { ExtendedGraphSettings } from '../settings';
 import { Link, LinkWrapper } from './link';
 import { InteractiveManager } from './interactiveManager';
+import { GraphView } from 'src/views/view';
+import { GraphViewData } from 'src/views/viewData';
 
 
 export class Graph extends Component {
-    containersMap: Map<string, GraphNodeContainer>;
-    nodesMap: Map<string, NodeWrapper>;
-    connectedLinksMap: Map<string, LinkWrapper>;
-    disconnectedLinksMap: Map<string, LinkWrapper>;
-    spritesSize: number;
+    interactiveManagers = new Map<string, InteractiveManager>();
+    containersMap = new Map<string, NodeContainer>();
+    nodesMap = new Map<string, NodeWrapper>();
+    connectedLinksMap = new Map<string, LinkWrapper>();
+    disconnectedLinksMap = new Map<string, LinkWrapper>();
+    disconnectedRelationships = new Set<string>();
+    disabledTags = new Set<string>();
+    spritesSize: number = 200;
+
     renderer: Renderer;
-    interactiveManagers: Map<string, InteractiveManager>;
     app: App;
     canvas: Element;
     leaf: WorkspaceLeaf;
@@ -24,15 +29,9 @@ export class Graph extends Component {
 
     constructor(renderer: Renderer, leaf: WorkspaceLeaf, app: App, canvas: Element, settings: ExtendedGraphSettings) {
         super();
-        this.containersMap = new Map<string, GraphNodeContainer>();
-        this.nodesMap = new Map<string, NodeWrapper>();
-        this.connectedLinksMap = new Map<string, LinkWrapper>();
-        this.disconnectedLinksMap = new Map<string, LinkWrapper>();
-        this.spritesSize = 200;
         this.renderer = renderer;
         this.leaf = leaf;
         this.settings = settings;
-        this.interactiveManagers = new Map<string, InteractiveManager>();
         this.interactiveManagers.set("tag", new InteractiveManager(this.leaf, this.settings, "tag"));
         this.interactiveManagers.set("relationship", new InteractiveManager(this.leaf, this.settings, "relationship"));
         this.interactiveManagers.forEach(manager => {
@@ -104,7 +103,7 @@ export class Graph extends Component {
                 const shape: {x: number, y: number, radius: number} = nodeWrapper.node.circle.geometry.graphicsData[0].shape;
                 
                 // create the container
-                let container = new GraphNodeContainer(nodeWrapper, texture, shape.radius);
+                let container = new NodeContainer(nodeWrapper, texture, shape.radius);
                 container.updateBackgroundColor(this.getBackgroundColor());
     
                 // add the container to the stage
@@ -136,9 +135,9 @@ export class Graph extends Component {
         });
     }
     
-    getGraphNodeContainerFromFile(file: TFile) : GraphNodeContainer | null {
+    getGraphNodeContainerFromFile(file: TFile) : NodeContainer | null {
         let foundContainer = null;
-        this.containersMap.forEach((container: GraphNodeContainer) => {
+        this.containersMap.forEach((container: NodeContainer) => {
             if (container.getGraphNode().isFile(file)) {
                 foundContainer = container;
                 return;
@@ -194,6 +193,7 @@ export class Graph extends Component {
     
             linkWrapper.setRenderable(false);
         });
+        this.disconnectedRelationships.add(type);
 
         if (hasChanged) this.postMessageToWorker();
     }
@@ -212,6 +212,7 @@ export class Graph extends Component {
     
             linkWrapper.setRenderable(true);
         });
+        this.disconnectedRelationships.delete(type);
 
         if (hasChanged) this.postMessageToWorker();
     }
@@ -252,14 +253,14 @@ export class Graph extends Component {
 
     resetArcs() : void {
         let manager = this.interactiveManagers.get("tag");
-        this.containersMap.forEach((container: GraphNodeContainer) => {
+        this.containersMap.forEach((container: NodeContainer) => {
             container.removeArcs();
             (manager) && container.addArcs(manager);
         });
     }
 
     removeArcs() : void {
-        this.containersMap.forEach((container: GraphNodeContainer) => {
+        this.containersMap.forEach((container: NodeContainer) => {
             container.removeArcs();
         });
     }
@@ -267,7 +268,7 @@ export class Graph extends Component {
     updateArcsColor(type: string, color: Uint8Array) : void {
         let manager = this.interactiveManagers.get("tag");
         if (!manager) return;
-        this.containersMap.forEach((container: GraphNodeContainer) => {
+        this.containersMap.forEach((container: NodeContainer) => {
             container.updateArc(type, color, manager);
         });
     }
@@ -275,27 +276,32 @@ export class Graph extends Component {
     disableTag(type: string) : void {
         let manager = this.interactiveManagers.get("tag");
         if (!manager) return;
-        this.containersMap.forEach((container: GraphNodeContainer) => {
+        this.disabledTags.add(type);
+        this.containersMap.forEach((container: NodeContainer) => {
             container.updateAlpha(type, false, manager);
         });
     }
 
     enableTag(type: string) : void {
+        this.disabledTags.delete(type);
         let manager = this.interactiveManagers.get("tag");
         if (!manager) return;
-        this.containersMap.forEach((container: GraphNodeContainer) => {
+        this.containersMap.forEach((container: NodeContainer) => {
             container.updateAlpha(type, true, manager);
         });
     }
 
     updateBackground(theme: string) : void {
-        this.containersMap.forEach((container: GraphNodeContainer) => {
+        this.containersMap.forEach((container: NodeContainer) => {
             container.updateBackgroundColor(this.getBackgroundColor());
         });
     }
 
-
-
+    newView(name: string) : void {
+        let view = new GraphView(name);
+        view.saveGraph(this);
+        this.app.workspace.trigger('extended-graph:view-needs-saving', view.data);
+    }
 
 
     test() : void {

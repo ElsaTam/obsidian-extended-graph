@@ -1,5 +1,4 @@
 import { App, TFile } from 'obsidian';
-import { Link } from './link';
 
 export interface Node {
     circle: {
