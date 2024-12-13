@@ -29,16 +29,19 @@ export class NodeWrapper {
     _file: TFile;
     _imageUri: string | null;
     _tags: string[];
+    _linkPathsMap: Map<string, string[]>;
 
-    constructor(obsidianNode: Node, app: App, keyProperty: string) {
-        this.node = obsidianNode;
+    constructor(node: Node, app: App, keyProperty: string) {
+        this.node = node;
+        this._linkPathsMap = new Map<string, string[]>();
         if (app) {
-            const file = app.vault.getFileByPath(obsidianNode.id);
-            if (!file) throw new Error(`Could not find TFile for node ${obsidianNode.id}.`)
+            const file = app.vault.getFileByPath(node.id);
+            if (!file) throw new Error(`Could not find TFile for node ${node.id}.`)
             this._file = file;
         }
         this.updateTags(app);
         this.updateImageUri(app, keyProperty);
+        this.updateLinks(app);
     }
 
     updateTags(app: App) : void {
@@ -49,6 +52,22 @@ export class NodeWrapper {
         metadata?.tags?.forEach(tagCache => {
             const tag = tagCache.tag.replace('#', '');
             this._tags.push(tag);
+        });
+    }
+
+    updateLinks(app: App) : void {
+        const frontmatterLinks = app.metadataCache.getFileCache(this._file)?.frontmatterLinks;
+        if (!frontmatterLinks) return;
+
+        frontmatterLinks.forEach(frontmatterLinkCache => {
+            const key = frontmatterLinkCache.key.split('.')[0];
+            const linkPath = frontmatterLinkCache.link + ".md";
+            const linkFile = app.vault.getFileByPath(linkPath);
+            if (! linkFile) return;
+            if (! this._linkPathsMap.has(key)) {
+                this._linkPathsMap.set(key, []);
+            }
+            this._linkPathsMap.get(key)?.push(linkPath);
         });
     }
 
@@ -76,6 +95,16 @@ export class NodeWrapper {
 
     isFile(file: TFile) : boolean {
         return this._file === file;
+    }
+
+    getLinkTypes(nodeID: string) : string[] {
+        let types: string[] = [];
+        this._linkPathsMap.forEach((links: string[], type: string) => {
+            if (links.includes(nodeID)) {
+                types.push(type);
+            }
+        });
+        return types;
     }
 
     waitReady(): Promise<void> {

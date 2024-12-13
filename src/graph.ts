@@ -3,19 +3,20 @@ import { Assets, Texture }  from 'pixi.js';
 import { App, Component, TFile, WorkspaceLeaf } from 'obsidian';
 import { Renderer } from './types';
 import { Node, NodeWrapper } from './node';
-import { GraphNodeContainer } from './container';
-import { TagsManager } from './tagsManager';
+import { GraphNodeContainer } from './graphNodeContainer';
 import { ExtendedGraphSettings } from './settings';
 import { Link, LinkWrapper } from './link';
+import { InteractiveManager } from './interactiveManager';
 
 
 export class Graph extends Component {
     containersMap: Map<string, GraphNodeContainer>;
+    nodesMap: Map<string, NodeWrapper>;
     connectedLinksMap: Map<string, LinkWrapper>;
     disconnectedLinksMap: Map<string, LinkWrapper>;
     spritesSize: number;
     renderer: Renderer;
-    tagsManager: TagsManager;
+    interactiveManagers: Map<string, InteractiveManager>;
     app: App;
     canvas: Element;
     leaf: WorkspaceLeaf;
@@ -24,26 +25,31 @@ export class Graph extends Component {
     constructor(renderer: Renderer, leaf: WorkspaceLeaf, app: App, canvas: Element, settings: ExtendedGraphSettings) {
         super();
         this.containersMap = new Map<string, GraphNodeContainer>();
+        this.nodesMap = new Map<string, NodeWrapper>();
         this.connectedLinksMap = new Map<string, LinkWrapper>();
         this.disconnectedLinksMap = new Map<string, LinkWrapper>();
         this.spritesSize = 200;
         this.renderer = renderer;
         this.leaf = leaf;
         this.settings = settings;
-        this.tagsManager = new TagsManager(this.leaf, this.settings);
-        this.addChild(this.tagsManager);
+        this.interactiveManagers = new Map<string, InteractiveManager>();
+        this.interactiveManagers.set("tag", new InteractiveManager(this.leaf, this.settings, "tag"));
+        this.interactiveManagers.set("relationship", new InteractiveManager(this.leaf, this.settings, "relationship"));
+        this.interactiveManagers.forEach(manager => {
+            this.addChild(manager);
+        });
         this.app = app;
         this.canvas = canvas;
     }
 
     onload() {
-        console.log("Loading Graph");
         let requestList: Promise<void>[] = [];
 
         // Create the graphics
         this.renderer.nodes.forEach((node: Node) => {
             // Create a graph node
             let nodeWrapper = new NodeWrapper(node, this.app, this.settings.imageProperty);
+            this.nodesMap.set(node.id, nodeWrapper);
             let image_uri = nodeWrapper.getImageUri();
             if (image_uri) {
                 requestList.push(this.initNode(nodeWrapper, image_uri));
@@ -51,20 +57,24 @@ export class Graph extends Component {
         });
 
         this.renderer.links.forEach((link: Link) => {
-            let linkWrapper = new LinkWrapper(link);
+            const source = this.nodesMap.get(link.source.id);
+            const target = this.nodesMap.get(link.target.id);
+            if (!source || !target) return;
+            let linkWrapper = new LinkWrapper(link, source, target);
             requestList.push(this.initLink(linkWrapper));
         })
 
         Promise.all(requestList).then(res => {
             // Initialize color for the tags of each node
-            this.tagsManager.update(this.getAllTagTypesFromCache());
+            this.interactiveManagers.get("tag")?.update(this.getAllTagTypesFromCache());
+            this.interactiveManagers.get("relationship")?.update(this.getAllRelationshipsTypes());
 
             this.leaf.trigger('extended-graph:graph-ready');
         });
     }
 
     onunload(): void {
-        console.log("Unload Graph");
+        
     }
 
     private getBackgroundColor() : Uint8Array {
@@ -83,12 +93,10 @@ export class Graph extends Component {
         await linkWrapper.waitReady();
         linkWrapper.init();
         this.connectedLinksMap.set(linkWrapper.id, linkWrapper);
-        linkWrapper.setTint(new Uint8Array([255, 0, 0]));
     }
 
     private async initNode(nodeWrapper: NodeWrapper, image_uri: string) : Promise<void> {
         await nodeWrapper.waitReady();
-        console.log(nodeWrapper.node);
         if (!this.containersMap.has(nodeWrapper.getID()) && this.renderer.px) {
             // load texture
             await Assets.load(image_uri).then((texture: Texture) => {
@@ -152,32 +160,60 @@ export class Graph extends Component {
         return types;
     }
 
-    disconnect(linkWrapper: LinkWrapper) : void {
-        if (! this.connectedLinksMap.get(linkWrapper.id) || this.disconnectedLinksMap.get(linkWrapper.id)) {
-            return;
+    getAllRelationshipsTypes() : Set<string> {
+        let relationships = new Set<string>();
+
+        let hasNoType = false;
+        this.connectedLinksMap.forEach(linkWrapper => {
+            linkWrapper.getTypes().forEach(type => relationships.add(type));
+            hasNoType = hasNoType || linkWrapper.getTypes().length == 0;
+        });
+
+        if (hasNoType) {
+            relationships.add("none");
         }
-
-        this.connectedLinksMap.delete(linkWrapper.id);
-        this.disconnectedLinksMap.set(linkWrapper.id, linkWrapper);
-        this.renderer.links.remove(linkWrapper._link);
-
-        linkWrapper.setRenderable(false);
-
-        this.postMessageToWorker();
+        
+        return relationships;
     }
 
-    connect(linkWrapper: LinkWrapper) : void {
-        if (this.connectedLinksMap.get(linkWrapper.id) || ! this.disconnectedLinksMap.get(linkWrapper.id)) {
-            return;
-        }
+    disableRelationship(type: string) : void {
+        let hasChanged = false;
+        this.connectedLinksMap.forEach((linkWrapper, id) => {
+            const linkTypes = linkWrapper.getTypes();
+            if (!linkTypes.includes(type)) return;
 
-        this.disconnectedLinksMap.delete(linkWrapper.id);
-        this.connectedLinksMap.set(linkWrapper.id, linkWrapper);
-        this.renderer.links.push(linkWrapper._link);
+            if(linkTypes.every(linkType => this.interactiveManagers.get("relationship")?.isActive(linkType))) {
+                return;
+            }
 
-        linkWrapper.setRenderable(true);
+            hasChanged = true;
+    
+            this.connectedLinksMap.delete(id);
+            this.disconnectedLinksMap.set(id, linkWrapper);
+            this.renderer.links.remove(linkWrapper._link);
+    
+            linkWrapper.setRenderable(false);
+        });
 
-        this.postMessageToWorker();
+        if (hasChanged) this.postMessageToWorker();
+    }
+
+    enableRelationship(type: string) : void {
+        let hasChanged = false;
+        this.disconnectedLinksMap.forEach((linkWrapper, id) => {
+            const linkTypes = linkWrapper.getTypes();
+            if (!linkTypes.includes(type)) return;
+
+            hasChanged = true;
+
+            this.disconnectedLinksMap.delete(linkWrapper.id);
+            this.connectedLinksMap.set(linkWrapper.id, linkWrapper);
+            this.renderer.links.push(linkWrapper._link);
+    
+            linkWrapper.setRenderable(true);
+        });
+
+        if (hasChanged) this.postMessageToWorker();
     }
 
     private postMessageToWorker() : void {
@@ -199,10 +235,26 @@ export class Graph extends Component {
         });
     }
 
+    updateLinksColor(type: string, color: Uint8Array) : void {
+        let manager = this.interactiveManagers.get("relationship");
+        if (!manager) return;
+        this.connectedLinksMap.forEach((linkWrapper: LinkWrapper) => {
+            if (linkWrapper.getType(manager) == type) {
+                linkWrapper.setColor(color);
+            }
+        });
+        this.disconnectedLinksMap.forEach((linkWrapper: LinkWrapper) => {
+            if (linkWrapper.getType(manager) == type) {
+                linkWrapper.setColor(color);
+            }
+        });
+    }
+
     resetArcs() : void {
+        let manager = this.interactiveManagers.get("tag");
         this.containersMap.forEach((container: GraphNodeContainer) => {
             container.removeArcs();
-            container.addArcs(this.tagsManager);
+            (manager) && container.addArcs(manager);
         });
     }
 
@@ -213,20 +265,26 @@ export class Graph extends Component {
     }
 
     updateArcsColor(type: string, color: Uint8Array) : void {
+        let manager = this.interactiveManagers.get("tag");
+        if (!manager) return;
         this.containersMap.forEach((container: GraphNodeContainer) => {
-            container.updateArc(type, color, this.tagsManager);
+            container.updateArc(type, color, manager);
         });
     }
 
     disableTag(type: string) : void {
+        let manager = this.interactiveManagers.get("tag");
+        if (!manager) return;
         this.containersMap.forEach((container: GraphNodeContainer) => {
-            container.updateAlpha(type, false, this.tagsManager);
+            container.updateAlpha(type, false, manager);
         });
     }
 
     enableTag(type: string) : void {
+        let manager = this.interactiveManagers.get("tag");
+        if (!manager) return;
         this.containersMap.forEach((container: GraphNodeContainer) => {
-            container.updateAlpha(type, true, this.tagsManager);
+            container.updateAlpha(type, true, manager);
         });
     }
 
@@ -241,12 +299,6 @@ export class Graph extends Component {
 
 
     test() : void {
-        let linkWrapper = Array.from(this.connectedLinksMap.values())[0];
-        if (linkWrapper) {
-            //console.log("Disconnecting ", linkWrapper.id);
-            //this.disconnect(linkWrapper);
-            //console.log("Connecting ", linkWrapper.id);
-            //this.connect(linkWrapper);
-        }
+        
     }
 }

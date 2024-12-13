@@ -1,6 +1,8 @@
-import { Graphics, LineStyle, Container, GraphicsGeometry, ColorSource } from "pixi.js";
-import { Node } from './node';
+import { Graphics, Container } from "pixi.js";
+import { Node, NodeWrapper } from './node';
 import { rgb2int } from "./colors";
+import { App } from "obsidian";
+import { InteractiveManager } from "./interactiveManager";
 
 
 export interface Link {
@@ -13,14 +15,18 @@ export interface Link {
 
 export class LinkWrapper {
     _link: Link;
+    _source: NodeWrapper;
+    _target: NodeWrapper;
+    _graphics: Graphics;
     id: string;
 
-    constructor(link: Link) {
+    constructor(link: Link, source: NodeWrapper, target: NodeWrapper) {
         this._link = link;
+        this._source = source;
+        this._target = target;
     }
 
     init() : void {
-        this._link.px.scale.set(1, 5); // increase thickness (y)
         this.id = this._link.source.id + "--to--" + this._link.target.id;
     }
 
@@ -35,13 +41,34 @@ export class LinkWrapper {
         });
     }
 
-    setTint(color: Uint8Array) : void {
-        const quad: Graphics = this._link.px.children[0] as Graphics;
-        quad.tint = rgb2int(color);
-        return;
+    setColor(color: Uint8Array) : void {
+        if (this._graphics) {
+            this._graphics.clear();
+        }
+        else {
+            this._graphics = new Graphics();
+            (this._link.px.children[0] as Graphics).addChild(this._graphics);
+        }
+        this._graphics
+            .lineStyle({width: 50, color: color})
+            .moveTo(0, 8)
+            .lineTo(16, 8);
+        this._graphics.alpha = 0.3;
     }
 
     setRenderable(r: boolean) : void {
         this._link.px.renderable = r;
+    }
+
+    getTypes() : string[] {
+        let types = this._source.getLinkTypes(this._target.getID());
+        (types.length == 0) && (types = ["none"]);
+        return types;
+    }
+
+    getType(manager: InteractiveManager) : string {
+        let type = this.getTypes().find(type => manager.isActive(type));
+        (!type) && (type = "none");
+        return type;
     }
 }

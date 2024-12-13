@@ -19,8 +19,6 @@ export class GraphsManager extends Component {
     }
 
     onload(): void {
-        console.log("Loading Graphs Manager");
-        
         this.registerEvent(this.app.metadataCache.on('changed', (file: TFile, data: string, cache: CachedMetadata) => {
             this.handleMetadataCacheChange(file, data, cache);
         }));
@@ -29,7 +27,6 @@ export class GraphsManager extends Component {
     }
 
     onunload(): void {
-        console.log("Unload Graphs Manager");
         if (this.themeObserver) {
             this.themeObserver.disconnect();
         }
@@ -93,14 +90,14 @@ export class GraphsManager extends Component {
             const needsUpdate = !container.matchesTypes(newTypes);
     
             if (needsUpdate) {
-                dispatcher.graph.tagsManager.update(dispatcher.graph.getAllTagTypesFromCache());
+                dispatcher.graph.interactiveManagers.get("tag")?.update(dispatcher.graph.getAllTagTypesFromCache());
             }
         });
     }
 
-    updatePalette() : void {
+    updatePalette(interactive: string) : void {
         this._dispatchers.forEach(dispatcher => {
-            dispatcher.graph.tagsManager.recomputeColors();
+            dispatcher.graph.interactiveManagers.get(interactive)?.recomputeColors();
         });
     }
 }

@@ -1,7 +1,6 @@
 import { Container, Sprite, Texture, Graphics }  from 'pixi.js';
 import { NodeWrapper, Node }  from './node';
-import { TagsManager } from './tagsManager';
-import { rgb2hex } from './colors';
+import { InteractiveManager } from './interactiveManager';
 
 class Arc extends Graphics {
     thickness: number = 0.09;
@@ -62,15 +61,15 @@ export class GraphNodeContainer extends Container {
         this._tagArcs.clear;
     }
 
-    addArcs(tagsManager: TagsManager) {
-        const nTags = tagsManager.getNumberOfTags();
+    addArcs(tagsManager: InteractiveManager) {
+        const nTags = tagsManager.getNumberOfInteractives();
         const arcSize = Math.min(2 * Math.PI / nTags, this.maxArcSize);
     
         this._nodeWrapper.getTags()?.forEach(type => {
             const color = tagsManager.getColor(type);
             if (!color) return;
         
-            const tagIndex = tagsManager.getTagIndex(type);
+            const tagIndex = tagsManager.getInteractiveIndex(type);
             const arc = this.createArc(type, color, arcSize, tagIndex);
             this.addChild(arc);
             this._tagArcs.set(type, arc);
@@ -94,15 +93,15 @@ export class GraphNodeContainer extends Container {
         return arc;
     }
 
-    updateArc(type: string, color: Uint8Array, tagsManager: TagsManager) : void {
+    updateArc(type: string, color: Uint8Array, tagsManager: InteractiveManager) : void {
         let arc = this._tagArcs.get(type);
         if (!arc) return;
 
         this.removeChild(arc);
         this._tagArcs.delete(type);
 
-        const tagIndex = tagsManager.getTagIndex(type);
-        const nTags = tagsManager.getNumberOfTags();
+        const tagIndex = tagsManager.getInteractiveIndex(type);
+        const nTags = tagsManager.getNumberOfInteractives();
         const arcSize = Math.min(2 * Math.PI / nTags, this.maxArcSize);
         arc = this.createArc(type, color, arcSize, tagIndex);
         this.addChild(arc);
@@ -116,7 +115,7 @@ export class GraphNodeContainer extends Container {
             .endFill();
     }
 
-    updateAlpha(type: string, isEnable: boolean, tagsManager: TagsManager) : void {
+    updateAlpha(type: string, isEnable: boolean, tagsManager: InteractiveManager) : void {
         const arc = this._tagArcs.get(type);
         if (!arc) return;
 

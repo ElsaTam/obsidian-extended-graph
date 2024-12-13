@@ -2,12 +2,15 @@ import { App, PluginSettingTab, Setting } from "obsidian";
 import GraphExtendedPlugin from "./main";
 
 export interface ExtendedGraphSettings {
-    colormap: string;
+    colormaps: { [interactive: string] : string };
     imageProperty: string;
 }
 
 export const DEFAULT_SETTINGS: ExtendedGraphSettings = {
-    colormap: "hsv",
+    colormaps: {
+        "tag": "hsv",
+        "relationship": "rainbow"
+    },
     imageProperty: "image"
 };
 
@@ -32,32 +35,44 @@ export class ExtendedGraphSettingTab extends PluginSettingTab {
                     this.plugin.settings.imageProperty = value;
                     await this.plugin.saveSettings();
             }))
+        
+        const cmOptions = {
+            RdYlBu: "RdYlBu",
+            RdYlGn: "RdYlGn",
+            Spectral: "Spectral",
+            brg: "brg",
+            cividis: "cividis",
+            cool: "cool",
+            hsv: "hsv",
+            gnuplot: "gnuplot",
+            jet: "jet",
+            magma: "magma",
+            plasma: "plasma",
+            rainbow: "rainbow",
+            spring: "spring",
+            summer: "summer",
+            turbo: "turbo",
+            viridis: "viridis",
+            winter: "winter"
+        };
 
         new Setting(containerEl)
-            .setName('Color palette')
+            .setName('Color palette (tags)')
             .setDesc('Choose the color palette for the tags arc visualizations')
-            .addDropdown(cb => cb.addOptions({
-                RdYlBu: "RdYlBu",
-                RdYlGn: "RdYlGn",
-                Spectral: "Spectral",
-                brg: "brg",
-                cividis: "cividis",
-                cool: "cool",
-                hsv: "hsv",
-                gnuplot: "gnuplot",
-                jet: "jet",
-                magma: "magma",
-                plasma: "plasma",
-                rainbow: "rainbow",
-                spring: "spring",
-                summer: "summer",
-                turbo: "turbo",
-                viridis: "viridis",
-                winter: "winter"
-            }).setValue(this.plugin.settings.colormap)
+            .addDropdown(cb => cb.addOptions(cmOptions).setValue(this.plugin.settings.colormaps["tag"])
             .onChange(async (value) => {
-                this.plugin.settings.colormap = value;
-                this.app.workspace.trigger('extended-graph:settings-colorpalette-changed');
+                this.plugin.settings.colormaps["tag"] = value;
+                this.app.workspace.trigger('extended-graph:settings-colorpalette-changed', "tag");
+                await this.plugin.saveSettings();
+            }));
+
+        new Setting(containerEl)
+            .setName('Color palette (relationships)')
+            .setDesc('Choose the color palette for the relationship links')
+            .addDropdown(cb => cb.addOptions(cmOptions).setValue(this.plugin.settings.colormaps["relationship"])
+            .onChange(async (value) => {
+                this.plugin.settings.colormaps["relationship"] = value;
+                this.app.workspace.trigger('extended-graph:settings-colorpalette-changed', "relationship");
                 await this.plugin.saveSettings();
             }));
     }

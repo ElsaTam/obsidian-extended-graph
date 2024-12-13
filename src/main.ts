@@ -22,8 +22,9 @@ export default class GraphExtendedPlugin extends Plugin {
             this.handleLayoutChange();
         }));
 
-        this.registerEvent(this.app.workspace.on('extended-graph:settings-colorpalette-changed', () => {
-            this.handleColorPaletteChange();
+        // @ts-ignore
+        this.registerEvent(this.app.workspace.on('extended-graph:settings-colorpalette-changed', (interactive: string) => {
+            this.graphsManager.updatePalette(interactive);
         }));
     }
 
@@ -46,10 +47,6 @@ export default class GraphExtendedPlugin extends Plugin {
         leaves.forEach(leaf => {
             this.graphsManager.addGraph(leaf, this.settings);
         });
-    }
-    
-    async handleColorPaletteChange() {
-        this.graphsManager.updatePalette();
     }
     
     waitForRenderer(): Promise<void> {
