@@ -12,6 +12,13 @@ export function int2rgb(int: number): Uint8Array {
     ]);
 }
 
+export function rgb2int(rgb: Uint8Array): number {
+    let int = rgb[0];
+    int = (int << 8) + rgb[1];
+    int = (int << 8) + rgb[2];
+    return int;
+}
+
 export function rgb2hsv(rgb: Uint8Array) : { h: number, s: number, v: number } {
     let r = rgb[0], g = rgb[1], b = rgb[2];
     r /= 255, g /= 255, b /= 255;

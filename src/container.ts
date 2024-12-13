@@ -1,5 +1,5 @@
 import { Container, Sprite, Texture, Graphics }  from 'pixi.js';
-import { GraphNode, ObsidianNode }  from './node';
+import { NodeWrapper, Node }  from './node';
 import { TagsManager } from './tagsManager';
 import { rgb2hex } from './colors';
 
@@ -10,7 +10,7 @@ class Arc extends Graphics {
 }
 
 export class GraphNodeContainer extends Container {
-    _node: GraphNode;
+    _nodeWrapper: NodeWrapper;
     _sprite: Sprite | null;
     _size: number;
     _tagArcs: Map<string, Arc>;
@@ -19,12 +19,12 @@ export class GraphNodeContainer extends Container {
     maxArcSize: number = Math.PI / 2;
     name: string;
 
-    constructor(node: GraphNode, texture: Texture, radius: number) {
+    constructor(nodeWrapper: NodeWrapper, texture: Texture, radius: number) {
         super();
         this._size = Math.min(texture.width, texture.height);
-        this._node = node;
+        this._nodeWrapper = nodeWrapper;
         this._tagArcs = new Map<string, Arc>();
-        this.name = node.getID();
+        this.name = nodeWrapper.getID();
 
         // Background
         this._background = new Graphics()
@@ -66,7 +66,7 @@ export class GraphNodeContainer extends Container {
         const nTags = tagsManager.getNumberOfTags();
         const arcSize = Math.min(2 * Math.PI / nTags, this.maxArcSize);
     
-        this._node.getTags()?.forEach(type => {
+        this._nodeWrapper.getTags()?.forEach(type => {
             const color = tagsManager.getColor(type);
             if (!color) return;
         
@@ -142,12 +142,12 @@ export class GraphNodeContainer extends Container {
         return this._size;
     }
 
-    getObsidianNode() : ObsidianNode {
-        return this._node.obsidianNode;
+    getObsidianNode() : Node {
+        return this._nodeWrapper.node;
     }
 
-    getGraphNode() : GraphNode {
-        return this._node;
+    getGraphNode() : NodeWrapper {
+        return this._nodeWrapper;
     }
 
     containsTypes(types: string[]) : boolean {

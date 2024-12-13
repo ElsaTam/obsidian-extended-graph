@@ -1,4 +1,6 @@
 import { Container }  from 'pixi.js';
+import { Node } from './node';
+import { Link } from './link';
 
 export interface Renderer {
     colors: {
@@ -9,12 +11,13 @@ export interface Renderer {
     px: {
         stage: Container;
     };
-    nodes: any[];
+    links: Link[];
+    nodes: Node[];
     nodeScale: number;
     fNodeSizeMult: number;
     panX: number;
     panY: number;
     scale: number;
-    links: any[];
+    worker: Worker,
     changed(): void;
 }

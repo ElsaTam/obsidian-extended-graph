@@ -6,11 +6,16 @@ import { ExtendedGraphSettings } from "./settings";
 export class GraphsManager extends Component {
     _dispatchers: Map<WorkspaceLeaf, GraphEventsDispatcher>;
     app: App;
+    themeObserver: MutationObserver;
+    currentTheme: string;
+    currentStyleSheetHref: string | null | undefined;
 
     constructor(app: App) {
         super();
         this._dispatchers = new Map<WorkspaceLeaf, GraphEventsDispatcher>();
         this.app = app;
+        this.currentTheme = this.getTheme();
+        this.currentStyleSheetHref = this.getStyleSheetHref();
     }
 
     onload(): void {
@@ -19,10 +24,38 @@ export class GraphsManager extends Component {
         this.registerEvent(this.app.metadataCache.on('changed', (file: TFile, data: string, cache: CachedMetadata) => {
             this.handleMetadataCacheChange(file, data, cache);
         }));
+
+        this.listenToThemeChange();
     }
 
     onunload(): void {
         console.log("Unload Graphs Manager");
+        if (this.themeObserver) {
+            this.themeObserver.disconnect();
+        }
+    }
+    
+    private listenToThemeChange(): void {
+        this.themeObserver = new MutationObserver(() => {
+            const newTheme = this.getTheme();
+            const newStyleSheetHref = this.getStyleSheetHref();
+            if (newTheme !== this.currentTheme || (newStyleSheetHref !== this.currentStyleSheetHref)) {
+                this.app.workspace.trigger('extended-graph:theme-change', this.currentTheme);
+                this.currentTheme = newTheme;
+                this.currentStyleSheetHref = newStyleSheetHref;
+            }
+        });
+        
+        this.themeObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+        this.themeObserver.observe(document.head, { childList: true, subtree: true, attributes: true, attributeFilter: ['href'] });
+    }
+
+    private getTheme() : string {
+        return this.app.vault.getConfig('theme') as string;
+    }
+
+    private getStyleSheetHref() : string | null | undefined {
+        return document.querySelector('link[rel="stylesheet"][href*="theme"]')?.getAttribute('href');
     }
 
     addGraph(leaf: WorkspaceLeaf, settings: ExtendedGraphSettings) : GraphEventsDispatcher {

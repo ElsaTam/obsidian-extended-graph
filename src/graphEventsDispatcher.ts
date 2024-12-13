@@ -3,6 +3,7 @@ import { Graph } from "./graph";
 import { Legend } from "./legend";
 import { Renderer } from "./types";
 import { ExtendedGraphSettings } from "./settings";
+import { Link, LinkWrapper } from "./link";
 
 export type WorkspaceLeafExt = WorkspaceLeaf & {
     on(name: "extended-graph:graph-ready",      callback: ( ) => any)                              : EventRef;
@@ -11,7 +12,6 @@ export type WorkspaceLeafExt = WorkspaceLeaf & {
     on(name: "extended-graph:change-tag-color", callback: (type: string, color: Uint8Array) => any): EventRef;
     on(name: "extended-graph:disable-tag",      callback: (type: string) => any)                   : EventRef;
     on(name: "extended-graph:enable-tag",       callback: (type: string) => any)                   : EventRef;
-    on(name: "extended-graph:theme-change",     callback: (type: string) => any)                   : EventRef;
 
     view: {
         renderer: Renderer
@@ -41,17 +41,23 @@ export class GraphEventsDispatcher extends Component {
     onload(): void {
         console.log("Loading GraphEventsDispatcher");
         
+        this.registerEvent(this.leaf.on('extended-graph:graph-ready', this.onGraphReady.bind(this)));
         this.registerEvent(this.leaf.on('extended-graph:add-tag-type', this.onTagTypeAdded.bind(this)));
         this.registerEvent(this.leaf.on('extended-graph:clear-tag-types', this.onTagsCleared.bind(this)));
         this.registerEvent(this.leaf.on('extended-graph:change-tag-color', this.onTagColorChanged.bind(this)));
         this.registerEvent(this.leaf.on('extended-graph:disable-tag', this.onTagDisabled.bind(this)));
         this.registerEvent(this.leaf.on('extended-graph:enable-tag', this.onTagEnabled.bind(this)));
         
-        this.registerEvent(this.leaf.on('extended-graph:theme-change', this.onThemeChange.bind(this)));
+        // @ts-ignore
+        this.registerEvent(this.leaf.workspace.on('extended-graph:theme-change', this.onThemeChange.bind(this)));
     }
 
     onunload() : void {
         console.log("Unload GraphEventsDispatcher");
+    }
+
+    onGraphReady() : void {
+        this.graph.test();
     }
 
     onTagTypeAdded(type: string, color: Uint8Array) {
@@ -80,6 +86,10 @@ export class GraphEventsDispatcher extends Component {
     onTagEnabled(type: string) {
         this.graph.enableTag(type);
         this.renderer.changed();
+    }
+
+    onLinkClicked(linkWrapper: LinkWrapper) {
+        this.graph.clickLink(linkWrapper);
     }
 
     onThemeChange(theme: string) {

@@ -1,6 +1,7 @@
 import { App, TFile } from 'obsidian';
+import { Link } from './link';
 
-export interface ObsidianNode {
+export interface Node {
     circle: {
         alpha: number;
         tintColor: {
@@ -19,16 +20,18 @@ export interface ObsidianNode {
     weight: number;
     x: number;
     y: number;
+    forward: {[id: string] : Node};
+    reverse: {[id: string] : Node};
 }
 
-export class GraphNode {
-    obsidianNode: ObsidianNode;
+export class NodeWrapper {
+    node: Node;
     _file: TFile;
     _imageUri: string | null;
     _tags: string[];
 
-    constructor(obsidianNode: ObsidianNode, app: App, keyProperty: string) {
-        this.obsidianNode = obsidianNode;
+    constructor(obsidianNode: Node, app: App, keyProperty: string) {
+        this.node = obsidianNode;
         if (app) {
             const file = app.vault.getFileByPath(obsidianNode.id);
             if (!file) throw new Error(`Could not find TFile for node ${obsidianNode.id}.`)
@@ -68,7 +71,7 @@ export class GraphNode {
     }
 
     getID() : string {
-        return this.obsidianNode.id;
+        return this.node.id;
     }
 
     isFile(file: TFile) : boolean {
@@ -78,7 +81,7 @@ export class GraphNode {
     waitReady(): Promise<void> {
         return new Promise((resolve) => {
             const intervalId = setInterval(() => {
-                if (this.obsidianNode.color !== null) {
+                if (this.node.color !== null) {
                     clearInterval(intervalId);
                     resolve();
                 }

@@ -2,27 +2,30 @@
 import { Assets, Texture }  from 'pixi.js';
 import { App, Component, TFile, WorkspaceLeaf } from 'obsidian';
 import { Renderer } from './types';
-import { ObsidianNode, GraphNode } from './node';
+import { Node, NodeWrapper } from './node';
 import { GraphNodeContainer } from './container';
 import { TagsManager } from './tagsManager';
 import { ExtendedGraphSettings } from './settings';
+import { Link, LinkWrapper } from './link';
 
 
 export class Graph extends Component {
     containersMap: Map<string, GraphNodeContainer>;
+    connectedLinksMap: Map<string, LinkWrapper>;
+    disconnectedLinksMap: Map<string, LinkWrapper>;
     spritesSize: number;
     renderer: Renderer;
     tagsManager: TagsManager;
     app: App;
     canvas: Element;
-    currentTheme: string;
-    classObserver: MutationObserver;
     leaf: WorkspaceLeaf;
     settings: ExtendedGraphSettings;
 
     constructor(renderer: Renderer, leaf: WorkspaceLeaf, app: App, canvas: Element, settings: ExtendedGraphSettings) {
         super();
         this.containersMap = new Map<string, GraphNodeContainer>();
+        this.connectedLinksMap = new Map<string, LinkWrapper>();
+        this.disconnectedLinksMap = new Map<string, LinkWrapper>();
         this.spritesSize = 200;
         this.renderer = renderer;
         this.leaf = leaf;
@@ -31,7 +34,6 @@ export class Graph extends Component {
         this.addChild(this.tagsManager);
         this.app = app;
         this.canvas = canvas;
-        this.currentTheme = this.app.vault.getConfig('theme') as string;
     }
 
     onload() {
@@ -39,44 +41,30 @@ export class Graph extends Component {
         let requestList: Promise<void>[] = [];
 
         // Create the graphics
-        this.renderer.nodes.forEach((node: ObsidianNode) => {
+        this.renderer.nodes.forEach((node: Node) => {
             // Create a graph node
-            let graphNode = new GraphNode(node, this.app, this.settings.imageProperty);
-            let image_uri = graphNode.getImageUri();
+            let nodeWrapper = new NodeWrapper(node, this.app, this.settings.imageProperty);
+            let image_uri = nodeWrapper.getImageUri();
             if (image_uri) {
-                requestList.push(this.initNode(graphNode, image_uri));
+                requestList.push(this.initNode(nodeWrapper, image_uri));
             }
         });
+
+        this.renderer.links.forEach((link: Link) => {
+            let linkWrapper = new LinkWrapper(link);
+            requestList.push(this.initLink(linkWrapper));
+        })
 
         Promise.all(requestList).then(res => {
             // Initialize color for the tags of each node
             this.tagsManager.update(this.getAllTagTypesFromCache());
 
             this.leaf.trigger('extended-graph:graph-ready');
-
-            const body = document.getElementsByTagName("body")[0];
-            this.classObserver = new MutationObserver((mutationList) => {
-                let item = mutationList.find(i => i.attributeName === "class");
-                if (!item) return;
-                const classes = body.classList.toString().split(" ");
-                if (classes.contains("theme-dark") && this.currentTheme == "moonstone") {
-                    this.currentTheme = "obsidian";
-                    this.leaf.trigger('extended-graph:theme-change', this.currentTheme);
-                }
-                else if (classes.contains("theme-light") && this.currentTheme == "obsidian") {
-                    this.currentTheme = "moonstone";
-                    this.leaf.trigger('extended-graph:theme-change', this.currentTheme);
-                }
-            });
-            this.classObserver.observe(body, { attributes: true });
         });
     }
 
     onunload(): void {
         console.log("Unload Graph");
-        if (this.classObserver) {
-            this.classObserver.disconnect();
-        }
     }
 
     private getBackgroundColor() : Uint8Array {
@@ -91,31 +79,39 @@ export class Graph extends Component {
         return Uint8Array.from(RGB);
     }
 
-    private async initNode(graphNode: GraphNode, image_uri: string) : Promise<void> {
-        await graphNode.waitReady();
-        if (!this.containersMap.has(graphNode.getID()) && this.renderer.px) {
+    private async initLink(linkWrapper: LinkWrapper) : Promise<void> {
+        await linkWrapper.waitReady();
+        linkWrapper.init();
+        this.connectedLinksMap.set(linkWrapper.id, linkWrapper);
+        linkWrapper.setTint(new Uint8Array([255, 0, 0]));
+    }
+
+    private async initNode(nodeWrapper: NodeWrapper, image_uri: string) : Promise<void> {
+        await nodeWrapper.waitReady();
+        console.log(nodeWrapper.node);
+        if (!this.containersMap.has(nodeWrapper.getID()) && this.renderer.px) {
             // load texture
             await Assets.load(image_uri).then((texture: Texture) => {
                 // @ts-ignore
-                const shape: {x: number, y: number, radius: number} = graphNode.obsidianNode.circle.geometry.graphicsData[0].shape;
+                const shape: {x: number, y: number, radius: number} = nodeWrapper.node.circle.geometry.graphicsData[0].shape;
                 
                 // create the container
-                let container = new GraphNodeContainer(graphNode, texture, shape.radius);
+                let container = new GraphNodeContainer(nodeWrapper, texture, shape.radius);
                 container.updateBackgroundColor(this.getBackgroundColor());
     
                 // add the container to the stage
                 // @ts-ignore
-                if (graphNode.obsidianNode.circle.getChildByName(graphNode.getID())) {
+                if (nodeWrapper.node.circle.getChildByName(nodeWrapper.getID())) {
                     container.destroy();
                     return;
                 }
 
                 // @ts-ignore
-                graphNode.obsidianNode.circle.addChild(container);
+                nodeWrapper.node.circle.addChild(container);
                 container.x = shape.x;
                 container.y = shape.y;
     
-                this.containersMap.set(graphNode.getID(), container);
+                this.containersMap.set(nodeWrapper.getID(), container);
             });
         }
     }
@@ -156,7 +152,52 @@ export class Graph extends Component {
         return types;
     }
 
+    disconnect(linkWrapper: LinkWrapper) : void {
+        if (! this.connectedLinksMap.get(linkWrapper.id) || this.disconnectedLinksMap.get(linkWrapper.id)) {
+            return;
+        }
 
+        this.connectedLinksMap.delete(linkWrapper.id);
+        this.disconnectedLinksMap.set(linkWrapper.id, linkWrapper);
+        this.renderer.links.remove(linkWrapper._link);
+
+        linkWrapper.setRenderable(false);
+
+        this.postMessageToWorker();
+    }
+
+    connect(linkWrapper: LinkWrapper) : void {
+        if (this.connectedLinksMap.get(linkWrapper.id) || ! this.disconnectedLinksMap.get(linkWrapper.id)) {
+            return;
+        }
+
+        this.disconnectedLinksMap.delete(linkWrapper.id);
+        this.connectedLinksMap.set(linkWrapper.id, linkWrapper);
+        this.renderer.links.push(linkWrapper._link);
+
+        linkWrapper.setRenderable(true);
+
+        this.postMessageToWorker();
+    }
+
+    private postMessageToWorker() : void {
+        let nodes: any = {};
+        this.renderer.nodes.forEach(node => {
+            nodes[node.id] = [node.x, node.y];
+        });
+
+        let links: any[] = [];
+        this.renderer.links.forEach(link => {
+            links.push([link.source.id, link.target.id]);
+        });
+
+        this.renderer.worker.postMessage({
+            nodes: nodes,
+            links: links,
+            alpha: .3,
+            run: !0
+        });
+    }
 
     resetArcs() : void {
         this.containersMap.forEach((container: GraphNodeContainer) => {
@@ -193,5 +234,19 @@ export class Graph extends Component {
         this.containersMap.forEach((container: GraphNodeContainer) => {
             container.updateBackgroundColor(this.getBackgroundColor());
         });
+    }
+
+
+
+
+
+    test() : void {
+        let linkWrapper = Array.from(this.connectedLinksMap.values())[0];
+        if (linkWrapper) {
+            //console.log("Disconnecting ", linkWrapper.id);
+            //this.disconnect(linkWrapper);
+            //console.log("Connecting ", linkWrapper.id);
+            //this.connect(linkWrapper);
+        }
     }
 }
