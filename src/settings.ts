@@ -1,6 +1,7 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
 import GraphExtendedPlugin from "./main";
 import { GraphViewData } from "./views/viewData";
+import { DEFAULT_VIEW_ID } from "./globalVariables";
 
 export interface ExtendedGraphSettings {
     colormaps: { [interactive: string] : string };
@@ -12,11 +13,18 @@ export interface ExtendedGraphSettings {
 export const DEFAULT_SETTINGS: ExtendedGraphSettings = {
     colormaps: {
         "tag": "hsv",
-        "relationship": "rainbow"
+        "link": "rainbow"
     },
     imageProperty: "image",
 
-    views: [],
+    views: [
+        {
+            id: DEFAULT_VIEW_ID,
+            name: "Vault (default)",
+            disabledLinks: [],
+            disabledTags: []
+        }
+    ],
 };
 
 export class ExtendedGraphSettingTab extends PluginSettingTab {
@@ -72,12 +80,12 @@ export class ExtendedGraphSettingTab extends PluginSettingTab {
             }));
 
         new Setting(containerEl)
-            .setName('Color palette (relationships)')
-            .setDesc('Choose the color palette for the relationship links')
-            .addDropdown(cb => cb.addOptions(cmOptions).setValue(this.plugin.settings.colormaps["relationship"])
+            .setName('Color palette (links)')
+            .setDesc('Choose the color palette for the link links')
+            .addDropdown(cb => cb.addOptions(cmOptions).setValue(this.plugin.settings.colormaps["link"])
             .onChange(async (value) => {
-                this.plugin.settings.colormaps["relationship"] = value;
-                this.app.workspace.trigger('extended-graph:settings-colorpalette-changed', "relationship");
+                this.plugin.settings.colormaps["link"] = value;
+                this.app.workspace.trigger('extended-graph:settings-colorpalette-changed', "link");
                 await this.plugin.saveSettings();
             }));
     }

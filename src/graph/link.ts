@@ -58,14 +58,14 @@ export class LinkWrapper {
         this._link.px.renderable = r;
     }
 
-    getTypes() : string[] {
+    getLinkTypes() : string[] {
         let types = this._source.getLinkTypes(this._target.getID());
         (types.length == 0) && (types = ["none"]);
         return types;
     }
 
     getType(manager: InteractiveManager) : string {
-        let type = this.getTypes().find(type => manager.isActive(type));
+        let type = this.getLinkTypes().find(type => manager.isActive(type));
         (!type) && (type = "none");
         return type;
     }

@@ -19,6 +19,7 @@ export interface Node {
     weight: number;
     x: number;
     y: number;
+    rendered: boolean;
     forward: {[id: string] : Node};
     reverse: {[id: string] : Node};
 }
@@ -29,6 +30,7 @@ export class NodeWrapper {
     _imageUri: string | null;
     _tags: string[];
     _linkPathsMap: Map<string, string[]>;
+    isActive: boolean = true;
 
     constructor(node: Node, app: App, keyProperty: string) {
         this.node = node;
@@ -70,7 +72,8 @@ export class NodeWrapper {
         });
     }
 
-    getTags() : string[] {
+    getTagsTypes(app?: App) : string[] {
+        (app) && this.updateTags(app);
         return this._tags;
     }
 

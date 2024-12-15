@@ -1,6 +1,5 @@
 import { Graph } from "src/graph/graph";
 import { GraphViewData } from "./viewData";
-import { InteractiveManager } from "src/graph/interactiveManager";
 
 export class GraphView {
     data = new GraphViewData();
@@ -9,8 +8,12 @@ export class GraphView {
         this.data.name = name;
     }
 
+    setID(id?: string) {
+        this.data.id = id ? id : crypto.randomUUID();
+    }
+
     saveGraph(graph: Graph) {
-        this.data.disconnectedLinks = Array.from(graph.disconnectedRelationships);
+        this.data.disabledLinks = Array.from(graph.disconnectedLinks);
         this.data.disabledTags = Array.from(graph.disabledTags);
     }
 
@@ -18,7 +21,7 @@ export class GraphView {
         let tagsManager = graph.interactiveManagers.get("tag");
         (tagsManager) && tagsManager.disable(this.data.disabledTags);
 
-        let relationshipsManager = graph.interactiveManagers.get("relationship");
-        (relationshipsManager) && relationshipsManager.disable(this.data.disconnectedLinks);
+        let linksManager = graph.interactiveManagers.get("link");
+        (linksManager) && linksManager.disable(this.data.disabledLinks);
     }
 }

@@ -7,16 +7,19 @@ import { ExtendedGraphSettings } from "../settings";
 
 export type WorkspaceLeafExt = WorkspaceLeaf & {
     on(name: "extended-graph:graph-ready",      callback: ( ) => any) : EventRef;
+    on(name: "extended-graph:disable-nodes", callback: (type: string[]) => any) : EventRef;
+    on(name: "extended-graph:enable-nodes",  callback: (type: string[]) => any) : EventRef;
     on(name: "extended-graph:add-tag-type",     callback: (type: string, color: Uint8Array) => any) : EventRef;
     on(name: "extended-graph:clear-tag-types",  callback: (types: string[]) => any)                 : EventRef;
     on(name: "extended-graph:change-tag-color", callback: (type: string, color: Uint8Array) => any) : EventRef;
     on(name: "extended-graph:disable-tags",     callback: (type: string[]) => any)                  : EventRef;
-    on(name: "extended-graph:enable-tag",       callback: (type: string) => any)                    : EventRef;
-    on(name: "extended-graph:add-relationship-type",     callback: (type: string, color: Uint8Array) => any) : EventRef;
-    on(name: "extended-graph:clear-relationship-types",  callback: (types: string[]) => any)                 : EventRef;
-    on(name: "extended-graph:change-relationship-color", callback: (type: string, color: Uint8Array) => any) : EventRef;
-    on(name: "extended-graph:disable-relationships",     callback: (type: string[]) => any)                  : EventRef;
-    on(name: "extended-graph:enable-relationship",       callback: (type: string) => any)                    : EventRef;
+    on(name: "extended-graph:enable-tags",      callback: (type: string[]) => any)                  : EventRef;
+    on(name: "extended-graph:add-link-type",     callback: (type: string, color: Uint8Array) => any) : EventRef;
+    on(name: "extended-graph:clear-link-types",  callback: (types: string[]) => any)                 : EventRef;
+    on(name: "extended-graph:change-link-color", callback: (type: string, color: Uint8Array) => any) : EventRef;
+    on(name: "extended-graph:disable-links",     callback: (type: string[]) => any)                  : EventRef;
+    on(name: "extended-graph:enable-links",      callback: (type: string[]) => any)                  : EventRef;
+    on(name: "extended-graph:view-changed", callback: (name: string) => any) : EventRef;
 
     view: {
         renderer: Renderer
@@ -52,17 +55,22 @@ export class GraphEventsDispatcher extends Component {
     onload(): void {
         this.registerEvent(this.leaf.on('extended-graph:graph-ready', this.onGraphReady.bind(this)));
 
+        this.registerEvent(this.leaf.on('extended-graph:disable-nodes', this.onNodesDisabled.bind(this)));
+        this.registerEvent(this.leaf.on('extended-graph:enable-nodes', this.onNodesEnabled.bind(this)));
+
         this.registerEvent(this.leaf.on('extended-graph:add-tag-type', this.onTagTypeAdded.bind(this)));
         this.registerEvent(this.leaf.on('extended-graph:clear-tag-types', this.onTagsCleared.bind(this)));
         this.registerEvent(this.leaf.on('extended-graph:change-tag-color', this.onTagColorChanged.bind(this)));
         this.registerEvent(this.leaf.on('extended-graph:disable-tags', this.onTagsDisabled.bind(this)));
-        this.registerEvent(this.leaf.on('extended-graph:enable-tag', this.onTagEnabled.bind(this)));
+        this.registerEvent(this.leaf.on('extended-graph:enable-tags', this.onTagsEnabled.bind(this)));
         
-        this.registerEvent(this.leaf.on('extended-graph:add-relationship-type', this.onRelationshipTypeAdded.bind(this)));
-        this.registerEvent(this.leaf.on('extended-graph:clear-relationship-types', this.onRelationshipsCleared.bind(this)));
-        this.registerEvent(this.leaf.on('extended-graph:change-relationship-color', this.onRelationshipColorChanged.bind(this)));
-        this.registerEvent(this.leaf.on('extended-graph:disable-relationships', this.onRelationshipsDisabled.bind(this)));
-        this.registerEvent(this.leaf.on('extended-graph:enable-relationship', this.onRelationshipEnabled.bind(this)));
+        this.registerEvent(this.leaf.on('extended-graph:add-link-type', this.onLinkTypeAdded.bind(this)));
+        this.registerEvent(this.leaf.on('extended-graph:clear-link-types', this.onLinksCleared.bind(this)));
+        this.registerEvent(this.leaf.on('extended-graph:change-link-color', this.onLinkColorChanged.bind(this)));
+        this.registerEvent(this.leaf.on('extended-graph:disable-links', this.onLinksDisabled.bind(this)));
+        this.registerEvent(this.leaf.on('extended-graph:enable-links', this.onLinksEnabled.bind(this)));
+
+        this.registerEvent(this.leaf.on('extended-graph:view-changed', this.onViewChanged.bind(this)));
     }
 
     onunload() : void {
@@ -71,6 +79,16 @@ export class GraphEventsDispatcher extends Component {
 
     onGraphReady() : void {
         this.graph.test();
+    }
+
+    // NODES
+
+    onNodesDisabled(ids: string[]) {
+        this.graph.disableNodes(ids);
+    }
+
+    onNodesEnabled(ids: string[]) {
+        this.graph.enableNodes(ids);
     }
 
     // TAGS
@@ -100,40 +118,58 @@ export class GraphEventsDispatcher extends Component {
         this.renderer.changed();
     }
 
-    onTagEnabled(type: string) {
-        this.graph.enableTag(type);
-        this.renderer.changed();
-    }
-
-    // RELATIONSHIPS
-
-    onRelationshipTypeAdded(type: string, color: Uint8Array) {
-        this.graph.updateLinksColor(type, color);
-        this.legendUI.addLegend("relationship", type, color);
-        this.renderer.changed();
-    }
-
-    onRelationshipsCleared(types: string[]) {
-        //this.graph.resetArcs();
-        this.legendUI.removeLegend("relationship", types);
-        this.renderer.changed();
-    }
-
-    onRelationshipColorChanged(type: string, color: Uint8Array) {
-        this.graph.updateLinksColor(type, color);
-        this.legendUI.updateLegend("relationship", type, color);
-        this.renderer.changed();
-    }
-
-    onRelationshipsDisabled(types: string[]) {
+    onTagsEnabled(types: string[]) {
         types.forEach(type => {
-            this.graph.disableRelationship(type);
+            this.graph.enableTag(type);
         });
         this.renderer.changed();
     }
 
-    onRelationshipEnabled(type: string) {
-        this.graph.enableRelationship(type);
+    // LINKS
+
+    onLinkTypeAdded(type: string, color: Uint8Array) {
+        this.graph.updateLinksColor(type, color);
+        this.legendUI.addLegend("link", type, color);
         this.renderer.changed();
+    }
+
+    onLinksCleared(types: string[]) {
+        //this.graph.resetArcs();
+        this.legendUI.removeLegend("link", types);
+        this.renderer.changed();
+    }
+
+    onLinkColorChanged(type: string, color: Uint8Array) {
+        this.graph.updateLinksColor(type, color);
+        this.legendUI.updateLegend("link", type, color);
+        this.renderer.changed();
+    }
+
+    onLinksDisabled(types: string[]) {
+        this.graph.disableLinks(types);
+        this.renderer.changed();
+    }
+
+    onLinksEnabled(types: string[]) {
+        this.graph.enableLinks(types);
+        this.renderer.changed();
+    }
+
+    // VIEWS
+
+    onViewChanged(id: string) {
+        const viewData = this.settings.views.find(v => v.id === id);
+        if (!viewData) return;
+
+        this.graph.loadView(viewData);
+
+        this.legendUI.enableAll("tag");
+        viewData.disabledTags.forEach(type => {
+            this.legendUI.disable("tag", type);
+        });
+        this.legendUI.enableAll("link");
+        viewData.disabledLinks.forEach(type => {
+            this.legendUI.disable("link", type);
+        });
     }
 }

@@ -1,6 +1,7 @@
 import { Component, WorkspaceLeaf } from "obsidian";
 import { Graph } from "../graph";
 import { InteractiveManager } from "../interactiveManager";
+import { NONE_TYPE } from "src/globalVariables";
 
 class LegendRow {
     name: string;
@@ -35,6 +36,9 @@ class LegendRow {
                 this.toggle(type);
             })
             button.style.setProperty(this.cssColorVariable, `${color[0]}, ${color[1]}, ${color[2]}`);
+            if (type == NONE_TYPE) {
+                button.addClass("graph-legend-none");
+            }
         }
     }
 
@@ -59,16 +63,20 @@ class LegendRow {
         const interactive = this.manager.getInteractive(type);
         if (!interactive) return;
 
-        let button = this.container.getElementsByClassName(this.getClassName(type))[0];
+        if (interactive.isActive) this.disable(type);
+        else this.enable(type);
+    }
 
-        if (interactive.isActive) {
-            this.manager.disable([type]);
-            button.addClass("is-hidden");
-        }
-        else {
-            this.manager.enable(type);
-            button.removeClass("is-hidden");
-        }
+    disable(type: string) {
+        let button = this.container.getElementsByClassName(this.getClassName(type))[0];
+        this.manager.disable([type]);
+        button.addClass("is-hidden");
+    }
+
+    enable(type: string) {
+        let button = this.container.getElementsByClassName(this.getClassName(type))[0];
+        this.manager.enable([type]);
+        button.removeClass("is-hidden");
     }
 }
 
@@ -89,7 +97,7 @@ export class LegendUI extends Component {
         this.legendRows = new Map<string, LegendRow>();
         let legend = this.viewContent.createDiv();
         legend?.addClass("graph-legend-container");
-        for (const name of ["tag", "relationship"]) {
+        for (const name of ["tag", "link"]) {
             const manager = this.graph.interactiveManagers.get(name);
             (manager) && this.legendRows.set(name, new LegendRow(name, manager, legend));
         }
@@ -113,5 +121,19 @@ export class LegendUI extends Component {
 
     toggle(row: string, type: string) {
         this.legendRows.get(row)?.toggle(type);
+    }
+
+    disable(row: string, type: string) {
+        this.legendRows.get(row)?.disable(type);
+    }
+
+    enable(row: string, type: string) {
+        this.legendRows.get(row)?.enable(type);
+    }
+
+    enableAll(row: string) {
+        this.legendRows.get(row)?.manager.getTypes().forEach(type => {
+            this.legendRows.get(row)?.enable(type);
+        })
     }
 }

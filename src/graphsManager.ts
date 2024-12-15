@@ -52,8 +52,6 @@ export class GraphsManager extends Component {
     }
 
     async onViewNeedsSaving(viewData: GraphViewData) {
-        console.log(viewData);
-        console.log(this.plugin.settings.views);
         let currentViewData = this.plugin.settings.views.find(v => v.name === viewData.name);
         if (currentViewData) {
             this.plugin.settings.views[this.plugin.settings.views.indexOf(currentViewData)] = viewData;
@@ -66,6 +64,7 @@ export class GraphsManager extends Component {
     }
 
     onViewSaved(name: string) {
+        new Notice(`Extended Graph: view "${name}" has been saved`);
         this._dispatchers.forEach(dispatcher => {
             dispatcher.viewsUI.updateViewsList(this.plugin.settings.views);
         });

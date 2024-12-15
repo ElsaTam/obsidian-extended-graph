@@ -1,6 +1,7 @@
 
 export class GraphViewData {
+    id: string;
     name: string;
-    disconnectedLinks: string[];
+    disabledLinks: string[];
     disabledTags: string[];
 }

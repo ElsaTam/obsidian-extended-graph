@@ -1,11 +1,13 @@
 import { Container, Sprite, Texture, Graphics }  from 'pixi.js';
 import { NodeWrapper, Node }  from './node';
 import { InteractiveManager } from './interactiveManager';
+import { NONE_TYPE } from 'src/globalVariables';
 
 class Arc extends Graphics {
     thickness: number = 0.09;
     inset: number = 0.03;
     gap: number = 0.2;
+    isActive: boolean = true;
 }
 
 export class NodeContainer extends Container {
@@ -58,14 +60,15 @@ export class NodeContainer extends Container {
         this._tagArcs.forEach((arc: Graphics, type: string) => {
             this.removeChild(arc);
         });
-        this._tagArcs.clear;
+        this._tagArcs.clear();
     }
 
     addArcs(tagsManager: InteractiveManager) {
         const nTags = tagsManager.getNumberOfInteractives();
         const arcSize = Math.min(2 * Math.PI / nTags, this.maxArcSize);
     
-        this._nodeWrapper.getTags()?.forEach(type => {
+        this._nodeWrapper.getTagsTypes()?.forEach(type => {
+            if (type === NONE_TYPE) return;
             const color = tagsManager.getColor(type);
             if (!color) return;
         
@@ -94,6 +97,7 @@ export class NodeContainer extends Container {
     }
 
     updateArc(type: string, color: Uint8Array, tagsManager: InteractiveManager) : void {
+        if (type === NONE_TYPE) return;
         let arc = this._tagArcs.get(type);
         if (!arc) return;
 
@@ -115,26 +119,42 @@ export class NodeContainer extends Container {
             .endFill();
     }
 
-    updateAlpha(type: string, isEnable: boolean, tagsManager: InteractiveManager) : void {
+    updateArcState(type: string, isEnable: boolean, tagsManager: InteractiveManager) : void {
         const arc = this._tagArcs.get(type);
-        if (!arc) return;
+        (arc) && (arc.alpha = isEnable ? 1 : 0.1);
 
-        arc.alpha = isEnable ? 1 : 0.1;
-
-        let isFaded = !Array.from(this._tagArcs.keys()).some((type: string) => tagsManager.isActive(type));
-
-        if (isFaded) {
-            this.children.forEach((child: Graphics) => {
-                child.alpha = 0.1;
-            })
-            this._background.alpha = 1;
+        let noTagActive = false;
+        if (this._tagArcs.size > 0) {
+            noTagActive = !Array.from(this._tagArcs.keys()).some((type: string) => tagsManager.isActive(type));
         }
         else {
+            noTagActive = !tagsManager.isActive(NONE_TYPE);
+        }
+
+        this.setDisplayed(!noTagActive);
+    }
+
+    setDisplayed(show: boolean) {
+        if (show) {
             this.children.forEach((child: Graphics) => {
-                if (!child.name?.startsWith("arc-")) child.alpha = 1;
+                if (!child.name?.startsWith("arc-")) {
+                    child.alpha = 1;
+                }
             })
             this._background.alpha = 0;
         }
+        else {
+            this.children.forEach((child: Graphics) => {
+                if (child.name && !child.name?.startsWith("arc-")) {
+                    child.alpha = this._tagArcs.get(child.name)?.isActive ? 1 : 0.1;
+                }
+                else {
+                    child.alpha = 0.1;
+                }
+            })
+            this._background.alpha = 1;
+        }
+        this._nodeWrapper.isActive = show;
     }
 
     getSize() : number {

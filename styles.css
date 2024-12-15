@@ -30,6 +30,10 @@
     font-weight: unset;
 }
 
+.graph-legend-row button.graph-legend-none {
+    order: 1;
+}
+
 .graph-legend-title {
     font-variant: small-caps;
 }
@@ -39,7 +43,7 @@
 .graph-views-container {
     position: absolute;
     padding: var(--size-4-6) var(--size-4-3);
-    top: 0; left: 0; right: 0;
+    top: 0; left: 0;
     display: flex;
     align-items: center;
     gap: var(--size-4-3);

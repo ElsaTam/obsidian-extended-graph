@@ -33,7 +33,6 @@ export default class GraphExtendedPlugin extends Plugin {
     }
 
     async saveSettings() {
-        console.log(this.settings);
         await this.saveData(this.settings);
     }
     

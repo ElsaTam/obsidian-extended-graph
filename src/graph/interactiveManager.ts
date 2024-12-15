@@ -2,6 +2,7 @@
 import { Component, WorkspaceLeaf } from "obsidian";
 import { ExtendedGraphSettings } from "../settings";
 import { getColor } from "../colors/colors";
+import { NONE_TYPE } from "src/globalVariables";
 
 export class Interactive {
     type: string;
@@ -56,12 +57,13 @@ export class InteractiveManager extends Component {
         (disabledTypes.length > 0) && (this.leaf.trigger(`extended-graph:disable-${this.name}s`, disabledTypes));
     }
 
-    enable(type: string) : void {
-        let interactive = this.interactives.get(type);
-        if (!interactive) return;
-
-        interactive.isActive = true;
-        this.leaf.trigger(`extended-graph:enable-${this.name}`, type);
+    enable(types: string[]) : void {
+        let enabledTypes: string[] = [];
+        types.forEach(type => {
+            let interactive = this.interactives.get(type);
+            (interactive) && (interactive.isActive = true, enabledTypes.push(type));
+        });
+        (enabledTypes.length > 0) && (this.leaf.trigger(`extended-graph:enable-${this.name}s`, enabledTypes));
     }
 
     isActive(type: string) : boolean {
@@ -80,7 +82,7 @@ export class InteractiveManager extends Component {
     }
 
     addType(type: string, x: number) : void {
-        const color = getColor(this.settings.colormaps[this.name], x);
+        const color = (type === NONE_TYPE) ? new Uint8Array([125, 125, 125]) : getColor(this.settings.colormaps[this.name], x);
         this.interactives.set(type, new Interactive(type, color));
         this.leaf.trigger(`extended-graph:add-${this.name}-type`, type, color);
     }
@@ -96,7 +98,7 @@ export class InteractiveManager extends Component {
     }
 
     getNumberOfInteractives() : number {
-        return this.interactives.size;
+        return this.interactives.size - 1; // don't count NONE_TYPE
     }
 
     getInteractiveIndex(type: string) : number {
@@ -104,7 +106,8 @@ export class InteractiveManager extends Component {
     }
 
     getTypes() : string[] {
-        return Array.from(this.interactives.keys());
+        let types = Array.from(this.interactives.keys());
+        return types;
     }
 
     containsTypes(types: string[]) : boolean {
@@ -113,14 +116,11 @@ export class InteractiveManager extends Component {
         }
         return true;
     }
-
-    matchesTypes(types: string[]) : boolean {
-        return types.sort().join(`,`) === this.getTypes().join(`,`);
-    }
     
     update(types: Set<string>) : void {
         this.clear();
         let i = 0;
+        types.add(NONE_TYPE);
         types.forEach(type => {
             this.addType(type, i / types.size);
             ++i;
@@ -130,7 +130,7 @@ export class InteractiveManager extends Component {
     recomputeColors() : void {
         let i = 0;
         this.interactives.forEach((interactive, type) => {
-            const color = getColor(this.settings.colormaps[this.name], i / this.interactives.size);
+            const color = (type === NONE_TYPE) ? new Uint8Array([125, 125, 125]) : getColor(this.settings.colormaps[this.name], i / this.getNumberOfInteractives());
             this.setColor(type, color);
             ++i;
         });
