@@ -1,5 +1,5 @@
 import { Graphics, Container } from "pixi.js";
-import { Node, NodeWrapper } from './node';
+import { Node } from './node';
 import { InteractiveManager } from "./interactiveManager";
 
 
@@ -12,31 +12,37 @@ export interface Link {
 }
 
 export class LinkWrapper {
-    _link: Link;
-    _source: NodeWrapper;
-    _target: NodeWrapper;
-    _graphics: Graphics;
+    link: Link;
+    sourceID: string;
+    targetID: string;
     id: string;
+    types = new Set<string>();
 
-    constructor(link: Link, source: NodeWrapper, target: NodeWrapper) {
-        this._link = link;
-        this._source = source;
-        this._target = target;
+    _graphics: Graphics;
+
+    constructor(link: Link, source: string, target: string) {
+        this.link = link;
+        this.sourceID = source;
+        this.targetID = target;
     }
 
     init() : void {
-        this.id = this._link.source.id + "--to--" + this._link.target.id;
+        this.id = getLinkID(this.link);
     }
 
     waitReady(): Promise<void> {
         return new Promise((resolve) => {
             const intervalId = setInterval(() => {
-                if (this._link.px && this._link.px.scale !== null) {
+                if (this.link.px && this.link.px.scale !== null) {
                     clearInterval(intervalId);
                     resolve();
                 }
             }, 500);
         });
+    }
+
+    setTypes(types: Set<string>) {
+        this.types = types;
     }
 
     setColor(color: Uint8Array) : void {
@@ -45,7 +51,7 @@ export class LinkWrapper {
         }
         else {
             this._graphics = new Graphics();
-            (this._link.px.children[0] as Graphics).addChild(this._graphics);
+            (this.link.px.children[0] as Graphics).addChild(this._graphics);
         }
         this._graphics
             .lineStyle({width: 50, color: color})
@@ -55,18 +61,10 @@ export class LinkWrapper {
     }
 
     setRenderable(r: boolean) : void {
-        this._link.px.renderable = r;
+        this.link.px.renderable = r;
     }
+}
 
-    getLinkTypes() : string[] {
-        let types = this._source.getLinkTypes(this._target.getID());
-        (types.length == 0) && (types = ["none"]);
-        return types;
-    }
-
-    getType(manager: InteractiveManager) : string {
-        let type = this.getLinkTypes().find(type => manager.isActive(type));
-        (!type) && (type = "none");
-        return type;
-    }
+export function getLinkID(link: any) {
+    return link.source.id + "--to--" + link.target.id;
 }

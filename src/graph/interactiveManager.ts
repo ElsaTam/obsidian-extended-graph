@@ -87,14 +87,16 @@ export class InteractiveManager extends Component {
         this.leaf.trigger(`extended-graph:add-${this.name}-type`, type, color);
     }
 
-    getInteractive(type: string) : Interactive | null {
+    getInteractive(type: string) : Interactive {
         const interactive = this.interactives.get(type);
-        return interactive ? interactive : null;
+        if (!interactive) {
+            throw new Error(`No interactive (${this.name}) of type ${type}`);
+        }
+        return interactive;
     }
 
-    getColor(type: string) : Uint8Array | null {
-        const interactive = this.interactives.get(type);
-        return interactive ? interactive.color : null;
+    getColor(type: string) : Uint8Array {
+        return this.getInteractive(type).color;
     }
 
     getNumberOfInteractives() : number {

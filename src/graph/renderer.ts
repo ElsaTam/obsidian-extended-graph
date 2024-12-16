@@ -19,5 +19,6 @@ export interface Renderer {
     panY: number;
     scale: number;
     worker: Worker,
+    interactiveEl: HTMLCanvasElement,
     changed(): void;
 }

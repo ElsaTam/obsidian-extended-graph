@@ -46,7 +46,7 @@ export class GraphsManager extends Component {
 
     onThemeChange(theme: string) {
         this._dispatchers.forEach(dispatcher => {
-            dispatcher.graph.updateBackground(theme);
+            dispatcher.graph.nodesSet.updateBackground();
             dispatcher.renderer.changed();
         });
     }
@@ -116,7 +116,7 @@ export class GraphsManager extends Component {
         this._dispatchers.forEach(dispatcher => {
             if (!(dispatcher.graph && dispatcher.renderer)) return;
     
-            const container = dispatcher.graph.getGraphNodeContainerFromFile(file);
+            const container = dispatcher.graph.nodesSet.getNodeWrapperFromFile(file);
             if (!container) return;
     
             let newTypes: string[] = [];
@@ -125,10 +125,10 @@ export class GraphsManager extends Component {
                 newTypes.push(type);
             });
     
-            const needsUpdate = !container.matchesTypes(newTypes);
+            const needsUpdate = !container.matchesTagsTypes(newTypes);
     
             if (needsUpdate) {
-                dispatcher.graph.interactiveManagers.get("tag")?.update(dispatcher.graph.getAllTagTypesFromCache());
+                dispatcher.graph.nodesSet.tagsManager.update(dispatcher.graph.nodesSet.getAllTagTypesFromCache(this.app));
             }
         });
     }

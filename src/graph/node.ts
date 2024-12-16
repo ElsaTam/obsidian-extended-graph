@@ -1,12 +1,10 @@
 import { App, TFile } from 'obsidian';
+import { Assets, Circle, Container, Graphics, Sprite, Texture } from 'pixi.js';
+import { InteractiveManager } from './interactiveManager';
+import { NONE_TYPE, REMOVE_INACTIVE_NODES } from 'src/globalVariables';
 
 export interface Node {
-    circle: {
-        alpha: number;
-        tintColor: {
-            components: Float32Array;
-        }
-    }
+    circle: Graphics,
     color: {
         a: number;
         rgb: number;
@@ -24,99 +22,314 @@ export interface Node {
     reverse: {[id: string] : Node};
 }
 
-export class NodeWrapper {
+class Arc extends Graphics {
+    thickness: number = 0.09;
+    inset: number = 0.03;
+    gap: number = 0.2;
+    isActive: boolean = true;
+}
+
+export interface NodeGraphics {
+    sprite: Sprite;
+    tagArcs: Map<string, Arc>;
+    background: Graphics;
+    size: number;
+    borderFactor: number;
+    maxArcSize: number;
+}
+
+export class NodeWrapper extends Container {
     node: Node;
-    _file: TFile;
-    _imageUri: string | null;
-    _tags: string[];
-    _linkPathsMap: Map<string, string[]>;
+    nodeGraphics: NodeGraphics;
+    name: string;
+    file: TFile;
+    imageUri: string | null;
+    tagTypes: string[];
     isActive: boolean = true;
 
-    constructor(node: Node, app: App, keyProperty: string) {
+    constructor(node: Node, app: App) {
+        super();
         this.node = node;
-        this._linkPathsMap = new Map<string, string[]>();
-        if (app) {
-            const file = app.vault.getFileByPath(node.id);
-            if (!file) throw new Error(`Could not find TFile for node ${node.id}.`)
-            this._file = file;
-        }
+        this.name = node.id;
+
+        // Set values
+        this.nodeGraphics = {
+            sprite: new Sprite(),
+            tagArcs: new Map<string, Arc>(),
+            background: new Graphics(),
+            size: 1,
+            borderFactor: 0.06,
+            maxArcSize: Math.PI / 2
+        };
+
+        // Get TFile
+        const file = app.vault.getFileByPath(node.id);
+        if (!file) throw new Error(`Could not find TFile for node ${node.id}.`)
+        this.file = file;
+
+        // Get Tags
         this.updateTags(app);
-        this.updateImageUri(app, keyProperty);
-        this.updateLinks(app);
     }
 
-    updateTags(app: App) : void {
-        if (!this._file) return;
+    // =========================== INITIALIZATION =========================== //
 
-        const metadata = app.metadataCache.getFileCache(this._file);
-        this._tags = [];
-        metadata?.tags?.forEach(tagCache => {
-            const tag = tagCache.tag.replace('#', '');
-            this._tags.push(tag);
-        });
-    }
-
-    updateLinks(app: App) : void {
-        const frontmatterLinks = app.metadataCache.getFileCache(this._file)?.frontmatterLinks;
-        if (!frontmatterLinks) return;
-
-        frontmatterLinks.forEach(frontmatterLinkCache => {
-            const key = frontmatterLinkCache.key.split('.')[0];
-            const linkPath = frontmatterLinkCache.link + ".md";
-            const linkFile = app.vault.getFileByPath(linkPath);
-            if (! linkFile) return;
-            if (! this._linkPathsMap.has(key)) {
-                this._linkPathsMap.set(key, []);
-            }
-            this._linkPathsMap.get(key)?.push(linkPath);
-        });
-    }
-
-    getTagsTypes(app?: App) : string[] {
-        (app) && this.updateTags(app);
-        return this._tags;
-    }
-
-    updateImageUri(app: App, keyProperty: string) : void {
-        if (!this._file) return;
-
-        const metadata = app.metadataCache.getFileCache(this._file);
+    async init(app: App, keyProperty: string) : Promise<void> {
+        // Get image URI
+        const metadata = app.metadataCache.getFileCache(this.file);
         const frontmatter = metadata?.frontmatter;
-        const image_link = frontmatter ? frontmatter[keyProperty]?.replace("[[", "").replace("]]", "") : null;
-        const image_file = image_link ? app.metadataCache.getFirstLinkpathDest(image_link, ".") : null;
-        this._imageUri = image_file ? app.vault.getResourcePath(image_file) : null;
+        const imageLink = frontmatter ? frontmatter[keyProperty]?.replace("[[", "").replace("]]", "") : null;
+        const imageFile = imageLink ? app.metadataCache.getFirstLinkpathDest(imageLink, ".") : null;
+        this.imageUri = imageFile ? app.vault.getResourcePath(imageFile) : null;
+
+        // Load texture
+        if (this.imageUri) {
+            await Assets.load(this.imageUri).then((texture: Texture) => {
+                this.nodeGraphics.size = Math.min(texture.width, texture.height);
+
+                // Sprite
+                this.nodeGraphics.sprite = Sprite.from(texture);
+                this.nodeGraphics.sprite.name = "image";
+                this.nodeGraphics.sprite.anchor.set(0.5);
+                this.addChild(this.nodeGraphics.sprite);
+                this.nodeGraphics.sprite.scale.set((1 - this.nodeGraphics.borderFactor));
+        
+                // Mask
+                let mask = new Graphics()
+                    .beginFill(0xFFFFFF)
+                    .drawCircle(0, 0, 0.5 * this.nodeGraphics.size)
+                    .endFill();
+                this.nodeGraphics.sprite.mask = mask;
+                this.nodeGraphics.sprite.addChild(mask);
+            });
+        }
+        else {
+            this.nodeGraphics.size = 1;
+        }
+
+        const shape = this.node.circle.geometry.graphicsData[0].shape as Circle;
+
+        // Background
+        this.nodeGraphics.background
+            .beginFill(0xFFFFFF)
+            .drawCircle(0, 0, 0.5 * this.nodeGraphics.size)
+            .endFill();
+        this.nodeGraphics.background.alpha = 0;
+        this.nodeGraphics.background.scale.set(1.01);
+        this.addChild(this.nodeGraphics.background);
+        
+        // Scale
+        this.scale.set(shape.radius * 2 / this.nodeGraphics.size);
+
+        // Because of async, make sure the container is not already added
+        if (this.node.circle.getChildByName(this.name)) {
+            throw new Error(`${this.name} has already a nodeWrapper.`);
+        }
+
+        // Add the container to the node
+        this.node.circle.addChild(this);
+        this.x = shape.x;
+        this.y = shape.y;
     }
 
-    getImageUri() : string | null {
-        return this._imageUri;
-    }
-
-    getID() : string {
-        return this.node.id;
-    }
-
-    isFile(file: TFile) : boolean {
-        return this._file === file;
-    }
-
-    getLinkTypes(nodeID: string) : string[] {
-        let types: string[] = [];
-        this._linkPathsMap.forEach((links: string[], type: string) => {
-            if (links.includes(nodeID)) {
-                types.push(type);
-            }
-        });
-        return types;
-    }
-
-    waitReady(): Promise<void> {
+    async waitReady() : Promise<void> {
         return new Promise((resolve) => {
             const intervalId = setInterval(() => {
-                if (this.node.color !== null) {
+                if (this.node.circle) {
                     clearInterval(intervalId);
                     resolve();
                 }
-            }, 500);
+            }, 100);
         });
+    }
+
+    // ============================= TAG TYPES ============================== //
+
+    /**
+     * Update tags list from the cache
+     * @param app 
+     */
+    updateTags(app: App) : void {
+        const metadata = app.metadataCache.getFileCache(this.file);
+        this.tagTypes = [];
+        metadata?.tags?.forEach(tagCache => {
+            const tag = tagCache.tag.replace('#', '');
+            this.tagTypes.push(tag);
+        });
+        if (this.tagTypes.length == 0) {
+            this.tagTypes.push(NONE_TYPE);
+        }
+    }
+
+    /**
+     * Get all tag types for this node.
+     * @param app if not null, the app will be used to retrieve the tags from the cache
+     * @returns list of tag types
+     */
+    getTagsTypes(app?: App) : string[] {
+        (app) && this.updateTags(app);
+        return this.tagTypes;
+    }
+
+    /**
+     * Check if the list of tag types is exactly the same than the types of the
+     * node (without regard to order)
+     * @param types list of tag types
+     * @returns true if it matches
+     */
+    matchesTagsTypes(types: string[]) : boolean {
+        return types.sort().join(',') === this.tagTypes.join(',');
+    }
+
+    hasTagType(type: string) : boolean {
+        return this.getTagsTypes().includes(type);
+    }
+
+    // ============================== TAG ARCS ============================== //
+
+    /**
+     * Get the arc associated with the type
+     * @param type tag type
+     * @returns the associated arc
+     */
+    getArc(type: string) : Arc {
+        let arc = this.nodeGraphics.tagArcs.get(type);
+        if (!arc) {
+            throw new Error(`No arc of type ${type} for node ${this.name}.`);
+        }
+        return arc;
+    }
+    
+    /**
+     * Add all arcs to the container
+     * @param manager tatgs manager
+     */
+    addArcs(manager: InteractiveManager) {
+        const nTags = manager.getNumberOfInteractives();
+        const arcSize = Math.min(2 * Math.PI / nTags, this.nodeGraphics.maxArcSize);
+    
+        this.getTagsTypes().forEach(type => {
+            if (type === NONE_TYPE) return;
+
+            try {
+                const color = manager.getColor(type);
+                const tagIndex = manager.getInteractiveIndex(type);
+                const arc = this.createArc(type, color, arcSize, tagIndex);
+                this.addChild(arc);
+                this.nodeGraphics.tagArcs.set(type, arc);
+            }
+            catch (error) { }
+        });
+    }
+
+    /**
+     * Update one arc
+     * @param type type of the arc (tag)
+     * @param color color of the arc
+     * @param tagsManager tags manager
+     */
+    updateArc(type: string, color: Uint8Array, tagsManager: InteractiveManager) : void {
+        this.removeArc(type);
+        const tagIndex = tagsManager.getInteractiveIndex(type);
+        const nTags = tagsManager.getNumberOfInteractives();
+        const arcSize = Math.min(2 * Math.PI / nTags, this.nodeGraphics.maxArcSize);
+        const arc = this.createArc(type, color, arcSize, tagIndex);
+        this.addChild(arc);
+        this.nodeGraphics.tagArcs.set(type, arc);
+    }
+
+    /**
+     * Update the state of the arc (opaque is active, transparent if inactive)
+     * @param type tag type
+     * @param manager tags manager
+     */
+    updateArcState(type: string, manager: InteractiveManager) : void {
+        if (type !== NONE_TYPE) {
+            // Update the transparency of the arc
+            this.getArc(type).alpha = manager.isActive(type) ? 1 : 0.1;
+        }
+
+        // Check if all arcs are disabled
+        let isNodeActive = false;
+        if (this.nodeGraphics.tagArcs.size > 0) {
+            isNodeActive = Array.from(this.nodeGraphics.tagArcs.keys()).some((type: string) => manager.isActive(type));
+        }
+        else {
+            isNodeActive = manager.isActive(NONE_TYPE);
+        }
+        this.isActive = isNodeActive;
+
+        if (!REMOVE_INACTIVE_NODES) {
+            // If the node still has active tags
+            if (isNodeActive) {
+                this.children.forEach((child: Graphics) => {
+                    if (child.name && !child.name.startsWith("arc-")) {
+                        child.alpha = 1;
+                    }
+                })
+                this.nodeGraphics.background.alpha = 0;
+            }
+            // Else, if the node doesn't have any active tag
+            else {
+                this.children.forEach((child: Graphics) => {
+                    if (child.name && !child.name.startsWith("arc-")) {
+                        child.alpha = this.nodeGraphics.tagArcs.get(child.name)?.isActive ? 1 : 0.1;
+                    }
+                    else {
+                        child.alpha = 0.1;
+                    }
+                })
+                this.nodeGraphics.background.alpha = 1;
+            }
+        }
+    }
+
+    /**
+     * Remove one arc
+     * @param type tag type
+     */
+    removeArc(type: string) {
+        this.removeChild(this.getArc(type));
+        this.nodeGraphics.tagArcs.delete(type);
+    }
+    
+    /**
+     * Remove all arcs
+     */
+    removeArcs(types?: string[]) {
+        this.nodeGraphics.tagArcs.forEach((arc, type) => (!types || types.includes(type)) && this.removeChild(arc));
+        this.nodeGraphics.tagArcs.clear();
+    }
+    
+    /**
+     * Create an arc. Does not add it to the scene or to the maps.
+     * @param type type of the arc (tag)
+     * @param color color of the arc
+     * @param arcSize size of the arc
+     * @param index index of the arc
+     * @returns a disconnected Arc object
+     */
+    private createArc(type: string, color: Uint8Array, arcSize: number, index: number) : Arc {
+        const arc = new Arc();
+
+        arc.lineStyle(arc.thickness * this.nodeGraphics.size, color)
+            .arc(
+                0, 0,
+                (0.5 + arc.thickness + arc.inset) * this.nodeGraphics.size,
+                arcSize * index + arc.gap * 0.5,
+                arcSize * (index + 1) - arc.gap * 0.5
+            )
+            .endFill();
+        
+        arc.name = "arc-" + type;
+        return arc;
+    }
+
+    // ========================= ALPHA / BACKGROUND ========================= //
+    
+    updateBackgroundColor(backgroundColor: Uint8Array) : void {
+        this.nodeGraphics.background.clear();
+        this.nodeGraphics.background.beginFill(backgroundColor)
+            .drawCircle(0, 0, 0.5 * this.nodeGraphics.size)
+            .endFill();
     }
 }
