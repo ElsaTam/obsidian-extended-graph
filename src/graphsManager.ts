@@ -35,7 +35,7 @@ export class GraphsManager extends Component {
         // @ts-ignore
         this.registerEvent(this.app.workspace.on('extended-graph:view-needs-saving', this.onViewNeedsSaving.bind(this)));
         // @ts-ignore
-        this.registerEvent(this.app.workspace.on('extended-graph:view-saved', this.onViewSaved.bind(this)));
+        this.registerEvent(this.app.workspace.on('extended-graph:view-needs-deletion', this.onViewNeedsDeletion.bind(this)));
     }
 
     onunload(): void {
@@ -59,12 +59,19 @@ export class GraphsManager extends Component {
         else {
             this.plugin.settings.views.push(viewData);
         }
-        this.app.workspace.trigger('extended-graph:view-saved', viewData.name);
         await this.plugin.saveSettings();
+        new Notice(`Extended Graph: view "${viewData.name}" has been saved`);
+        this._dispatchers.forEach(dispatcher => {
+            dispatcher.viewsUI.updateViewsList(this.plugin.settings.views);
+        });
     }
 
-    onViewSaved(name: string) {
-        new Notice(`Extended Graph: view "${name}" has been saved`);
+    async onViewNeedsDeletion(id: string) {
+        const view = this.plugin.settings.views.find(v => v.id === id);
+        if (!view) return;
+        this.plugin.settings.views.remove(view);
+        await this.plugin.saveSettings();
+        new Notice(`Extended Graph: view "${view.name}" has been removed`);
         this._dispatchers.forEach(dispatcher => {
             dispatcher.viewsUI.updateViewsList(this.plugin.settings.views);
         });
