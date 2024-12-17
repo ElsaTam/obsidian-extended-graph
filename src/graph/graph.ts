@@ -6,7 +6,7 @@ import { InteractiveManager } from './interactiveManager';
 import { GraphView } from 'src/views/view';
 import { NodesSet } from './nodesSet';
 import { LinksSet } from './linksSet';
-import { FUNC_NAMES, NONE_TYPE } from 'src/globalVariables';
+import { DEFAULT_VIEW_ID, FUNC_NAMES, NONE_TYPE } from 'src/globalVariables';
 
 export class Graph extends Component {
     nodesSet: NodesSet;
@@ -129,22 +129,28 @@ export class Graph extends Component {
         });
     }
 
-    newView(name: string) : void {
+    newView(name: string) : string {
         FUNC_NAMES && console.log("[Graph] newView");
         let view = new GraphView(name);
         view.setID();
         view.saveGraph(this);
         this.app.workspace.trigger('extended-graph:view-needs-saving', view.data);
+        return view.data.id;
     }
 
     saveView(id: string) : void {
         FUNC_NAMES && console.log("[Graph] saveView");
+        if (id === DEFAULT_VIEW_ID) return;
         let viewData = this.settings.views.find(v => v.id == id);
         if (!viewData) return;
         let view = new GraphView(viewData?.name);
         view.setID(id);
         view.saveGraph(this);
         this.app.workspace.trigger('extended-graph:view-needs-saving', view.data);
+    }
+
+    deleteView(id: string) : void {
+        this.app.workspace.trigger('extended-graph:view-needs-deletion', id);
     }
 
 

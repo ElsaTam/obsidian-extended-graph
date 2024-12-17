@@ -13,15 +13,12 @@ export class GraphView {
     }
 
     saveGraph(graph: Graph) {
-        this.data.disabledLinks = Array.from(graph.disconnectedLinks);
-        this.data.disabledTags = Array.from(graph.disabledTags);
+        this.data.disabledLinks = graph.linksSet.linksManager.getTypes().filter(type => !graph.linksSet.linksManager.isActive(type));
+        this.data.disabledTags = graph.nodesSet.tagsManager.getTypes().filter(type => !graph.nodesSet.tagsManager.isActive(type));
     }
 
     loadGraph(graph: Graph) {
-        let tagsManager = graph.interactiveManagers.get("tag");
-        (tagsManager) && tagsManager.disable(this.data.disabledTags);
-
-        let linksManager = graph.interactiveManagers.get("link");
-        (linksManager) && linksManager.disable(this.data.disabledLinks);
+        graph.nodesSet.tagsManager.disable(this.data.disabledTags);
+        graph.linksSet.linksManager.disable(this.data.disabledLinks);
     }
 }

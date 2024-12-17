@@ -192,18 +192,18 @@ export class NodesSet {
     disableTag(type: string) : void {
         FUNC_NAMES && console.log("[NodesSet] disableTag");
         this.disabledTags.add(type);
-        let disabledNodes: string[] = [];
+        let nodesToDisable: string[] = [];
         this.nodesMap.forEach((wrapper: NodeWrapper, id: string) => {
             if (!wrapper.hasTagType(type)) return;
 
             const wasActive = wrapper.isActive;
             wrapper.updateArcState(type, this.tagsManager);
             if(wrapper.isActive != wasActive && !wrapper.isActive) {
-                disabledNodes.push(id);
+                nodesToDisable.push(id);
             }
         });
 
-        (disabledNodes.length > 0) && this.disableNodes(disabledNodes);
+        (nodesToDisable.length > 0) && this.disableNodes(nodesToDisable);
     }
 
     /**
@@ -213,17 +213,17 @@ export class NodesSet {
     enableTag(type: string) : void {
         FUNC_NAMES && console.log("[NodesSet] enableTag");
         this.disabledTags.delete(type);
-        let enabledNodes: string[] = [];
+        let nodesToEnable: string[] = [];
         this.nodesMap.forEach((wrapper: NodeWrapper, id: string) => {
             if (!wrapper.hasTagType(type)) return;
             
             const wasActive = wrapper.isActive;
             wrapper.updateArcState(type, this.tagsManager);
             if(wrapper.isActive != wasActive) {
-                (wrapper.isActive) && enabledNodes.push(id);
+                (wrapper.isActive) && nodesToEnable.push(id);
             }
         });
-        (enabledNodes.length > 0) && this.enableNodes(enabledNodes);
+        (nodesToEnable.length > 0) && this.enableNodes(nodesToEnable);
     }
     
     /**
@@ -258,8 +258,12 @@ export class NodesSet {
 
     disableNodes(ids: string[]) : void {
         FUNC_NAMES && console.log("[NodesSet] disableNodes");
+        ids.forEach(id => {
+            this.disconnectedNodes.add(id);
+            this.connectedNodes.delete(id);
+        });
         let newFilter = "";
-        for(const id of [...this.disconnectedNodes].concat(ids)) {
+        for(const id of this.disconnectedNodes) {
             newFilter += ` -path:"${id}"`
         }
         this.applyAdditionalFilter(newFilter);
@@ -267,9 +271,12 @@ export class NodesSet {
 
     enableNodes(ids: string[]) : void {
         FUNC_NAMES && console.log("[NodesSet] enableNodes");
+        ids.forEach(id => {
+            this.connectedNodes.add(id);
+            this.disconnectedNodes.delete(id);
+        });
         let newFilter = "";
-        let disconnectedNodes = [...this.disconnectedNodes].filter(id => !ids.includes(id));
-        for(const id of disconnectedNodes) {
+        for(const id of this.disconnectedNodes) {
             newFilter += ` -path:"${id}"`
         }
         this.applyAdditionalFilter(newFilter);

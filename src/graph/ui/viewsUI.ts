@@ -7,10 +7,12 @@ export class GraphViewsUI extends Component {
     viewContent: HTMLElement;
     graph: Graph;
     leaf: WorkspaceLeaf;
+    currentViewID: string;
 
     select: HTMLSelectElement;
     saveButton: HTMLButtonElement;
     addButton: HTMLButtonElement;
+    deleteButton: HTMLButtonElement;
     
 
     constructor(graphicsManager: Graph, leaf: WorkspaceLeaf) {
@@ -27,7 +29,8 @@ export class GraphViewsUI extends Component {
 
         this.select = container.createEl("select");
         this.select.addEventListener('change', event => {
-            this.displaySaveButton();
+            this.currentViewID = this.select.value;
+            this.displaySaveDeleteButton();
             this.leaf.trigger('extended-graph:view-changed', this.select.value);
         });
 
@@ -44,7 +47,8 @@ export class GraphViewsUI extends Component {
             let btn = modal.contentEl.createEl("button");
             setIcon(btn, "plus");
             btn.addEventListener('click', event => {
-                this.graph.newView(input.value);
+                const id = this.graph.newView(input.value);
+                this.currentViewID = id;
                 modal.close();
             })
             modal.open();
@@ -52,14 +56,20 @@ export class GraphViewsUI extends Component {
 
         this.saveButton = container.createEl("button");
         setIcon(this.saveButton, "save");
-
         this.saveButton.addEventListener('click', event => {
             this.graph.saveView(this.select.value);
-        })
+        });
 
+        this.deleteButton = container.createEl("button");
+        setIcon(this.deleteButton, "trash-2");
+        this.deleteButton.addEventListener('click', event => {
+            this.graph.deleteView(this.select.value);
+        });
+
+        this.currentViewID = this.select.value;
     }
 
-    addView(key: string, name: string) : void {
+    addOption(key: string, name: string) : void {
         for (let i = 0; i < this.select.length; ++i) {
             if (this.select.options[i].value == key) {
                 this.select.options[i].innerText = name;
@@ -71,17 +81,24 @@ export class GraphViewsUI extends Component {
         option.text = name;
         this.select.appendChild(option);
     }
+
+    addView(key: string, name: string) {
+        this.addOption(key, name);
+        this.select.value = key;
+    }
     
     updateViewsList(views: GraphViewData[]) : void {
-        const selected = this.select.value;
         this.clear();
         views.forEach(view => {
-            this.addView(view.id, view.name);
+            this.addOption(view.id, view.name);
         });
-        if (views.find(v => v.name === selected)) {
-            this.select.value = selected;
+        if (views.find(v => v.id === this.currentViewID)) {
+            this.select.value = this.currentViewID;
         }
-        this.displaySaveButton();
+        else {
+            this.currentViewID = this.select.value;
+        }
+        this.displaySaveDeleteButton();
     }
 
     clear() {
@@ -90,7 +107,8 @@ export class GraphViewsUI extends Component {
         }
     }
 
-    private displaySaveButton() {
-        this.saveButton.style.display = this.select.value !== DEFAULT_VIEW_ID ? "" : "none";
+    private displaySaveDeleteButton() {
+        this.saveButton.style.display   = this.select.value !== DEFAULT_VIEW_ID ? "" : "none";
+        this.deleteButton.style.display = this.select.value !== DEFAULT_VIEW_ID ? "" : "none";
     }
 }
