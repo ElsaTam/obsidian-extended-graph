@@ -1,7 +1,7 @@
 import { App, TFile } from 'obsidian';
 import { Assets, Circle, Container, Graphics, Sprite, Texture } from 'pixi.js';
 import { InteractiveManager } from './interactiveManager';
-import { NONE_TYPE, REMOVE_INACTIVE_NODES } from 'src/globalVariables';
+import { FUNC_NAMES, NONE_TYPE, REMOVE_INACTIVE_NODES } from 'src/globalVariables';
 
 export interface Node {
     circle: Graphics,
@@ -48,6 +48,7 @@ export class NodeWrapper extends Container {
     isActive: boolean = true;
 
     constructor(node: Node, app: App) {
+        FUNC_NAMES && console.log("[NodeWrapper] new");
         super();
         this.node = node;
         this.name = node.id;
@@ -74,6 +75,7 @@ export class NodeWrapper extends Container {
     // =========================== INITIALIZATION =========================== //
 
     async init(app: App, keyProperty: string) : Promise<void> {
+        FUNC_NAMES && console.log("[NodeWrapper] init");
         // Get image URI
         const metadata = app.metadataCache.getFileCache(this.file);
         const frontmatter = metadata?.frontmatter;
@@ -132,6 +134,7 @@ export class NodeWrapper extends Container {
     }
 
     async waitReady() : Promise<void> {
+        FUNC_NAMES && console.log("[NodeWrapper] waitReady");
         return new Promise((resolve) => {
             const intervalId = setInterval(() => {
                 if (this.node.circle) {
@@ -149,6 +152,7 @@ export class NodeWrapper extends Container {
      * @param app 
      */
     updateTags(app: App) : void {
+        FUNC_NAMES && console.log("[NodeWrapper] updateTags");
         const metadata = app.metadataCache.getFileCache(this.file);
         this.tagTypes = [];
         metadata?.tags?.forEach(tagCache => {
@@ -204,7 +208,10 @@ export class NodeWrapper extends Container {
      * @param manager tatgs manager
      */
     addArcs(manager: InteractiveManager) {
-        const nTags = manager.getNumberOfInteractives();
+        FUNC_NAMES && console.log("[NodeWrapper] addArcs");
+        const allTypes = manager.getTypes();
+        allTypes.remove(NONE_TYPE);
+        const nTags = allTypes.length;
         const arcSize = Math.min(2 * Math.PI / nTags, this.nodeGraphics.maxArcSize);
     
         this.getTagsTypes().forEach(type => {
@@ -212,7 +219,7 @@ export class NodeWrapper extends Container {
 
             try {
                 const color = manager.getColor(type);
-                const tagIndex = manager.getInteractiveIndex(type);
+                const tagIndex = allTypes.findIndex(t => t === type);
                 const arc = this.createArc(type, color, arcSize, tagIndex);
                 this.addChild(arc);
                 this.nodeGraphics.tagArcs.set(type, arc);
@@ -227,11 +234,14 @@ export class NodeWrapper extends Container {
      * @param color color of the arc
      * @param tagsManager tags manager
      */
-    updateArc(type: string, color: Uint8Array, tagsManager: InteractiveManager) : void {
+    updateArc(type: string, color: Uint8Array, manager: InteractiveManager) : void {
+        FUNC_NAMES && console.log("[NodeWrapper] updateArc");
         this.removeArc(type);
-        const tagIndex = tagsManager.getInteractiveIndex(type);
-        const nTags = tagsManager.getNumberOfInteractives();
+        const allTypes = manager.getTypes();
+        allTypes.remove(NONE_TYPE);
+        const nTags = allTypes.length;
         const arcSize = Math.min(2 * Math.PI / nTags, this.nodeGraphics.maxArcSize);
+        const tagIndex = allTypes.findIndex(t => t === type);
         const arc = this.createArc(type, color, arcSize, tagIndex);
         this.addChild(arc);
         this.nodeGraphics.tagArcs.set(type, arc);
@@ -243,6 +253,7 @@ export class NodeWrapper extends Container {
      * @param manager tags manager
      */
     updateArcState(type: string, manager: InteractiveManager) : void {
+        FUNC_NAMES && console.log("[NodeWrapper] updateArcState");
         if (type !== NONE_TYPE) {
             // Update the transparency of the arc
             this.getArc(type).alpha = manager.isActive(type) ? 1 : 0.1;
@@ -288,6 +299,7 @@ export class NodeWrapper extends Container {
      * @param type tag type
      */
     removeArc(type: string) {
+        FUNC_NAMES && console.log("[NodeWrapper] removeArc");
         this.removeChild(this.getArc(type));
         this.nodeGraphics.tagArcs.delete(type);
     }
@@ -296,6 +308,7 @@ export class NodeWrapper extends Container {
      * Remove all arcs
      */
     removeArcs(types?: string[]) {
+        FUNC_NAMES && console.log("[NodeWrapper] removeArcs");
         this.nodeGraphics.tagArcs.forEach((arc, type) => (!types || types.includes(type)) && this.removeChild(arc));
         this.nodeGraphics.tagArcs.clear();
     }
@@ -309,6 +322,7 @@ export class NodeWrapper extends Container {
      * @returns a disconnected Arc object
      */
     private createArc(type: string, color: Uint8Array, arcSize: number, index: number) : Arc {
+        FUNC_NAMES && console.log("[NodeWrapper] createArc");
         const arc = new Arc();
 
         arc.lineStyle(arc.thickness * this.nodeGraphics.size, color)
@@ -327,6 +341,7 @@ export class NodeWrapper extends Container {
     // ========================= ALPHA / BACKGROUND ========================= //
     
     updateBackgroundColor(backgroundColor: Uint8Array) : void {
+        FUNC_NAMES && console.log("[NodeWrapper] updateBackgroundColor");
         this.nodeGraphics.background.clear();
         this.nodeGraphics.background.beginFill(backgroundColor)
             .drawCircle(0, 0, 0.5 * this.nodeGraphics.size)
