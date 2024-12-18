@@ -45,7 +45,7 @@ export default class GraphExtendedPlugin extends Plugin {
 
         const leaves = this.getAllGraphLeaves();
         leaves.forEach(leaf => {
-            this.graphsManager.enablePlugin(leaf as WorkspaceLeafExt);
+            this.graphsManager.disablePlugin(leaf as WorkspaceLeafExt);
         });
     }
     
