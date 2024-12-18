@@ -110,7 +110,7 @@ export class GraphsManager extends Component {
         let dispatcher = this.getGraphEventsDispatcher(leaf);
         if (dispatcher) return dispatcher;
 
-        dispatcher = new GraphEventsDispatcher(leaf, this.app, this.plugin.settings);
+        dispatcher = new GraphEventsDispatcher(leaf, this.app, this.plugin.settings, this);
 
         this.dispatchers.set(leaf.id, dispatcher);
         dispatcher.load();

@@ -51,24 +51,20 @@ export class NodesSet {
         this.disabledTags.clear();
     }
 
+    reset() {
+        this.unload();
+        this.load();
+    }
+
     private async initNode(nodeWrapper: NodeWrapper) : Promise<void> {
         FUNC_NAMES && console.log("[NodesSet] initNode");
-        let ready: boolean = await nodeWrapper.waitReady(this.renderer)
-            .then(() => true, () => false);
-        if (ready) {
-            await nodeWrapper.init(this.app, this.settings.imageProperty).then(() => {
-                this.nodesMap.set(nodeWrapper.node.id, nodeWrapper);
-                this.connectedNodes.add(nodeWrapper.node.id);
-            }, () => {
-                console.error("DESTROY");
-                nodeWrapper.destroy();
-                this.nodesMap.delete(nodeWrapper.node.id);
-                this.connectedNodes.delete(nodeWrapper.node.id);
-            });
-        }
-        else {
+        await nodeWrapper.init(this.app, this.settings.imageProperty, this.renderer).then(() => {
+            nodeWrapper.node.circle.addChild(nodeWrapper);
+            this.nodesMap.set(nodeWrapper.node.id, nodeWrapper);
+            this.connectedNodes.add(nodeWrapper.node.id);
+        }, () => {
             nodeWrapper.destroy();
-        }
+        });
     }
 
     /**
@@ -148,19 +144,16 @@ export class NodesSet {
             // Get the new nodes that need to be created
             let nodesToCreate: string[] = newNodesIDs.filter(id => !nodesToRemove.includes(id) && !nodesToAdd.includes(id));
 
+
             for (const id of nodesToAdd) {
                 let node = this.renderer.nodes.find(n => n.id === id);
                 if (!node) continue;
 
                 let nodeWrapper = this.get(id);
-                nodeWrapper.node = node;
-                nodeWrapper.waitReady(this.renderer).then(() => {
-                    if (!node.circle.getChildByName(nodeWrapper.name)) {
+                nodeWrapper.waitReady(this.renderer).then((ready: boolean) => {
+                    nodeWrapper.node = node;
+                    if (node.circle && !node.circle.getChildByName(nodeWrapper.name)) {
                         node.circle.addChild(nodeWrapper);
-                    }
-                }, () => {
-                    if (node.circle && node.circle.getChildByName(nodeWrapper.name)) {
-                        node.circle.removeChild(nodeWrapper);
                     }
                 });
             };
@@ -170,6 +163,7 @@ export class NodesSet {
             else if (nodesToCreate.length > 0) {
                 this.leaf.trigger('extended-graph:graph-needs-update');
             }
+
         })
     }
     
@@ -286,11 +280,7 @@ export class NodesSet {
             this.disconnectedNodes.add(id);
             this.connectedNodes.delete(id);
         });
-        let newFilter = "";
-        for(const id of this.disconnectedNodes) {
-            newFilter += ` -path:"${id}"`
-        }
-        this.applyAdditionalFilter(newFilter);
+        this.applyAdditionalFilter();
     }
 
     enableNodes(ids: string[]) : void {
@@ -299,27 +289,14 @@ export class NodesSet {
             this.connectedNodes.add(id);
             this.disconnectedNodes.delete(id);
         });
-        let newFilter = "";
-        for(const id of this.disconnectedNodes) {
-            newFilter += ` -path:"${id}"`
-        }
-        this.applyAdditionalFilter(newFilter);
+        this.applyAdditionalFilter();
     }
 
-    private applyAdditionalFilter(newFilter: string) {
+    applyAdditionalFilter() {
         FUNC_NAMES && console.log("[NodesSet] applyAdditionalFilter");
+
         // @ts-ignore
-        let engine: any = this.leaf.view.dataEngine;
-        let query = [];
-        let filter = engine.filterOptions.search.getValue();
-        filter += newFilter;
-        (filter) && query.push({
-            query: filter,
-            color: null
-        }),
-        query = query.concat(engine.colorGroupOptions.getColoredQueries()),
-        engine.setQuery(query),
-        engine.onOptionsChange();
+        this.leaf.view.dataEngine.updateSearch();
     }
     
     loadView(viewData: GraphViewData) : void {

@@ -1,7 +1,7 @@
 import { App, TFile } from 'obsidian';
 import { Assets, Circle, Container, Graphics, Sprite, Texture } from 'pixi.js';
 import { InteractiveManager } from './interactiveManager';
-import { FUNC_NAMES, NONE_TYPE, REMOVE_INACTIVE_NODES } from 'src/globalVariables';
+import { FUNC_NAMES, NODE_CIRCLE_RADIUS, NODE_CIRCLE_X, NODE_CIRCLE_Y, NONE_TYPE, REMOVE_INACTIVE_NODES } from 'src/globalVariables';
 import { Renderer } from './renderer';
 
 export interface Node {
@@ -28,6 +28,7 @@ class Arc extends Graphics {
     inset: number = 0.03;
     gap: number = 0.2;
     isActive: boolean = true;
+    name: string;
 }
 
 export interface NodeGraphics {
@@ -47,7 +48,6 @@ export class NodeWrapper extends Container {
     imageUri: string | null;
     tagTypes: string[];
     isActive: boolean = true;
-    stopWaiting: boolean = false;
 
     constructor(node: Node, app: App) {
         FUNC_NAMES && console.log("[NodeWrapper] new");
@@ -76,7 +76,14 @@ export class NodeWrapper extends Container {
 
     // =========================== INITIALIZATION =========================== //
 
-    async init(app: App, keyProperty: string) : Promise<void> {
+    async init(app: App, keyProperty: string, renderer: Renderer) : Promise<void> {
+        FUNC_NAMES && console.log("[NodeWrapper] init");
+
+        const ready: boolean = await this.waitReady(renderer);
+        if (!ready) {
+            return Promise.reject<void>();
+        }
+
         FUNC_NAMES && console.log("[NodeWrapper] init");
         // Get image URI
         const metadata = app.metadataCache.getFileCache(this.file);
@@ -110,14 +117,6 @@ export class NodeWrapper extends Container {
             this.nodeGraphics.size = 1;
         }
 
-        let shape: Circle;
-        try {
-            shape = this.node.circle.geometry.graphicsData[0].shape as Circle;
-        }
-        catch (error) {
-            return Promise.reject<void>(error);
-        }
-
         // Background
         this.nodeGraphics.background
             .beginFill(0xFFFFFF)
@@ -128,39 +127,30 @@ export class NodeWrapper extends Container {
         this.addChild(this.nodeGraphics.background);
         
         // Scale
-        this.scale.set(shape.radius * 2 / this.nodeGraphics.size);
+        this.scale.set(NODE_CIRCLE_RADIUS * 2 / this.nodeGraphics.size);
 
         // Because of async, make sure the container is not already added
-        if (this.node.circle.getChildByName(this.name)) {
-            throw new Error(`${this.name} has already a nodeWrapper.`);
+        if (this.node.circle?.getChildByName(this.name)) {
+            return Promise.reject<void>();
         }
 
-        // Add the container to the node
-        this.node.circle.addChild(this);
-        this.x = shape.x;
-        this.y = shape.y;
+        this.x = NODE_CIRCLE_X;
+        this.y = NODE_CIRCLE_Y;
     }
 
-    async waitReady(renderer: Renderer) : Promise<void> {
+    async waitReady(renderer: Renderer) : Promise<boolean> {
         FUNC_NAMES && console.log("[NodeWrapper] waitReady");
-        return new Promise((resolve, reject) => {
-            let i = 0;
+        let i = 0;
+        return new Promise((resolve) => {
             const intervalId = setInterval(() => {
-                if (renderer.nodes.find(node => node === this.node)?.circle) {
+                let node = renderer.nodes.find(node => node === this.node);
+                if (node && node.circle) {
                     clearInterval(intervalId);
-                    resolve();
+                    resolve(true);
                 }
-                if (i > 10) {
+                if (i > 10 || !renderer.nodes.includes(this.node)) {
                     clearInterval(intervalId);
-                    reject();
-                }
-                if (!renderer.nodes.includes(this.node)) {
-                    clearInterval(intervalId);
-                    reject();
-                }
-                if (this.stopWaiting) {
-                    clearInterval(intervalId);
-                    reject();
+                    resolve(false);
                 }
                 i += 1;
             }, 100);
@@ -238,6 +228,8 @@ export class NodeWrapper extends Container {
     
         this.getTagsTypes().forEach(type => {
             if (type === NONE_TYPE) return;
+            const oldArc = this.getChildByName(this.getArcName(type));
+            if (oldArc) return;
 
             try {
                 const color = manager.getColor(type);
@@ -356,8 +348,12 @@ export class NodeWrapper extends Container {
             )
             .endFill();
         
-        arc.name = "arc-" + type;
+        arc.name = this.getArcName(type);
         return arc;
+    }
+
+    private getArcName(type: string) {
+        return "arc-" + type;
     }
 
     // ========================= ALPHA / BACKGROUND ========================= //

@@ -13,12 +13,9 @@ export class GraphView {
     }
 
     saveGraph(graph: Graph) {
+        // @ts-ignore
+        this.data.filter = graph.leaf.view.dataEngine.filterOptions.search.inputEl.value;
         this.data.disabledLinks = graph.linksSet.linksManager.getTypes().filter(type => !graph.linksSet.linksManager.isActive(type));
         this.data.disabledTags = graph.nodesSet.tagsManager.getTypes().filter(type => !graph.nodesSet.tagsManager.isActive(type));
-    }
-
-    loadGraph(graph: Graph) {
-        graph.nodesSet.tagsManager.disable(this.data.disabledTags);
-        graph.linksSet.linksManager.disable(this.data.disabledLinks);
     }
 }

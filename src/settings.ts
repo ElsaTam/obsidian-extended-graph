@@ -22,6 +22,7 @@ export const DEFAULT_SETTINGS: ExtendedGraphSettings = {
         {
             id: DEFAULT_VIEW_ID,
             name: "Vault (default)",
+            filter: "",
             disabledLinks: [],
             disabledTags: []
         }

@@ -35,9 +35,22 @@ export class Graph extends Component {
         this.interactiveManagers.set("link", this.linksSet.linksManager);
         this.addChild(this.nodesSet.tagsManager);
         this.addChild(this.linksSet.linksManager);
+
+        // Intercept search filter
+        // @ts-ignore
+        let engine: any = this.leaf.view.dataEngine;
+        engine.filterOptions.search.getValue = (function() {
+            let newFilter = "";
+            this.nodesSet.disconnectedNodes.forEach((id: string) => {
+                newFilter += ` -path:"${id}"`;
+            });
+            return engine.filterOptions.search.inputEl.value + newFilter;
+        }).bind(this);
+        this.setFilter("");
+        engine.updateSearch();
     }
 
-    onload() {
+    onload() : void {
         FUNC_NAMES && console.log("[Graph] onload");
         this.initSets().then(() => {
             // Obsidian handles search filter after loading the graph. Which
@@ -47,6 +60,14 @@ export class Graph extends Component {
 
             this.leaf.trigger('extended-graph:graph-ready');
         });
+    }
+
+    onunload() : void {
+        // @ts-ignore
+        let engine = this.leaf.view.dataEngine;
+        engine.filterOptions.search.getValue = (function() {
+            return this.filterOptions.search.inputEl.value;
+        }).bind(engine);
     }
 
     private removeAdditionalData() : void {
@@ -60,7 +81,9 @@ export class Graph extends Component {
 
         if (invalidNodes.size > 0) {
             invalidNodes.forEach(nodeID => {
-                this.nodesSet.nodesMap.get(nodeID)?.destroy();
+                let wrapper = this.nodesSet.nodesMap.get(nodeID);
+                wrapper?.parent?.removeChild(wrapper);
+                wrapper?.destroy();
                 this.nodesSet.nodesMap.delete(nodeID);
                 this.nodesSet.connectedNodes.delete(nodeID);
                 this.nodesSet.disconnectedNodes.delete(nodeID);
@@ -106,7 +129,7 @@ export class Graph extends Component {
         FUNC_NAMES && console.log("[Graph] initSets");
         // Sleep for a short duration to let time to the engine to apply user filters
         await new Promise(r => setTimeout(r, 200));
-        
+
         let requestList: Promise<void>[] = [];
         requestList = requestList.concat(this.nodesSet.load());
         requestList = requestList.concat(this.linksSet.load());
@@ -167,16 +190,20 @@ export class Graph extends Component {
 
     disableLinkTypes(types: string[]) {
         FUNC_NAMES && console.log("[LinksSet] disableLinkTypes");
-        if (this.linksSet.disableLinks(this.getLinks(types))) {
-            this.leaf.trigger('extended-graph:engine-needs-update');
-        }
+        this.linksSet.disableLinks(this.getLinks(types)).then((hasChanged) => {
+            if (hasChanged) {
+                this.leaf.trigger('extended-graph:engine-needs-update');
+            }
+        });
     }
 
     enableLinkTypes(types: string[]) {
         FUNC_NAMES && console.log("[LinksSet] enableLinkTypes");
-        if (this.linksSet.enableLinks(this.getLinks(types))) {
-            this.leaf.trigger('extended-graph:engine-needs-update');
-        }
+        this.linksSet.enableLinks(this.getLinks(types)).then((hasChanged) => {
+            if (hasChanged) {
+                this.leaf.trigger('extended-graph:engine-needs-update');
+            }
+        });
     }
         
     updateWorker() : void {
@@ -206,6 +233,13 @@ export class Graph extends Component {
         view.saveGraph(this);
         this.app.workspace.trigger('extended-graph:view-needs-saving', view.data);
         return view.data.id;
+    }
+
+    setFilter(filter: string) {
+        // @ts-ignore
+        let engine = this.leaf.view.dataEngine;
+        engine.filterOptions.search.setValue(filter);
+        engine.updateSearch();
     }
 
     saveView(id: string) : void {

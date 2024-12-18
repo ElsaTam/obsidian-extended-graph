@@ -63,19 +63,23 @@ class LegendRow {
         const interactive = this.manager.getInteractive(type);
         if (!interactive) return;
 
-        if (interactive.isActive) this.disable(type);
-        else this.enable(type);
+        if (interactive.isActive) {
+            this.disable(type);
+            this.manager.disable([type]);
+        }
+        else {
+            this.enable(type);
+            this.manager.enable([type]);
+        }
     }
 
     disable(type: string) {
         let button = this.container.getElementsByClassName(this.getClassName(type))[0];
-        this.manager.disable([type]);
         button.addClass("is-hidden");
     }
 
     enable(type: string) {
         let button = this.container.getElementsByClassName(this.getClassName(type))[0];
-        this.manager.enable([type]);
         button.removeClass("is-hidden");
     }
 }

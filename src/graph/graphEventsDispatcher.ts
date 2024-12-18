@@ -122,7 +122,9 @@ export class GraphEventsDispatcher extends Component {
 
     onGraphNeedsUpdate() {
         FUNC_NAMES && console.log("[GraphEventsDispatcher] onGraphNeedsUpdate");
-        this.graph.initSets();
+        this.graph.initSets().then(() => {
+            this.graph.nodesSet.resetArcs();
+        });
     }
 
     // TAGS
@@ -223,6 +225,8 @@ export class GraphEventsDispatcher extends Component {
 
         this.graph.nodesSet.tagsManager.loadView(viewData);
         this.graph.linksSet.linksManager.loadView(viewData);
+
+        this.graph.setFilter(viewData.filter);
 
         this.legendUI.enableAll("tag");
         viewData.disabledTags.forEach(type => {

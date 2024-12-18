@@ -32,32 +32,42 @@ export class LinkWrapper extends Graphics {
         this.name = this.id;
     }
 
-    init() : void {
+    async init(renderer: Renderer) : Promise<void> {
         FUNC_NAMES && console.log("[LinkWrapper] init");
+
+        const ready: boolean = await this.waitReady(renderer);
+        if (!ready) {
+            return Promise.reject<void>();
+        }
+
         (this.link.px.children[0] as Graphics).removeChildren();
-        (this.link.px.children[0] as Graphics).addChild(this);
     }
 
-    waitReady(renderer: Renderer): Promise<void> {
+    async waitReady(renderer: Renderer): Promise<boolean> {
         FUNC_NAMES && console.log("[LinkWrapper] waitReady");
-        return new Promise((resolve, reject) => {
-            let i = 0;
+        let i = 0;
+        return new Promise((resolve) => {
             const intervalId = setInterval(() => {
                 if (this.link.px && this.link.px.scale !== null) {
                     clearInterval(intervalId);
-                    resolve();
+                    resolve(true);
                 }
-                if (i > 10) {
+                if (i > 10 || !renderer.links.includes(this.link)) {
                     clearInterval(intervalId);
-                    reject();
-                }
-                if (!renderer.links.includes(this.link)) {
-                    clearInterval(intervalId);
-                    reject();
+                    resolve(false);
                 }
                 i += 1;
             }, 100);
         });
+    }
+
+    connect() {
+        if (this.parent != this.link.px.children[0]) {
+            this.removeFromParent();
+        }
+        if (!(this.link.px.children[0] as Graphics)?.getChildByName(this.name)) {
+            (this.link.px.children[0] as Graphics).addChild(this);
+        }
     }
 
     setTypes(types: Set<string>) {

@@ -68,24 +68,25 @@ export class InteractiveManager extends Component {
     loadView(viewData: GraphViewData) : void {
         FUNC_NAMES && console.log("[InteractiveManager] loadView");
 
+        const viewTypesToDisable: string[] = this.name === "tag" ? viewData.disabledTags : viewData.disabledLinks;
         // Enable/Disable tags
-        let tagsToDisable: string[] = [];
-        let tagsToEnable: string[] = [];
+        let toDisable: string[] = [];
+        let toEnable: string[] = [];
         this.getTypes().forEach(type => {
             let interactive = this.interactives.get(type);
             if (!interactive) return;
-            if (interactive.isActive && viewData.disabledTags.includes(type)) {
+            if (interactive.isActive && viewTypesToDisable.includes(type)) {
                 interactive.isActive = false;
-                tagsToDisable.push(type);
+                toDisable.push(type);
             }
-            else if (interactive.isActive && !viewData.disabledTags.includes(type)) {
+            else if (!interactive.isActive && !viewTypesToDisable.includes(type)) {
                 interactive.isActive = true;
-                tagsToEnable.push(type);
+                toEnable.push(type);
             }
         });
 
-        (tagsToDisable.length > 0) && (this.leaf.trigger(`extended-graph:disable-${this.name}s`, tagsToDisable));
-        (tagsToEnable.length > 0) && (this.leaf.trigger(`extended-graph:enable-${this.name}s`, tagsToEnable));
+        (toDisable.length > 0) && (this.leaf.trigger(`extended-graph:disable-${this.name}s`, toDisable));
+        (toEnable.length > 0) && (this.leaf.trigger(`extended-graph:enable-${this.name}s`, toEnable));
     }
 
     isActive(type: string) : boolean {
@@ -149,13 +150,6 @@ export class InteractiveManager extends Component {
 
     getTypes() : string[] {
         return Array.from(this.interactives.keys());
-    }
-
-    containsTypes(types: string[]) : boolean {
-        for (const type of types) {
-            if (!this.getInteractive(type)) return false;
-        }
-        return true;
     }
     
     update(types: Set<string>) : void {

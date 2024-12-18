@@ -52,16 +52,13 @@ export class LinksSet {
      */
     private async initLink(linkWrapper: LinkWrapper) : Promise<void> {
         FUNC_NAMES && console.log("[LinksSet] initLink");
-        const ready: boolean = await linkWrapper.waitReady(this.renderer)
-            .then(() => true, () => false);
-        if (ready) {
-            linkWrapper.init();
+        await linkWrapper.init(this.renderer).then(() => {
+            linkWrapper.connect();
             this.linksMap.set(linkWrapper.id, linkWrapper);
             this.connectedLinks.add(linkWrapper.id);
-        }
-        else {
+        }, () => {
             linkWrapper.destroy();
-        }
+        });
     }
     
     /**
@@ -72,7 +69,7 @@ export class LinksSet {
     get(id: string) : LinkWrapper {
         let link = this.linksMap.get(id);
         if (!link) {
-            throw new Error(`No link for id ${id}.`)
+            throw new Error(`No link for id ${id}.`);
         }
         return link;
     }
@@ -92,19 +89,28 @@ export class LinksSet {
      * @param ids ids of the links
      * @returns true if a link was disabled
      */
-    disableLinks(ids: Set<string>) : boolean {
+    async disableLinks(ids: Set<string>) : Promise<boolean> {
         FUNC_NAMES && console.log("[LinksSet] disableLinks");
-        let hasChanged = false;
+        let promises: Promise<void>[] = [];
         ids.forEach(id => {
             const linkWrapper = this.get(id);
             if (!linkWrapper.isActive) return;
-            //this.renderer.links.remove(linkWrapper.link);
-            this.connectedLinks.delete(id);
-            this.disconnectedLinks.add(id);
-            linkWrapper.setRenderable(false);
-            hasChanged = true;
+            
+            promises.push(linkWrapper.waitReady(this.renderer).then((ready) => {
+                if (ready) {
+                    linkWrapper.setRenderable(false);
+                }
+                this.connectedLinks.delete(id);
+                this.disconnectedLinks.add(id);
+            }))
         });
-        return hasChanged;
+        if (promises.length > 0) {
+            await Promise.all(promises);
+            return true;
+        }
+        else {
+            return false;
+        }
     }
 
     /**
@@ -112,19 +118,29 @@ export class LinksSet {
      * @param ids ids of the links
      * @returns true if a link was enabled
      */
-    enableLinks(ids: Set<string>) : boolean {
+    async enableLinks(ids: Set<string>) : Promise<boolean> {
         FUNC_NAMES && console.log("[LinksSet] enableLinks");
-        let hasChanged = false;
+        let promises: Promise<void>[] = [];
         ids.forEach(id => {
             const linkWrapper = this.get(id);
             if (linkWrapper.isActive) return;
-            //this.renderer.links.push(linkWrapper.link);
-            this.disconnectedLinks.delete(id);
-            this.connectedLinks.add(id);
-            linkWrapper.setRenderable(true);
-            hasChanged = true;
+            
+            promises.push(linkWrapper.waitReady(this.renderer).then((ready) => {
+                if (ready) {
+                    linkWrapper.connect();
+                    linkWrapper.setRenderable(true);
+                }
+                this.disconnectedLinks.delete(id);
+                this.connectedLinks.add(id);
+            }))
         });
-        return hasChanged;
+        if (promises.length > 0) {
+            await Promise.all(promises);
+            return true;
+        }
+        else {
+            return false;
+        }
     }
 
     /**
@@ -148,18 +164,16 @@ export class LinksSet {
         for (const id of linksToAdd) {
             let link = this.renderer.links.find(l => getLinkID(l) === id);
             if (!link) continue;
-            const linkWrapper = this.get(id);
 
-            linkWrapper.link = link;
-            linkWrapper.waitReady(this.renderer).then(() => {
-                let graphics = linkWrapper.link.px.children[0] as Graphics;
-                if (!graphics.getChildByName(linkWrapper.name)) {
-                    graphics.addChild(linkWrapper);
-                }
+            try {
+                const linkWrapper = this.get(id);
+                linkWrapper.link = link;
+                linkWrapper.connect();
                 linkWrapper.setRenderable(true);
-            }, () => {
+            }
+            catch (error) {
 
-            });
+            }
         }
         for (const id of linksToRemove) {
             let link = this.renderer.links.find(l => getLinkID(l) === id);
@@ -167,15 +181,7 @@ export class LinksSet {
             const linkWrapper = this.get(id);
 
             linkWrapper.link = link;
-            linkWrapper.waitReady(this.renderer).then(() => {
-                let graphics = linkWrapper.link.px.children[0] as Graphics;
-                if (!graphics.getChildByName(linkWrapper.name)) {
-                    graphics.addChild(linkWrapper);
-                }
-                linkWrapper.setRenderable(false);
-            }, () => {
-
-            });
+            linkWrapper.setRenderable(false);
         }
         if (linksToRemove.length > 0) {
             this.leaf.trigger('extended-graph:engine-needs-update');
