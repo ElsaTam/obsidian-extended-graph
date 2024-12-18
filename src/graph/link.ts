@@ -1,7 +1,8 @@
-import { Graphics, Container } from "pixi.js";
+import { Graphics, Container, RenderTexture } from "pixi.js";
 import { Node } from './node';
 import { InteractiveManager } from "./interactiveManager";
 import { FUNC_NAMES } from "src/globalVariables";
+import { Renderer } from "./renderer";
 
 
 export interface Link {
@@ -33,17 +34,29 @@ export class LinkWrapper extends Graphics {
 
     init() : void {
         FUNC_NAMES && console.log("[LinkWrapper] init");
+        (this.link.px.children[0] as Graphics).removeChildren();
+        (this.link.px.children[0] as Graphics).addChild(this);
     }
 
-    waitReady(): Promise<void> {
+    waitReady(renderer: Renderer): Promise<void> {
         FUNC_NAMES && console.log("[LinkWrapper] waitReady");
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
+            let i = 0;
             const intervalId = setInterval(() => {
                 if (this.link.px && this.link.px.scale !== null) {
                     clearInterval(intervalId);
                     resolve();
                 }
-            }, 500);
+                if (i > 10) {
+                    clearInterval(intervalId);
+                    reject();
+                }
+                if (!renderer.links.includes(this.link)) {
+                    clearInterval(intervalId);
+                    reject();
+                }
+                i += 1;
+            }, 100);
         });
     }
 
@@ -55,7 +68,6 @@ export class LinkWrapper extends Graphics {
     setColor(color: Uint8Array) : void {
         FUNC_NAMES && console.log("[LinkWrapper] setColor");
         this.clear();
-        (this.link.px.children[0] as Graphics).addChild(this);
         this.lineStyle({width: 50, color: color})
             .moveTo(0, 8)
             .lineTo(16, 8);

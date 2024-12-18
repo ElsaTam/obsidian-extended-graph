@@ -85,6 +85,7 @@ export class LegendUI extends Component {
     graph: Graph;
     leaf: WorkspaceLeaf;
     legendRows: Map<string, LegendRow>;
+    root: HTMLDivElement;
 
     constructor(graphicsManager: Graph, leaf: WorkspaceLeaf) {
         super();
@@ -95,16 +96,16 @@ export class LegendUI extends Component {
 
     onload(): void {
         this.legendRows = new Map<string, LegendRow>();
-        let legend = this.viewContent.createDiv();
-        legend?.addClass("graph-legend-container");
+        this.root = this.viewContent.createDiv();
+        this.root?.addClass("graph-legend-container");
         for (const name of ["tag", "link"]) {
             const manager = this.graph.interactiveManagers.get(name);
-            (manager) && this.legendRows.set(name, new LegendRow(name, manager, legend));
+            (manager) && this.legendRows.set(name, new LegendRow(name, manager, this.root));
         }
     }
 
     onunload(): void {
-        
+        this.root.parentNode?.removeChild(this.root);
     }
 
     updateLegend(row: string, type: string, color: Uint8Array) {

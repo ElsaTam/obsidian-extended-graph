@@ -35,16 +35,33 @@ export class LinksSet {
         return requestList;
     }
 
+    unload() {
+        this.linksMap.forEach(wrapper => {
+            if (wrapper.link.px)
+                (wrapper.link.px.children[0] as Graphics).removeChild(wrapper);
+            wrapper.destroy();
+        });
+        this.linksMap.clear();
+        this.connectedLinks.clear();
+        this.disconnectedLinks.clear();
+    }
+
     /**
      * Initialize the link wrapper and add it to the maps
      * @param linkWrapper 
      */
     private async initLink(linkWrapper: LinkWrapper) : Promise<void> {
         FUNC_NAMES && console.log("[LinksSet] initLink");
-        await linkWrapper.waitReady();
-        linkWrapper.init();
-        this.linksMap.set(linkWrapper.id, linkWrapper);
-        this.connectedLinks.add(linkWrapper.id);
+        const ready: boolean = await linkWrapper.waitReady(this.renderer)
+            .then(() => true, () => false);
+        if (ready) {
+            linkWrapper.init();
+            this.linksMap.set(linkWrapper.id, linkWrapper);
+            this.connectedLinks.add(linkWrapper.id);
+        }
+        else {
+            linkWrapper.destroy();
+        }
     }
     
     /**
@@ -134,16 +151,15 @@ export class LinksSet {
             const linkWrapper = this.get(id);
 
             linkWrapper.link = link;
-            linkWrapper.waitReady().then(() => {
+            linkWrapper.waitReady(this.renderer).then(() => {
                 let graphics = linkWrapper.link.px.children[0] as Graphics;
                 if (!graphics.getChildByName(linkWrapper.name)) {
                     graphics.addChild(linkWrapper);
                 }
                 linkWrapper.setRenderable(true);
-            })
-        }
-        if (linksToCreate.length > 0) {
-            this.load();
+            }, () => {
+
+            });
         }
         for (const id of linksToRemove) {
             let link = this.renderer.links.find(l => getLinkID(l) === id);
@@ -151,20 +167,21 @@ export class LinksSet {
             const linkWrapper = this.get(id);
 
             linkWrapper.link = link;
-            linkWrapper.waitReady().then(() => {
+            linkWrapper.waitReady(this.renderer).then(() => {
                 let graphics = linkWrapper.link.px.children[0] as Graphics;
                 if (!graphics.getChildByName(linkWrapper.name)) {
                     graphics.addChild(linkWrapper);
                 }
                 linkWrapper.setRenderable(false);
-            })
+            }, () => {
+
+            });
         }
-    
-        //(linksToAdd.length > 0)    && console.log("Links to add: ", linksToAdd);
-        //(linksToCreate.length > 0) && console.log("Links to prevent create: ", linksToCreate);
-        //(linksToRemove.length > 0) && console.log("Links to remove: ", linksToRemove);
         if (linksToRemove.length > 0) {
             this.leaf.trigger('extended-graph:engine-needs-update');
+        }
+        else if (linksToCreate.length > 0) {
+            this.leaf.trigger('extended-graph:graph-needs-update');
         }
     }
 

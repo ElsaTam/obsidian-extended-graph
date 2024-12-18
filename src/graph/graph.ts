@@ -7,6 +7,7 @@ import { GraphView } from 'src/views/view';
 import { NodesSet } from './nodesSet';
 import { LinksSet } from './linksSet';
 import { DEFAULT_VIEW_ID, FUNC_NAMES, NONE_TYPE } from 'src/globalVariables';
+import { NodeWrapper } from './node';
 
 export class Graph extends Component {
     nodesSet: NodesSet;
@@ -38,46 +39,115 @@ export class Graph extends Component {
 
     onload() {
         FUNC_NAMES && console.log("[Graph] onload");
+        this.initSets().then(() => {
+            // Obsidian handles search filter after loading the graph. Which
+            // means that it will first load and trigger changes with all nodes,
+            // creating a lot of Promises.
+            this.removeAdditionalData();
+
+            this.leaf.trigger('extended-graph:graph-ready');
+        });
+    }
+
+    private removeAdditionalData() : void {
+        // Remove invalid nodes
+        let invalidNodes = new Set<string>();
+        this.nodesSet.nodesMap.forEach((nodeWrapper, nodeID) => {
+            if (! this.renderer.nodes.find(n => n.id === nodeID)) {
+                invalidNodes.add(nodeID);
+            }
+        });
+
+        if (invalidNodes.size > 0) {
+            invalidNodes.forEach(nodeID => {
+                this.nodesSet.nodesMap.get(nodeID)?.destroy();
+                this.nodesSet.nodesMap.delete(nodeID);
+                this.nodesSet.connectedNodes.delete(nodeID);
+                this.nodesSet.disconnectedNodes.delete(nodeID);
+            })
+        }
+
+        // Remove invalid links
+        let invalidLinks = new Set<string>();
+        this.linksSet.linksMap.forEach((linkWrapper, linkID) => {
+            try {
+                this.nodesSet.get(linkWrapper.sourceID);
+                this.nodesSet.get(linkWrapper.targetID);
+            }
+            catch (error) {
+                invalidLinks.add(linkID);
+                return;
+            }
+        });
+        
+        if (invalidLinks.size > 0) {
+            let invalidLinkTypes = new Set<string>();
+            invalidLinks.forEach(linkID => {
+                this.linkTypesMap.forEach((linkForType, type) => {
+                    if (linkForType.has(linkID)) {
+                        linkForType.delete(linkID);
+                        if (linkForType.size === 0) {
+                            invalidLinkTypes.add(type);
+                        }
+                    }
+                });
+                this.linksSet.get(linkID).destroy();
+                this.linksSet.linksMap.delete(linkID);
+                this.linksSet.connectedLinks.delete(linkID);
+                this.linksSet.disconnectedLinks.delete(linkID);
+            });
+            if (invalidLinkTypes.size > 0) {
+                this.linksSet.linksManager.removeTypes(invalidLinkTypes);
+            }
+        }
+    }
+
+    async initSets() : Promise<void> {
+        FUNC_NAMES && console.log("[Graph] initSets");
+        // Sleep for a short duration to let time to the engine to apply user filters
+        await new Promise(r => setTimeout(r, 200));
+        
         let requestList: Promise<void>[] = [];
         requestList = requestList.concat(this.nodesSet.load());
         requestList = requestList.concat(this.linksSet.load());
 
-        Promise.all(requestList).then(res => {
-            // Create link types
-            this.linksSet.linksMap.forEach((linkWrapper, linkID) => {
-                const sourceFile = this.nodesSet.get(linkWrapper.sourceID).file;
+        await Promise.all(requestList);
 
-                let types = new Set<string>();
+        this.removeAdditionalData();
 
-                const frontmatterLinks = this.app.metadataCache.getFileCache(sourceFile)?.frontmatterLinks;
-                if (frontmatterLinks) {
-                    // For each link in the frontmatters, check if target matches
-                    frontmatterLinks.forEach(linkCache => {
-                        const linkType = linkCache.key.split('.')[0];
-                        const targetID = linkCache.link + ".md";
-                        if (targetID == linkWrapper.targetID) {
-                            // Set the pair
-                            (!this.linkTypesMap.get(linkType)) &&  this.linkTypesMap.set(linkType, new Set<string>());
-                            this.linkTypesMap.get(linkType)?.add(linkID);
-                            types.add(linkType);
-                        }
-                    });
-                }
-                if (!frontmatterLinks || types.size === 0) {
-                    (!this.linkTypesMap.get(NONE_TYPE)) &&  this.linkTypesMap.set(NONE_TYPE, new Set<string>());
-                    this.linkTypesMap.get(NONE_TYPE)?.add(linkID);
-                    types.add(NONE_TYPE);
-                }
+        // Create link types
+        this.linksSet.linksMap.forEach((linkWrapper, linkID) => {
+            let sourceNode = this.nodesSet.get(linkWrapper.sourceID);
+            const sourceFile = sourceNode.file;
 
-                linkWrapper.setTypes(types);
-            });
+            let types = new Set<string>();
 
-            // Initialize colors for each node/link type
-            this.nodesSet.tagsManager.update(this.nodesSet.getAllTagTypesFromCache(this.app));
-            this.linksSet.linksManager.update(this.getAllLinkTypes());
+            const frontmatterLinks = this.app.metadataCache.getFileCache(sourceFile)?.frontmatterLinks;
+            if (frontmatterLinks) {
+                // For each link in the frontmatters, check if target matches
+                frontmatterLinks.forEach(linkCache => {
+                    const linkType = linkCache.key.split('.')[0];
+                    const targetID = linkCache.link + ".md";
+                    if (targetID == linkWrapper.targetID) {
+                        // Set the pair
+                        (!this.linkTypesMap.get(linkType)) &&  this.linkTypesMap.set(linkType, new Set<string>());
+                        this.linkTypesMap.get(linkType)?.add(linkID);
+                        types.add(linkType);
+                    }
+                });
+            }
+            if (!frontmatterLinks || types.size === 0) {
+                (!this.linkTypesMap.get(NONE_TYPE)) &&  this.linkTypesMap.set(NONE_TYPE, new Set<string>());
+                this.linkTypesMap.get(NONE_TYPE)?.add(linkID);
+                types.add(NONE_TYPE);
+            }
 
-            this.leaf.trigger('extended-graph:graph-ready');
+            linkWrapper.setTypes(types);
         });
+
+        // Initialize colors for each node/link type
+        this.nodesSet.tagsManager.update(this.nodesSet.getAllTagTypesFromCache(this.app));
+        this.linksSet.linksManager.update(this.getAllLinkTypes());
     }
 
     getAllLinkTypes() : Set<string> {
@@ -152,7 +222,6 @@ export class Graph extends Component {
     deleteView(id: string) : void {
         this.app.workspace.trigger('extended-graph:view-needs-deletion', id);
     }
-
 
     test() : void {
         

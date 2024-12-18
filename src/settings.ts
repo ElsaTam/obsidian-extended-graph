@@ -6,7 +6,7 @@ import { DEFAULT_VIEW_ID } from "./globalVariables";
 export interface ExtendedGraphSettings {
     colormaps: { [interactive: string] : string };
     imageProperty: string;
-
+    maxNodes: number;
     views: GraphViewData[];
 }
 
@@ -16,6 +16,7 @@ export const DEFAULT_SETTINGS: ExtendedGraphSettings = {
         "link": "rainbow"
     },
     imageProperty: "image",
+    maxNodes: 20,
 
     views: [
         {
@@ -47,6 +48,19 @@ export class ExtendedGraphSettingTab extends PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.imageProperty = value;
                     await this.plugin.saveSettings();
+            }))
+
+        new Setting(containerEl)
+            .setName('Maximum number of nodes')
+            .setDesc('If the graph contains more nodes than this setting, the plugin will be disabled.')
+            .addText(cb => cb
+                .setValue(this.plugin.settings.maxNodes.toString())
+                .onChange(async (value) => {
+                    const intValue = parseInt(value);
+                    if (!isNaN(intValue)) {
+                        this.plugin.settings.maxNodes = intValue;
+                        await this.plugin.saveSettings();
+                    }
             }))
         
         const cmOptions = {

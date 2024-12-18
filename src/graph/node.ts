@@ -2,6 +2,7 @@ import { App, TFile } from 'obsidian';
 import { Assets, Circle, Container, Graphics, Sprite, Texture } from 'pixi.js';
 import { InteractiveManager } from './interactiveManager';
 import { FUNC_NAMES, NONE_TYPE, REMOVE_INACTIVE_NODES } from 'src/globalVariables';
+import { Renderer } from './renderer';
 
 export interface Node {
     circle: Graphics,
@@ -46,6 +47,7 @@ export class NodeWrapper extends Container {
     imageUri: string | null;
     tagTypes: string[];
     isActive: boolean = true;
+    stopWaiting: boolean = false;
 
     constructor(node: Node, app: App) {
         FUNC_NAMES && console.log("[NodeWrapper] new");
@@ -108,7 +110,13 @@ export class NodeWrapper extends Container {
             this.nodeGraphics.size = 1;
         }
 
-        const shape = this.node.circle.geometry.graphicsData[0].shape as Circle;
+        let shape: Circle;
+        try {
+            shape = this.node.circle.geometry.graphicsData[0].shape as Circle;
+        }
+        catch (error) {
+            return Promise.reject<void>(error);
+        }
 
         // Background
         this.nodeGraphics.background
@@ -133,14 +141,28 @@ export class NodeWrapper extends Container {
         this.y = shape.y;
     }
 
-    async waitReady() : Promise<void> {
+    async waitReady(renderer: Renderer) : Promise<void> {
         FUNC_NAMES && console.log("[NodeWrapper] waitReady");
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
+            let i = 0;
             const intervalId = setInterval(() => {
-                if (this.node.circle) {
+                if (renderer.nodes.find(node => node === this.node)?.circle) {
                     clearInterval(intervalId);
                     resolve();
                 }
+                if (i > 10) {
+                    clearInterval(intervalId);
+                    reject();
+                }
+                if (!renderer.nodes.includes(this.node)) {
+                    clearInterval(intervalId);
+                    reject();
+                }
+                if (this.stopWaiting) {
+                    clearInterval(intervalId);
+                    reject();
+                }
+                i += 1;
             }, 100);
         });
     }

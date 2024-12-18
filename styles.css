@@ -68,3 +68,17 @@
     font-size: var(--font-ui-medium);
     padding: var(--size-4-1) var(--size-4-3);
 }
+
+/* TOGGLE */
+
+.graph-toggle {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    padding: var(--size-4-6) var(--size-4-3);
+    z-index: 20;
+}
+
+.graph-toggle button.is-active {
+    background-color: var(--interactive-accent);
+}

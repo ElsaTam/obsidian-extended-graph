@@ -35,16 +35,40 @@ export class NodesSet {
         let requestList: Promise<void>[] = [];
         this.renderer.nodes.forEach((node: Node) => {
             let nodeWrapper = new NodeWrapper(node, this.app);
-            let requestInit: Promise<void> = nodeWrapper.init(this.app, this.settings.imageProperty);
-            requestList.push(requestInit.then(() => {
-                this.nodesMap.set(node.id, nodeWrapper);
-                this.connectedNodes.add(node.id);
-            },
-            () => {
-                nodeWrapper.destroy();
-            }));
+            requestList.push(this.initNode(nodeWrapper));
         });
         return requestList;
+    }
+
+    unload() {
+        this.nodesMap.forEach(wrapper => {
+            wrapper.node.circle?.removeChild(wrapper);
+            wrapper.destroy();
+        });
+        this.nodesMap.clear();
+        this.connectedNodes.clear();
+        this.disconnectedNodes.clear();
+        this.disabledTags.clear();
+    }
+
+    private async initNode(nodeWrapper: NodeWrapper) : Promise<void> {
+        FUNC_NAMES && console.log("[NodesSet] initNode");
+        let ready: boolean = await nodeWrapper.waitReady(this.renderer)
+            .then(() => true, () => false);
+        if (ready) {
+            await nodeWrapper.init(this.app, this.settings.imageProperty).then(() => {
+                this.nodesMap.set(nodeWrapper.node.id, nodeWrapper);
+                this.connectedNodes.add(nodeWrapper.node.id);
+            }, () => {
+                console.error("DESTROY");
+                nodeWrapper.destroy();
+                this.nodesMap.delete(nodeWrapper.node.id);
+                this.connectedNodes.delete(nodeWrapper.node.id);
+            });
+        }
+        else {
+            nodeWrapper.destroy();
+        }
     }
 
     /**
@@ -127,24 +151,24 @@ export class NodesSet {
             for (const id of nodesToAdd) {
                 let node = this.renderer.nodes.find(n => n.id === id);
                 if (!node) continue;
-                const nodeWrapper = this.get(id);
-    
+
+                let nodeWrapper = this.get(id);
                 nodeWrapper.node = node;
-                nodeWrapper.waitReady().then(() => {
+                nodeWrapper.waitReady(this.renderer).then(() => {
                     if (!node.circle.getChildByName(nodeWrapper.name)) {
                         node.circle.addChild(nodeWrapper);
                     }
+                }, () => {
+                    if (node.circle && node.circle.getChildByName(nodeWrapper.name)) {
+                        node.circle.removeChild(nodeWrapper);
+                    }
                 });
             };
-            if (nodesToCreate.length > 0) {
-                this.load();
-            }
-    
-            //(nodesToAdd.length > 0) && console.log("Nodes to add: ", nodesToAdd);
-            //(nodesToRemove.length > 0) && console.log("Nodes to remove: ", nodesToRemove);
-            //(nodesToPreventAdding.length > 0) && console.log("Nodes to prevent adding: ", nodesToPreventAdding);
             if (nodesToRemove.length > 0) {
                 this.leaf.trigger('extended-graph:engine-needs-update');
+            }
+            else if (nodesToCreate.length > 0) {
+                this.leaf.trigger('extended-graph:graph-needs-update');
             }
         })
     }

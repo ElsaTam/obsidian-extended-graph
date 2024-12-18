@@ -104,22 +104,33 @@ export class InteractiveManager extends Component {
         this.leaf.trigger(`extended-graph:change-${this.name}-color`, type, color);
     }
 
-    addType(type: string, x: number) : void {
-        FUNC_NAMES && console.log("[InteractiveManager] addType");
-        const color = (type === NONE_TYPE) ? NONE_COLOR : getColor(this.settings.colormaps[this.name], x);
-        this.interactives.set(type, new Interactive(type, color));
-        this.leaf.trigger(`extended-graph:add-${this.name}-type`, type, color);
+    removeTypes(types: Set<string>) {
+        types.forEach(type => {
+            this.interactives.delete(type);
+        });
+        this.leaf.trigger(`extended-graph:remove-${this.name}-types`, types);
     }
 
     addTypes(types: Set<string>) : void {
         FUNC_NAMES && console.log("[InteractiveManager] addTypes");
-        let i = 0;
-        let colorsMaps = new Map<string, Uint8Array>;
+        let colorsMaps = new Map<string, Uint8Array>();
+        let allTypes = new Set<string>([...this.interactives.keys(), ...types]);
+        let allTypesWithoutNone = new Set<string>(allTypes);
+        allTypesWithoutNone.delete(NONE_TYPE);
         types.forEach(type => {
-            const color = (type === NONE_TYPE) ? NONE_COLOR : getColor(this.settings.colormaps[this.name], i / types.size);
+            if (this.interactives.get(type)) return;
+            let color: Uint8Array;
+            if (type === NONE_TYPE) {
+                color = NONE_COLOR;
+            }
+            else {
+                const nColors = allTypesWithoutNone.size;
+                const i = [...allTypesWithoutNone.values()].indexOf(type);
+                const x = i / nColors;
+                color = getColor(this.settings.colormaps[this.name], x);
+            }
             colorsMaps.set(type, color);
             this.interactives.set(type, new Interactive(type, color));
-            ++i;
         });
         this.leaf.trigger(`extended-graph:add-${this.name}-types`, colorsMaps);
     }
@@ -158,7 +169,9 @@ export class InteractiveManager extends Component {
         FUNC_NAMES && console.log("[InteractiveManager] recomputeColors");
         let i = 0;
         this.interactives.forEach((interactive, type) => {
-            const color = (type === NONE_TYPE) ? NONE_COLOR : getColor(this.settings.colormaps[this.name], i / (this.interactives.size - 1));
+            let nColors = this.interactives.size;
+            if (this.interactives.has(NONE_TYPE)) nColors -= 1;
+            const color = (type === NONE_TYPE) ? NONE_COLOR : getColor(this.settings.colormaps[this.name], i / nColors);
             this.setColor(type, color);
             ++i;
         });

@@ -9,6 +9,7 @@ export class GraphViewsUI extends Component {
     leaf: WorkspaceLeaf;
     currentViewID: string;
 
+    root: HTMLDivElement;
     select: HTMLSelectElement;
     saveButton: HTMLButtonElement;
     addButton: HTMLButtonElement;
@@ -20,21 +21,21 @@ export class GraphViewsUI extends Component {
         this.graph = graphicsManager;
         this.leaf = leaf;
         this.viewContent = this.leaf.containerEl.getElementsByClassName("view-content")[0] as HTMLElement;
-        let container = this.viewContent.createDiv();
-        container?.addClass("graph-views-container");
+        this.root = this.viewContent.createDiv();
+        this.root?.addClass("graph-views-container");
 
-        let title = container.createSpan();
+        let title = this.root.createSpan();
         title.innerHTML = "views";
         title.addClass("graph-views-title");
 
-        this.select = container.createEl("select");
+        this.select = this.root.createEl("select");
         this.select.addEventListener('change', event => {
             this.currentViewID = this.select.value;
             this.displaySaveDeleteButton();
             this.leaf.trigger('extended-graph:view-changed', this.select.value);
         });
 
-        this.addButton = container.createEl("button");
+        this.addButton = this.root.createEl("button");
         setIcon(this.addButton, "plus");
         let addText = this.addButton.createSpan();
         addText.innerText = "Add view";
@@ -54,19 +55,24 @@ export class GraphViewsUI extends Component {
             modal.open();
         })
 
-        this.saveButton = container.createEl("button");
+        this.saveButton = this.root.createEl("button");
         setIcon(this.saveButton, "save");
         this.saveButton.addEventListener('click', event => {
             this.graph.saveView(this.select.value);
         });
 
-        this.deleteButton = container.createEl("button");
+        this.deleteButton = this.root.createEl("button");
         setIcon(this.deleteButton, "trash-2");
         this.deleteButton.addEventListener('click', event => {
             this.graph.deleteView(this.select.value);
         });
 
         this.currentViewID = this.select.value;
+    }
+
+    
+    onunload(): void {
+        this.root.parentNode?.removeChild(this.root);
     }
 
     addOption(key: string, name: string) : void {
