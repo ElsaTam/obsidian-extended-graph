@@ -91,10 +91,6 @@ export class GraphEventsDispatcher extends Component {
 
     onGraphReady() : void {
         FUNC_NAMES && console.log("[GraphEventsDispatcher] onGraphReady");
-        if (this.graph.nodesSet.tagsManager.interactives.size === 0 && this.renderer.nodes.length > 0) {
-            this.graphsManager.reloadPlugin(this.leaf);
-            return;
-        }
         this.renderer.px.stage.children[1].on('childAdded', (e: any) => {
             this.updateFromEngine();
         });

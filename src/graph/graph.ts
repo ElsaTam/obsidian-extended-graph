@@ -68,6 +68,7 @@ export class Graph extends Component {
         engine.filterOptions.search.getValue = (function() {
             return this.filterOptions.search.inputEl.value;
         }).bind(engine);
+        engine.updateSearch();
     }
 
     private removeAdditionalData() : void {

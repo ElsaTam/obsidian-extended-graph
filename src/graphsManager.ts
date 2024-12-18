@@ -162,7 +162,8 @@ export class GraphsManager extends Component {
         });
     }
     
-    
+    // ENABLE/DISABLE PLUGIN
+
     onPluginEnabled(leaf: WorkspaceLeafExt) : void {
         this.enablePlugin(leaf);
     }
@@ -199,11 +200,5 @@ export class GraphsManager extends Component {
         dispatcher.unload();
         this.dispatchers.delete(leaf.id);
         leaf.view.renderer.changed();
-    }
-
-    reloadPlugin(leaf: WorkspaceLeafExt) : void {
-        console.log("Reload plugin");
-        this.disablePlugin(leaf);
-        this.enablePlugin(leaf);
     }
 }

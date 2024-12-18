@@ -1,4 +1,4 @@
-import { Component, setIcon, WorkspaceLeaf } from "obsidian";
+import { Component, setIcon, setTooltip, WorkspaceLeaf } from "obsidian";
 
 export class MenuUI extends Component {
     viewContent: HTMLElement;
@@ -31,10 +31,12 @@ export class MenuUI extends Component {
     enable() {
         this.enabled = true;
         this.button.addClass("is-active");
+        setTooltip(this.button, "Enable Extended Graph Plugin", {placement: 'top'});
     }
 
     disable() {
         this.enabled = false;
         this.button.removeClass("is-active");
+        setTooltip(this.button, "Disable Extended Graph Plugin", {placement: 'top'});
     }
 }
