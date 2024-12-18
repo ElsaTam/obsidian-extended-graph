@@ -296,7 +296,8 @@ export class NodesSet {
         FUNC_NAMES && console.log("[NodesSet] applyAdditionalFilter");
 
         // @ts-ignore
-        this.leaf.view.dataEngine.updateSearch();
+        let engine: any = this.leaf.view.dataEngine ? this.leaf.view.dataEngine : this.leaf.view.engine;
+        engine.updateSearch();
     }
     
     loadView(viewData: GraphViewData) : void {

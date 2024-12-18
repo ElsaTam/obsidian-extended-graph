@@ -14,7 +14,8 @@ export class GraphView {
 
     saveGraph(graph: Graph) {
         // @ts-ignore
-        this.data.filter = graph.leaf.view.dataEngine.filterOptions.search.inputEl.value;
+        let engine: any = this.leaf.view.dataEngine ? this.leaf.view.dataEngine : this.leaf.view.engine;
+        this.data.filter = engine.filterOptions.search.inputEl.value;
         this.data.disabledLinks = graph.linksSet.linksManager.getTypes().filter(type => !graph.linksSet.linksManager.isActive(type));
         this.data.disabledTags = graph.nodesSet.tagsManager.getTypes().filter(type => !graph.nodesSet.tagsManager.isActive(type));
     }

@@ -75,12 +75,12 @@ class LegendRow {
 
     disable(type: string) {
         let button = this.container.getElementsByClassName(this.getClassName(type))[0];
-        button.addClass("is-hidden");
+        if (button) button.addClass("is-hidden");
     }
 
     enable(type: string) {
         let button = this.container.getElementsByClassName(this.getClassName(type))[0];
-        button.removeClass("is-hidden");
+        if (button) button.removeClass("is-hidden");
     }
 }
 

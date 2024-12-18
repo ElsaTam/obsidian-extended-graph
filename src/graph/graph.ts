@@ -15,6 +15,7 @@ export class Graph extends Component {
     linkTypesMap = new Map<string, Set<string>>(); // key: type / value: link ids
     interactiveManagers = new Map<string, InteractiveManager>();
 
+    engine: any;
     renderer: Renderer;
     app: App;
     leaf: WorkspaceLeaf;
@@ -38,16 +39,16 @@ export class Graph extends Component {
 
         // Intercept search filter
         // @ts-ignore
-        let engine: any = this.leaf.view.dataEngine;
-        engine.filterOptions.search.getValue = (function() {
+        this.engine = this.leaf.view.dataEngine ? this.leaf.view.dataEngine : this.leaf.view.engine;
+        this.engine.filterOptions.search.getValue = (function() {
             let newFilter = "";
             this.nodesSet.disconnectedNodes.forEach((id: string) => {
                 newFilter += ` -path:"${id}"`;
             });
-            return engine.filterOptions.search.inputEl.value + newFilter;
+            return this.engine.filterOptions.search.inputEl.value + newFilter;
         }).bind(this);
         this.setFilter("");
-        engine.updateSearch();
+        this.engine.updateSearch();
     }
 
     onload() : void {
@@ -63,12 +64,10 @@ export class Graph extends Component {
     }
 
     onunload() : void {
-        // @ts-ignore
-        let engine = this.leaf.view.dataEngine;
-        engine.filterOptions.search.getValue = (function() {
+        this.engine.filterOptions.search.getValue = (function() {
             return this.filterOptions.search.inputEl.value;
-        }).bind(engine);
-        engine.updateSearch();
+        }).bind(this.engine);
+        this.engine.updateSearch();
     }
 
     private removeAdditionalData() : void {
@@ -237,10 +236,8 @@ export class Graph extends Component {
     }
 
     setFilter(filter: string) {
-        // @ts-ignore
-        let engine = this.leaf.view.dataEngine;
-        engine.filterOptions.search.setValue(filter);
-        engine.updateSearch();
+        this.engine.filterOptions.search.setValue(filter);
+        this.engine.updateSearch();
     }
 
     saveView(id: string) : void {

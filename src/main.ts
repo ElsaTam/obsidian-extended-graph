@@ -44,7 +44,7 @@ export default class GraphExtendedPlugin extends Plugin {
         await this.waitForRenderer();
 
         const leaves = this.getAllGraphLeaves();
-        leaves.forEach(leaf => {
+        leaves.forEach((type, leaf) => {
             this.graphsManager.disablePlugin(leaf as WorkspaceLeafExt);
         });
     }
@@ -68,10 +68,14 @@ export default class GraphExtendedPlugin extends Plugin {
         return false;
     }
 
-    getAllGraphLeaves() : WorkspaceLeaf[] {
-        let leaves: WorkspaceLeaf[] = [];
-        leaves = leaves.concat(this.app.workspace.getLeavesOfType('graph').filter(l => this.hasObsidianRenderer(l)));
-        leaves = leaves.concat(this.app.workspace.getLeavesOfType('localgraph').filter(l => this.hasObsidianRenderer(l)));
+    getAllGraphLeaves() : Map<WorkspaceLeaf, string> {
+        let leaves = new Map<WorkspaceLeaf, string>();
+        this.app.workspace.getLeavesOfType('graph').filter(l => this.hasObsidianRenderer(l)).forEach(leaf => {
+            leaves.set(leaf, "graph");
+        })
+        this.app.workspace.getLeavesOfType('localgraph').filter(l => this.hasObsidianRenderer(l)).forEach(leaf => {
+            leaves.set(leaf, "localgraph");
+        })
         return leaves;
     }
 
