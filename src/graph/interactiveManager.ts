@@ -1,9 +1,9 @@
 
 import { Component, WorkspaceLeaf } from "obsidian";
-import { ExtendedGraphSettings } from "../settings";
-import { getColor } from "../colors/colors";
+import { getColor, hex2rgb } from "../colors/colors";
 import { FUNC_NAMES, NONE_COLOR, NONE_TYPE } from "src/globalVariables";
 import { GraphViewData } from "src/views/viewData";
+import { ExtendedGraphSettings } from "src/settings/settings";
 
 export class Interactive {
     type: string;
@@ -119,17 +119,18 @@ export class InteractiveManager extends Component {
         let allTypesWithoutNone = new Set<string>(allTypes);
         allTypesWithoutNone.delete(NONE_TYPE);
         types.forEach(type => {
-            if (this.interactives.get(type)) return;
+            if (this.interactives.has(type)) return;
+
             let color: Uint8Array;
-            if (type === NONE_TYPE) {
-                color = NONE_COLOR;
+            try {
+                color = this.tryComputeColorFromType(type);
             }
-            else {
+            catch {
                 const nColors = allTypesWithoutNone.size;
-                const i = [...allTypesWithoutNone.values()].indexOf(type);
-                const x = i / nColors;
-                color = getColor(this.settings.colormaps[this.name], x);
+                const i = [...allTypesWithoutNone].indexOf(type);
+                color = this.computeColorFromIndex(i, nColors);
             }
+
             colorsMaps.set(type, color);
             this.interactives.set(type, new Interactive(type, color));
         });
@@ -163,11 +164,42 @@ export class InteractiveManager extends Component {
         FUNC_NAMES && console.log("[InteractiveManager] recomputeColors");
         let i = 0;
         this.interactives.forEach((interactive, type) => {
-            let nColors = this.interactives.size;
-            if (this.interactives.has(NONE_TYPE)) nColors -= 1;
-            const color = (type === NONE_TYPE) ? NONE_COLOR : getColor(this.settings.colormaps[this.name], i / nColors);
-            this.setColor(type, color);
-            ++i;
+            this.setColor(type, this.tryComputeColorFromType(type));
         });
+    }
+
+    recomputeColor(type: string) : void {
+        FUNC_NAMES && console.log("[InteractiveManager] recomputeColor");
+        if (!this.interactives.has(type)) return;
+
+        this.setColor(type, this.tryComputeColorFromType(type));
+    }
+
+    private tryComputeColorFromType(type: string) : Uint8Array {
+        let color: Uint8Array;
+        let colorSettings = this.settings.interactiveColors[this.name].find(p => p.type === type)?.color;
+        if (colorSettings) {
+            color = hex2rgb(colorSettings);
+        }
+        else if (type === NONE_TYPE) {
+            color = NONE_COLOR;
+        }
+        else {
+            let allTypesWithoutNone = [...this.interactives.keys()];
+            allTypesWithoutNone.remove(NONE_TYPE);
+            const nColors = allTypesWithoutNone.length;
+            const i = allTypesWithoutNone.indexOf(type);
+            if (i < 0) {
+                throw new Error();
+            }
+            color = this.computeColorFromIndex(i, nColors);
+        }
+
+        return color;
+    }
+
+    private computeColorFromIndex(index: number, nColors: number) {
+        const x = index / nColors;
+        return getColor(this.settings.colormaps[this.name], x);
     }
 }

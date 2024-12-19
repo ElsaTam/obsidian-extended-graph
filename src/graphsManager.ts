@@ -1,6 +1,5 @@
-import { App, CachedMetadata, Component, TFile, WorkspaceLeaf } from "obsidian";
+import { App, CachedMetadata, Component, TFile } from "obsidian";
 import { GraphEventsDispatcher, WorkspaceLeafExt } from "./graph/graphEventsDispatcher";
-import { ExtendedGraphSettings } from "./settings";
 import GraphExtendedPlugin from "./main";
 import { GraphViewData } from "./views/viewData";
 import { MenuUI } from "./graph/ui/menu";
@@ -159,6 +158,12 @@ export class GraphsManager extends Component {
     updatePalette(interactive: string) : void {
         this.dispatchers.forEach(dispatcher => {
             dispatcher.graph.interactiveManagers.get(interactive)?.recomputeColors();
+        });
+    }
+
+    updateTagColor(type: string) : void {
+        this.dispatchers.forEach(dispatcher => {
+            dispatcher.graph.nodesSet.tagsManager.recomputeColor(type);
         });
     }
     

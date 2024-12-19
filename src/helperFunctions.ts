@@ -19,3 +19,7 @@ export function getBackgroundColor(renderer: Renderer) : Uint8Array {
     const RGB = bg.split(", ").map(c => parseInt(c));
     return Uint8Array.from(RGB);
 }
+
+export function capitalizeFirstLetter(val: string) {
+    return String(val).charAt(0).toUpperCase() + String(val).slice(1);
+}

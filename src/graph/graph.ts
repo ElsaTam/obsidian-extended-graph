@@ -1,14 +1,13 @@
 
 import { App, Component, WorkspaceLeaf } from 'obsidian';
 import { Renderer } from './renderer';
-import { ExtendedGraphSettings } from '../settings';
 import { InteractiveManager } from './interactiveManager';
 import { GraphView } from 'src/views/view';
 import { NodesSet } from './nodesSet';
 import { LinksSet } from './linksSet';
 import { DEFAULT_VIEW_ID, FUNC_NAMES, NONE_TYPE } from 'src/globalVariables';
-import { NodeWrapper } from './node';
 import { EngineOptions } from 'src/views/viewData';
+import { ExtendedGraphSettings } from 'src/settings/settings';
 
 export class Graph extends Component {
     nodesSet: NodesSet;

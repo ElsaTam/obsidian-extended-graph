@@ -1,11 +1,11 @@
 import { App, TFile, WorkspaceLeaf } from "obsidian";
 import { Node, NodeWrapper } from "./node";
 import { Renderer } from "./renderer";
-import { ExtendedGraphSettings } from "src/settings";
 import { InteractiveManager } from "./interactiveManager";
 import { GraphViewData } from "src/views/viewData";
 import { getBackgroundColor } from "src/helperFunctions";
-import { FUNC_NAMES } from "src/globalVariables";
+import { FUNC_NAMES, NONE_TYPE } from "src/globalVariables";
+import { ExtendedGraphSettings } from "src/settings/settings";
 
 export class NodesSet {
     nodesMap = new Map<string, NodeWrapper>();
@@ -272,7 +272,7 @@ export class NodesSet {
      */
     updateArcsColor(type: string, color: Uint8Array) : void {
         FUNC_NAMES && console.log("[NodesSet] updateArcsColor");
-        this.nodesMap.forEach(c => c.hasTagType(type) && c.updateArc(type, color, this.tagsManager));
+        this.nodesMap.forEach(w => w.hasTagType(type) && (type !== NONE_TYPE) && w.updateArc(type, color, this.tagsManager));
     }
 
     disableNodes(ids: string[]) : void {

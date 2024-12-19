@@ -1,7 +1,8 @@
 import { Plugin, View, WorkspaceLeaf } from 'obsidian';
 import { GraphsManager } from './graphsManager';
-import { DEFAULT_SETTINGS, ExtendedGraphSettings, ExtendedGraphSettingTab } from './settings';
+import { DEFAULT_SETTINGS, ExtendedGraphSettings } from './settings/settings';
 import { WorkspaceLeafExt } from './graph/graphEventsDispatcher';
+import { ExtendedGraphSettingTab } from './settings/settingTab';
 
 // https://pixijs.download/v7.4.2/docs/index.html
 
@@ -25,6 +26,14 @@ export default class GraphExtendedPlugin extends Plugin {
         // @ts-ignore
         this.registerEvent(this.app.workspace.on('extended-graph:settings-colorpalette-changed', (interactive: string) => {
             this.graphsManager.updatePalette(interactive);
+        }));
+        // @ts-ignore
+        this.registerEvent(this.app.workspace.on('extended-graph:settings-tag-color-changed', (type: string) => {
+            this.graphsManager.updatePalette("tag");
+        }));
+        // @ts-ignore
+        this.registerEvent(this.app.workspace.on('extended-graph:settings-link-color-changed', (type: string) => {
+            this.graphsManager.updatePalette("link");
         }));
     }
 

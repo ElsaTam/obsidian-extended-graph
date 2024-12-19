@@ -1,12 +1,12 @@
-import { App, Component, EventRef, Menu, WorkspaceLeaf } from "obsidian";
+import { App, Component, EventRef, WorkspaceLeaf } from "obsidian";
 import { Graph } from "./graph";
 import { LegendUI } from "./ui/legendUI";
 import { GraphViewsUI } from "./ui/viewsUI";
 import { Renderer } from "./renderer";
-import { ExtendedGraphSettings } from "../settings";
 import { FUNC_NAMES } from "src/globalVariables";
 import { GraphsManager } from "src/graphsManager";
 import { GraphControlsUI } from "./ui/graphControl";
+import { ExtendedGraphSettings } from "src/settings/settings";
 
 export type WorkspaceLeafExt = WorkspaceLeaf & {
     on(name: "extended-graph:disable-plugin",   callback: (leaf: WorkspaceLeafExt) => any) : EventRef;

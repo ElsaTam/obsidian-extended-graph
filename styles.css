@@ -103,3 +103,82 @@ body {
 .graph-toggle button.is-active {
     background-color: var(--interactive-accent);
 }
+
+/* SETTINGS */
+.extended-graph-settings {
+
+    .color-palette {
+        flex-direction: row-reverse;
+        justify-content: flex-start;
+    }
+
+    .color-palette canvas {
+        border-radius: var(--radius-s);
+    }
+
+    .settings-colors-container > .setting-item {
+        justify-content: flex-start;
+            
+        .setting-item-info {
+            display: none;
+        }
+    
+        .setting-item-control {
+            justify-content: flex-start;
+        }
+
+        input[type="text"] {
+            border-color: color-mix(in srgb, var(--background-modifier-border), var(--interactive-color) 30%);
+            background: color-mix(in srgb, var(--background-modifier-form-field), var(--interactive-color) 5%);
+        }
+
+        .preview {
+            width: 50px;
+        }
+
+        .preview.arc {
+            --gap: 2px;
+            --thickness: 4px;
+            position: relative;
+        }
+
+        .preview.arc::before {
+            content: "";
+            position: absolute;
+            left: 0; right: 0;
+            top: 0; bottom: 0;
+            margin: auto;
+            height: calc(var(--input-height) - 2 * var(--thickness) - 2 * var(--gap));
+            min-height: 10px;
+            aspect-ratio: 1;
+            border-radius: 50%;
+            background-color: var(--graph-node);
+        }
+
+        .preview.arc::after {
+            content: "";
+            position: absolute;
+            left: calc(-1 * var(--thickness) - var(--gap));
+            right: calc(-1 * var(--thickness) - var(--gap));
+            top: calc(-1 * var(--thickness) - var(--gap));
+            bottom: calc(-1 * var(--thickness) - var(--gap));
+            margin: auto;
+            height: var(--input-height);
+            aspect-ratio: 1;
+            padding: var(--thickness);
+            box-sizing: border-box;
+            border-radius: 50%;
+            background: var(--interactive-color);
+            mask: linear-gradient(#0000 0 0) content-box intersect,
+                  conic-gradient(#000 110deg, #0000 0);
+            transform: rotate(70deg);
+        }
+    
+        .preview.line {
+            background-color: var(--interactive-color);
+            border-radius: var(--radius-s);
+            height: 5px;
+        }
+    }
+
+}

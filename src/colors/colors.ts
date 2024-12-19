@@ -1,4 +1,5 @@
 import * as cm from './colormaps';
+import { evaluate_cmap } from './colormaps';
 
 export function getColor(palette: string, x: number) : Uint8Array {
     return new Uint8Array(cm.evaluate_cmap(x, palette, false));
@@ -71,6 +72,18 @@ export function rgb2hex(rgb: Uint8Array) : number {
     return binaryRGB;
 }
 
+export function hex2rgb(hex: string) : Uint8Array {
+    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    if (!result) {
+        throw new Error(`Impossible to convert ${hex} to RGB.`);
+    }
+    return new Uint8Array([
+        parseInt(result[1], 16),
+        parseInt(result[2], 16),
+        parseInt(result[3], 16)
+    ]);
+}
+
 export function randomColor(baseColor?: {h: number, s: number, v: number}) {
     const newH = Math.floor(360 * Math.random());
 
@@ -91,5 +104,20 @@ export function randomColor(baseColor?: {h: number, s: number, v: number}) {
             s: s,
             v: v
         });
+    }
+}
+
+export function plot_colormap(canvas_id: string, name: string, reverse: boolean) {
+    let canvas = <HTMLCanvasElement> document.getElementById(canvas_id);
+    if (!canvas) return;
+    let ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    for (let x = 0; x <= 256; x++) {
+        let color = evaluate_cmap(x / 256, name, reverse);
+        let r = color[0];
+        let g = color[1];
+        let b = color[2];
+        ctx.fillStyle = 'rgb(' + r + ',' + g + ',' + b + ')';
+        ctx.fillRect(x * canvas.width / 256, 0, canvas.width / 256, canvas.height);
     }
 }
