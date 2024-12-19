@@ -38,8 +38,18 @@ export class Graph extends Component {
         this.addChild(this.linksSet.linksManager);
 
         // Intercept search filter
-        // @ts-ignore
-        this.engine = this.leaf.view.dataEngine ? this.leaf.view.dataEngine : this.leaf.view.engine;
+        if (this.leaf.view.getViewType() === "graph") {
+            // @ts-ignore
+            this.engine =  this.leaf.view.dataEngine;
+        }
+        else if(this.leaf.view.getViewType() === "localgraph") {
+            // @ts-ignore
+            this.engine =  this.leaf.view.engine;
+        }
+        else {
+            throw new Error("[Extended Graph plugin] Leaf is not a graph.")
+        }
+        
         this.engine.filterOptions.search.getValue = (function() {
             let newFilter = "";
             this.nodesSet.disconnectedNodes.forEach((id: string) => {

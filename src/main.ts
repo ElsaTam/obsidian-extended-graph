@@ -1,4 +1,4 @@
-import { Plugin, WorkspaceLeaf } from 'obsidian';
+import { Plugin, View, WorkspaceLeaf } from 'obsidian';
 import { GraphsManager } from './graphsManager';
 import { DEFAULT_SETTINGS, ExtendedGraphSettings, ExtendedGraphSettingTab } from './settings';
 import { WorkspaceLeafExt } from './graph/graphEventsDispatcher';
@@ -44,7 +44,7 @@ export default class GraphExtendedPlugin extends Plugin {
         await this.waitForRenderer();
 
         const leaves = this.getAllGraphLeaves();
-        leaves.forEach((type, leaf) => {
+        leaves.forEach(leaf => {
             this.graphsManager.disablePlugin(leaf as WorkspaceLeafExt);
         });
     }
@@ -63,19 +63,15 @@ export default class GraphExtendedPlugin extends Plugin {
     }
 
     isGraphOpen() : boolean {
-        if (this.app.workspace.getLeavesOfType('graph').find(l => this.hasObsidianRenderer((l)))) return true;
-        if (this.app.workspace.getLeavesOfType('localgraph').find(l => this.hasObsidianRenderer(l))) return true;
+        if (this.app.workspace.getLeavesOfType('graph').find(l => (l.view instanceof View) && this.hasObsidianRenderer((l)))) return true;
+        if (this.app.workspace.getLeavesOfType('localgraph').find(l => (l.view instanceof View) && this.hasObsidianRenderer(l))) return true;
         return false;
     }
 
-    getAllGraphLeaves() : Map<WorkspaceLeaf, string> {
-        let leaves = new Map<WorkspaceLeaf, string>();
-        this.app.workspace.getLeavesOfType('graph').filter(l => this.hasObsidianRenderer(l)).forEach(leaf => {
-            leaves.set(leaf, "graph");
-        })
-        this.app.workspace.getLeavesOfType('localgraph').filter(l => this.hasObsidianRenderer(l)).forEach(leaf => {
-            leaves.set(leaf, "localgraph");
-        })
+    getAllGraphLeaves() : WorkspaceLeaf[] {
+        let leaves: WorkspaceLeaf[] = [];
+        leaves = leaves.concat(this.app.workspace.getLeavesOfType('graph').filter(l => (l.view instanceof View) && this.hasObsidianRenderer(l)));
+        leaves = leaves.concat(this.app.workspace.getLeavesOfType('localgraph').filter(l => (l.view instanceof View) && this.hasObsidianRenderer(l)));
         return leaves;
     }
 
