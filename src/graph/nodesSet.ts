@@ -151,6 +151,7 @@ export class NodesSet {
 
                 let nodeWrapper = this.get(id);
                 nodeWrapper.waitReady(this.renderer).then((ready: boolean) => {
+                    if (!node) return;
                     nodeWrapper.node = node;
                     if (node.circle && !node.circle.getChildByName(nodeWrapper.name)) {
                         node.circle.addChild(nodeWrapper);
