@@ -77,7 +77,7 @@ export class LinkWrapper extends Graphics {
     setColor(color: Uint8Array) : void {
         FUNC_NAMES && console.log("[LinkWrapper] setColor");
         this.clear();
-        this.lineStyle({width: 50, color: color})
+        this.lineStyle({width: 16, color: color})
             .moveTo(0, 8)
             .lineTo(16, 8);
         this.alpha = 0.3;

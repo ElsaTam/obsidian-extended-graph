@@ -109,12 +109,11 @@ export class GraphsManager extends Component {
         let dispatcher = this.getGraphEventsDispatcher(leaf);
         if (dispatcher) return dispatcher;
 
-        dispatcher = new GraphEventsDispatcher(leaf, this.app, this.plugin.settings, this);
+        dispatcher = new GraphEventsDispatcher(leaf, this.app, this.plugin, this);
 
         this.dispatchers.set(leaf.id, dispatcher);
         dispatcher.load();
         leaf.view.addChild(dispatcher);
-
 
         return dispatcher;
     }
@@ -198,9 +197,10 @@ export class GraphsManager extends Component {
         this.menus.get(leaf.id)?.disable();
         if (!dispatcher) return;
 
+
+        dispatcher.unload();
         dispatcher.graph.nodesSet.unload();
         dispatcher.graph.linksSet.unload();
-        dispatcher.unload();
         this.dispatchers.delete(leaf.id);
         leaf.view.renderer.changed();
     }

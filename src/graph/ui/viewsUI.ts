@@ -48,11 +48,16 @@ export class GraphViewsUI extends Component {
             modal.setTitle("New view name");
             modal.modalEl.addClass("graph-modal-new-view");
             let input = modal.contentEl.createEl("input");
+            input.addEventListener('keydown', e => {
+                if ("Enter" === e.key && input.value.length > 0) {
+                    this.newView(input.value);
+                    modal.close();
+                }
+            });
             let btn = modal.contentEl.createEl("button");
             setIcon(btn, "plus");
-            btn.addEventListener('click', event => {
-                const id = this.graph.newView(input.value);
-                this.currentViewID = id;
+            btn.addEventListener('click', e => {
+                this.newView(input.value);
                 modal.close();
             })
             modal.open();
@@ -96,6 +101,11 @@ export class GraphViewsUI extends Component {
     addView(key: string, name: string) {
         this.addOption(key, name);
         this.select.value = key;
+    }
+
+    newView(name: string) {
+        const id = this.graph.newView(name);
+        this.currentViewID = id;
     }
     
     updateViewsList(views: GraphViewData[]) : void {

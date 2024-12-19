@@ -107,6 +107,11 @@ body {
 /* SETTINGS */
 .extended-graph-settings {
 
+    textarea {
+        resize: vertical;
+        width: 100%;
+    }
+
     .color-palette {
         flex-direction: row-reverse;
         justify-content: flex-start;

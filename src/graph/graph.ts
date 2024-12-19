@@ -8,6 +8,7 @@ import { LinksSet } from './linksSet';
 import { DEFAULT_VIEW_ID, FUNC_NAMES, NONE_TYPE } from 'src/globalVariables';
 import { EngineOptions } from 'src/views/viewData';
 import { ExtendedGraphSettings } from 'src/settings/settings';
+import GraphExtendedPlugin from 'src/main';
 
 export class Graph extends Component {
     nodesSet: NodesSet;
@@ -19,19 +20,19 @@ export class Graph extends Component {
     renderer: Renderer;
     app: App;
     leaf: WorkspaceLeaf;
-    settings: ExtendedGraphSettings;
+    plugin: GraphExtendedPlugin;
 
-    constructor(renderer: Renderer, leaf: WorkspaceLeaf, app: App, settings: ExtendedGraphSettings) {
+    constructor(renderer: Renderer, leaf: WorkspaceLeaf, app: App, plugin: GraphExtendedPlugin) {
         FUNC_NAMES && console.log("[Graph] new");
         super();
         this.renderer = renderer;
         this.app = app;
         this.leaf = leaf;
-        this.settings = settings;
+        this.plugin = plugin;
 
         // Initialize nodes and links sets
-        this.nodesSet = new NodesSet(leaf, this.renderer, new InteractiveManager(leaf, this.settings, "tag"), app, settings);
-        this.linksSet = new LinksSet(leaf, this.renderer, new InteractiveManager(leaf, this.settings, "link"));
+        this.nodesSet = new NodesSet(leaf, renderer, new InteractiveManager(leaf, plugin.settings, "tag"), app, plugin.settings);
+        this.linksSet = new LinksSet(leaf, renderer, new InteractiveManager(leaf, plugin.settings, "link"));
         this.interactiveManagers.set("tag", this.nodesSet.tagsManager);
         this.interactiveManagers.set("link", this.linksSet.linksManager);
         this.addChild(this.nodesSet.tagsManager);
@@ -51,11 +52,12 @@ export class Graph extends Component {
         }
         
         this.engine.filterOptions.search.getValue = (function() {
-            let prepend = this.settings.globalFilter ? this.settings.globalFilter + " " : "";
+            let prepend = this.plugin.settings.globalFilter ? this.plugin.settings.globalFilter + " " : "";
             let append = "";
             this.nodesSet.disconnectedNodes.forEach((id: string) => {
                 append += ` -path:"${id}"`;
             });
+            console.log(prepend + this.engine.filterOptions.search.inputEl.value + append);
             return prepend + this.engine.filterOptions.search.inputEl.value + append;
         }).bind(this);
         this.setFilter("");
@@ -76,8 +78,10 @@ export class Graph extends Component {
 
     onunload() : void {
         this.engine.filterOptions.search.getValue = (function() {
+            console.log(this.filterOptions.search.inputEl.value);
             return this.filterOptions.search.inputEl.value;
         }).bind(this.engine);
+        this.engine.onOptionsChange();
         this.engine.updateSearch();
     }
 
@@ -258,7 +262,7 @@ export class Graph extends Component {
     saveView(id: string) : void {
         FUNC_NAMES && console.log("[Graph] saveView");
         if (id === DEFAULT_VIEW_ID) return;
-        let viewData = this.settings.views.find(v => v.id == id);
+        let viewData = this.plugin.settings.views.find(v => v.id == id);
         if (!viewData) return;
         let view = new GraphView(viewData?.name);
         view.setID(id);

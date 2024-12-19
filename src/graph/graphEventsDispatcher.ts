@@ -7,6 +7,7 @@ import { FUNC_NAMES } from "src/globalVariables";
 import { GraphsManager } from "src/graphsManager";
 import { GraphControlsUI } from "./ui/graphControl";
 import { ExtendedGraphSettings } from "src/settings/settings";
+import GraphExtendedPlugin from "src/main";
 
 export type WorkspaceLeafExt = WorkspaceLeaf & {
     on(name: "extended-graph:disable-plugin",   callback: (leaf: WorkspaceLeafExt) => any) : EventRef;
@@ -36,7 +37,7 @@ export type WorkspaceLeafExt = WorkspaceLeaf & {
 export class GraphEventsDispatcher extends Component {
     type: string;
     leaf: WorkspaceLeafExt;
-    settings: ExtendedGraphSettings;
+    plugin: GraphExtendedPlugin;
     canvas: HTMLCanvasElement;
     renderer: Renderer;
     graph: Graph;
@@ -45,16 +46,16 @@ export class GraphEventsDispatcher extends Component {
     controlsUI: GraphControlsUI;
     graphsManager: GraphsManager;
 
-    constructor(leaf: WorkspaceLeaf, app: App, settings: ExtendedGraphSettings, graphsManager: GraphsManager) {
+    constructor(leaf: WorkspaceLeaf, app: App, plugin: GraphExtendedPlugin, graphsManager: GraphsManager) {
         FUNC_NAMES && console.log("[GraphEventsDispatcher] new");
         super();
         this.leaf = leaf as WorkspaceLeafExt;
-        this.settings = settings;
+        this.plugin = plugin;
         this.graphsManager = graphsManager;
 
         this.renderer = this.leaf.view.renderer;
         this.canvas = this.renderer.interactiveEl;
-        this.graph = new Graph(this.renderer, leaf, app, this.settings);
+        this.graph = new Graph(this.renderer, leaf, app, this.plugin);
         this.addChild(this.graph);
 
         this.legendUI = new LegendUI(this.graph, leaf);
@@ -63,7 +64,7 @@ export class GraphEventsDispatcher extends Component {
         this.addChild(this.viewsUI);
         this.controlsUI = new GraphControlsUI(this.graph, leaf);
         this.addChild(this.controlsUI);
-        this.viewsUI.updateViewsList(settings.views);
+        this.viewsUI.updateViewsList(plugin.settings.views);
     }
 
     onload(): void {
@@ -107,7 +108,7 @@ export class GraphEventsDispatcher extends Component {
 
     private updateFromEngine() {
         FUNC_NAMES && console.log("[GraphEventsDispatcher] updateFromEngine");
-        if (this.renderer.nodes.length > this.settings.maxNodes) {
+        if (this.renderer.nodes.length > this.plugin.settings.maxNodes) {
             this.leaf.trigger("extended-graph:disable-plugin", this.leaf);
             return;
         }
@@ -220,7 +221,7 @@ export class GraphEventsDispatcher extends Component {
 
     onViewChanged(id: string) {
         FUNC_NAMES && console.log("[GraphEventsDispatcher] onViewChanged");
-        const viewData = this.settings.views.find(v => v.id === id);
+        const viewData = this.plugin.settings.views.find(v => v.id === id);
         if (!viewData) return;
 
         this.graph.nodesSet.tagsManager.loadView(viewData);
@@ -237,4 +238,8 @@ export class GraphEventsDispatcher extends Component {
             this.legendUI.disable("link", type);
         });
     }
+
+    // PLUGIN
+
+    
 }
