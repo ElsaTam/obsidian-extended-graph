@@ -8,6 +8,7 @@ import { NodesSet } from './nodesSet';
 import { LinksSet } from './linksSet';
 import { DEFAULT_VIEW_ID, FUNC_NAMES, NONE_TYPE } from 'src/globalVariables';
 import { NodeWrapper } from './node';
+import { EngineOptions } from 'src/views/viewData';
 
 export class Graph extends Component {
     nodesSet: NodesSet;
@@ -248,6 +249,11 @@ export class Graph extends Component {
     setFilter(filter: string) {
         this.engine.filterOptions.search.setValue(filter);
         this.engine.updateSearch();
+    }
+
+    setEngineOptions(options: EngineOptions) {
+        console.log(options);
+        this.engine.setOptions(options);
     }
 
     saveView(id: string) : void {

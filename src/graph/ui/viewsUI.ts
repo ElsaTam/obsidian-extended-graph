@@ -24,10 +24,12 @@ export class GraphViewsUI extends Component {
         this.root = this.viewContent.createDiv();
         this.root?.addClass("graph-views-container");
 
+        // TITLE
         let title = this.root.createSpan();
         title.innerHTML = "views";
         title.addClass("graph-views-title");
 
+        // SELECT
         this.select = this.root.createEl("select");
         this.select.addEventListener('change', event => {
             this.currentViewID = this.select.value;
@@ -35,6 +37,7 @@ export class GraphViewsUI extends Component {
             this.leaf.trigger('extended-graph:view-changed', this.select.value);
         });
 
+        // ADD BUTTON
         this.addButton = this.root.createEl("button");
         setIcon(this.addButton, "plus");
         let addText = this.addButton.createSpan();
@@ -55,22 +58,24 @@ export class GraphViewsUI extends Component {
             modal.open();
         })
 
+        // SAVE BUTTON
         this.saveButton = this.root.createEl("button");
         setIcon(this.saveButton, "save");
         this.saveButton.addEventListener('click', event => {
             this.graph.saveView(this.select.value);
         });
 
+        // DELETE BUTTON
         this.deleteButton = this.root.createEl("button");
         setIcon(this.deleteButton, "trash-2");
         this.deleteButton.addEventListener('click', event => {
             this.graph.deleteView(this.select.value);
         });
 
+        // CURRENT VIEW ID
         this.currentViewID = this.select.value;
     }
 
-    
     onunload(): void {
         this.root.parentNode?.removeChild(this.root);
     }

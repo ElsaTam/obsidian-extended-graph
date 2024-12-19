@@ -1,6 +1,6 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
 import GraphExtendedPlugin from "./main";
-import { GraphViewData } from "./views/viewData";
+import { EngineOptions, GraphViewData } from "./views/viewData";
 import { DEFAULT_VIEW_ID } from "./globalVariables";
 
 export interface ExtendedGraphSettings {
@@ -22,7 +22,7 @@ export const DEFAULT_SETTINGS: ExtendedGraphSettings = {
         {
             id: DEFAULT_VIEW_ID,
             name: "Vault (default)",
-            filter: "",
+            engineOptions: new EngineOptions(),
             disabledLinks: [],
             disabledTags: []
         }

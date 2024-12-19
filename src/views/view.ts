@@ -1,5 +1,5 @@
 import { Graph } from "src/graph/graph";
-import { GraphViewData } from "./viewData";
+import { EngineOptions, GraphViewData } from "./viewData";
 
 export class GraphView {
     data = new GraphViewData();
@@ -14,9 +14,9 @@ export class GraphView {
 
     saveGraph(graph: Graph) {
         // @ts-ignore
-        let engine: any = this.leaf.view.getViewType() === "graph" ? this.leaf.view.dataEngine : this.leaf.view.engine;
-        this.data.filter = engine.filterOptions.search.inputEl.value;
         this.data.disabledLinks = graph.linksSet.linksManager.getTypes().filter(type => !graph.linksSet.linksManager.isActive(type));
         this.data.disabledTags = graph.nodesSet.tagsManager.getTypes().filter(type => !graph.nodesSet.tagsManager.isActive(type));
+        this.data.engineOptions = new EngineOptions(graph.engine.getOptions());
+        this.data.engineOptions.search = graph.engine.filterOptions.search.inputEl.value;
     }
 }

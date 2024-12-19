@@ -6,6 +6,7 @@ import { Renderer } from "./renderer";
 import { ExtendedGraphSettings } from "../settings";
 import { FUNC_NAMES } from "src/globalVariables";
 import { GraphsManager } from "src/graphsManager";
+import { GraphControlsUI } from "./ui/graphControl";
 
 export type WorkspaceLeafExt = WorkspaceLeaf & {
     on(name: "extended-graph:disable-plugin",   callback: (leaf: WorkspaceLeafExt) => any) : EventRef;
@@ -41,6 +42,7 @@ export class GraphEventsDispatcher extends Component {
     graph: Graph;
     legendUI: LegendUI;
     viewsUI: GraphViewsUI;
+    controlsUI: GraphControlsUI;
     graphsManager: GraphsManager;
 
     constructor(leaf: WorkspaceLeaf, app: App, settings: ExtendedGraphSettings, graphsManager: GraphsManager) {
@@ -59,6 +61,8 @@ export class GraphEventsDispatcher extends Component {
         this.addChild(this.legendUI);
         this.viewsUI = new GraphViewsUI(this.graph, leaf);
         this.addChild(this.viewsUI);
+        this.controlsUI = new GraphControlsUI(this.graph, leaf);
+        this.addChild(this.controlsUI);
         this.viewsUI.updateViewsList(settings.views);
     }
 
@@ -222,7 +226,7 @@ export class GraphEventsDispatcher extends Component {
         this.graph.nodesSet.tagsManager.loadView(viewData);
         this.graph.linksSet.linksManager.loadView(viewData);
 
-        this.graph.setFilter(viewData.filter);
+        this.graph.setEngineOptions(viewData.engineOptions);
 
         this.legendUI.enableAll("tag");
         viewData.disabledTags.forEach(type => {
