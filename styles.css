@@ -1,24 +1,45 @@
+body {
+    --ext-graph-background-container: var(--background-primary);
+    --ext-graph-background-container-opacity: 0.9;
+}
+
+/* Container */
+.graph-legend-container,
+.graph-views-container {
+    background-color: rgb(from var(--ext-graph-background-container) r g b / var(--ext-graph-background-container-opacity));
+    border: 1px solid var(--background-modifier-border);
+    box-shadow: var(--shadow-s);
+    border-radius: var(--radius-m);
+    padding: var(--size-4-2);
+    z-index: 10;
+
+    &:hover {
+        --ext-graph-background-container-opacity: 1;
+    }
+}
+
 /* LEGEND */
 
 .graph-legend-container {
     position: absolute;
-    padding: var(--size-4-6) var(--size-4-3);
-    bottom: 0; left: 0; right: 0;
+    bottom: var(--size-4-3);
+    left: var(--size-4-3);
+    right: var(--size-4-3);
+    margin-inline: auto;
+    width: fit-content;
     display: flex;
     flex-direction: column;
     gap: var(--size-4-3);
-    z-index: 10;
 }
 
 .graph-legend-row {
     display: flex;
-    justify-content: center;
     align-items: center;
     gap: var(--size-4-4);
 }
 
 .graph-legend-row button {
-    background-color: rgba(var(--legend-color-rgb), 0.5);
+    background-color: color-mix(in srgb, var(--ext-graph-background-container), rgb(var(--legend-color-rgb)) 50%);
     padding: var(--size-4-2);
     border-radius: var(--radius-s);
     font-weight: var(--font-bold);
@@ -42,12 +63,12 @@
 
 .graph-views-container {
     position: absolute;
-    padding: var(--size-4-6) var(--size-4-3);
-    top: 0; left: 0;
+    top: var(--size-4-3); left: var(--size-4-3);
+    max-width: calc(100% - var(--graph-controls-width) - 3 * var(--size-4-3));
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: var(--size-4-3);
-    z-index: 10;
 }
 
 .graph-views-container select {
