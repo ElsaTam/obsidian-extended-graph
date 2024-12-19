@@ -28,7 +28,7 @@ export class ExtendedGraphSettingTab extends PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.imageProperty = value;
                     await this.plugin.saveSettings();
-            }))
+            }));
 
         new Setting(containerEl)
             .setName('Maximum number of nodes')
@@ -41,13 +41,20 @@ export class ExtendedGraphSettingTab extends PluginSettingTab {
                         this.plugin.settings.maxNodes = intValue;
                         await this.plugin.saveSettings();
                     }
+            }));
+
+        new Setting(containerEl)
+            .setName('Global filter')
+            .setDesc('This filter query will be prepend at the beginning of every graph filter')
+            .addTextArea(cb => cb
+                .setValue(this.plugin.settings.globalFilter)
+                .onChange(async (value) => {
+                    this.plugin.settings.globalFilter = value;
+                    await this.plugin.saveSettings();
             }))
 
-        // TAGS
+        // INTERACTIVES
         this.tagSettings.display();
-        
-
-        // LINKS
         this.linkSettings.display();
     }
 }

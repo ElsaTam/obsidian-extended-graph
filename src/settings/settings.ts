@@ -6,6 +6,7 @@ export interface ExtendedGraphSettings {
     interactiveColors: {[interactive: string]: {type: string, color: string}[]};
     imageProperty: string;
     maxNodes: number;
+    globalFilter: string;
     views: GraphViewData[];
 }
 
@@ -20,6 +21,7 @@ export const DEFAULT_SETTINGS: ExtendedGraphSettings = {
     },
     imageProperty: "image",
     maxNodes: 20,
+    globalFilter: "",
 
     views: [
         {

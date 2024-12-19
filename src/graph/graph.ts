@@ -51,11 +51,12 @@ export class Graph extends Component {
         }
         
         this.engine.filterOptions.search.getValue = (function() {
-            let newFilter = "";
+            let prepend = this.settings.globalFilter ? this.settings.globalFilter + " " : "";
+            let append = "";
             this.nodesSet.disconnectedNodes.forEach((id: string) => {
-                newFilter += ` -path:"${id}"`;
+                append += ` -path:"${id}"`;
             });
-            return this.engine.filterOptions.search.inputEl.value + newFilter;
+            return prepend + this.engine.filterOptions.search.inputEl.value + append;
         }).bind(this);
         this.setFilter("");
         this.engine.updateSearch();
