@@ -252,7 +252,6 @@ export class Graph extends Component {
     }
 
     setEngineOptions(options: EngineOptions) {
-        console.log(options);
         this.engine.setOptions(options);
     }
 

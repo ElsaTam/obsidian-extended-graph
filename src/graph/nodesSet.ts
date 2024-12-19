@@ -271,7 +271,7 @@ export class NodesSet {
      */
     updateArcsColor(type: string, color: Uint8Array) : void {
         FUNC_NAMES && console.log("[NodesSet] updateArcsColor");
-        this.nodesMap.forEach(c => c.updateArc(type, color, this.tagsManager));
+        this.nodesMap.forEach(c => c.hasTagType(type) && c.updateArc(type, color, this.tagsManager));
     }
 
     disableNodes(ids: string[]) : void {

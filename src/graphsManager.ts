@@ -190,9 +190,7 @@ export class GraphsManager extends Component {
 
     disablePlugin(leaf: WorkspaceLeafExt) : void {
         let dispatcher = this.dispatchers.get(leaf.id);
-        let menuUI = this.setMenu(leaf);
-        menuUI.disable();
-
+        this.menus.get(leaf.id)?.disable();
         if (!dispatcher) return;
 
         dispatcher.graph.nodesSet.unload();

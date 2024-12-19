@@ -64,7 +64,6 @@ export class GraphControlsUI extends Component {
     }
 
     openGraphControlSection() {
-        console.log("openGraphControlSection");
         this.root.removeClass("is-collapsed");
         this.root.appendChild(this.treeItemChildren);
         this.collapseIcon.removeClass("is-collapsed");
@@ -72,7 +71,6 @@ export class GraphControlsUI extends Component {
     }
 
     collapseGraphControlSection() {
-        console.log("collapseGraphControlSection");
         this.root.addClass("is-collapsed");
         this.root.removeChild(this.treeItemChildren);
         this.collapseIcon.addClass("is-collapsed");
