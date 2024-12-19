@@ -51,6 +51,10 @@ The colour palettes are those used in matplotlib, thanks to Timothy Gebhard's [j
 
 ![](doc/images/settings.webp)
 
+# Demo
+
+![](doc/images/quick-demo-gif.gif)
+
 # License
 
 GNU General Public License version 3 (GPLv3) License
