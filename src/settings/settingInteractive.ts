@@ -13,6 +13,7 @@ export abstract class SettingInteractives {
     colorsContainer: HTMLDivElement;
     canvasPalette: HTMLCanvasElement;
     colorItems = new Map<string, Setting>();
+    allTopElements: HTMLElement[] = [];
 
     constructor(settingTab: ExtendedGraphSettingTab, name: string) {
         this.settingTab = settingTab;
@@ -22,7 +23,13 @@ export abstract class SettingInteractives {
     display() {
         this.colorItems.clear();
         let containerEl = this.settingTab.containerEl;
-        new Setting(containerEl).setName(capitalizeFirstLetter(this.name + 's')).setHeading();
+        
+        this.allTopElements.push(
+            new Setting(containerEl)
+                .setName(capitalizeFirstLetter(this.name + 's'))
+                .setHeading()
+                .settingEl
+        );
 
         let settingPalette = new Setting(containerEl)
             .setName(`Color palette (${this.name}s)`)
@@ -34,6 +41,7 @@ export abstract class SettingInteractives {
                 this.settingTab.app.workspace.trigger('extended-graph:settings-colorpalette-changed', this.name);
                 await this.settingTab.plugin.saveSettings();
             }));
+        this.allTopElements.push(settingPalette.settingEl);
         settingPalette.controlEl.addClass("color-palette");
         this.canvasPalette = settingPalette.controlEl.createEl("canvas");
         this.canvasPalette.id = `canvas-palette-${this.name}`;
@@ -50,8 +58,10 @@ export abstract class SettingInteractives {
                     this.addColor();
                 })
             });
+        this.allTopElements.push(this.settingInteractiveColor.settingEl);
         
         this.colorsContainer = containerEl.createDiv("settings-colors-container");
+        this.allTopElements.push(this.colorsContainer);
 
         this.settingTab.plugin.settings.interactiveColors[this.name].forEach((interactive) => {
             this.addColor(interactive.type, interactive.color);
@@ -144,6 +154,26 @@ export class SettingTags extends SettingInteractives {
         this.previewClass = "arc";
     }
 
+    display(): void {
+        super.display();
+
+        let disableNodes = new Setting(this.settingTab.containerEl)
+            .setName(`Disable nodes`)
+            .setDesc(`When no more tag is available on the node, remove it from the graph. Needs to restart the graph to take effect.`)
+            .addToggle(cb => {
+                cb.setValue(!this.settingTab.plugin.settings.fadeOnDisable);
+                cb.onChange(value => {
+                    this.settingTab.plugin.settings.fadeOnDisable = !value;
+                    this.settingTab.plugin.saveSettings();
+                })
+            });
+        this.allTopElements.push(disableNodes.settingEl);
+
+        this.allTopElements.forEach(el => {
+            el.addClass("extended-graph-setting-" + this.name);
+        })
+    }
+
     protected saveColor(preview: HTMLDivElement, type: string, color: string) {
         if (this.isNameValid(type)) {
             this.updatePreview(preview, type, color);
@@ -174,6 +204,14 @@ export class SettingLinks extends SettingInteractives {
     constructor(settingTab: ExtendedGraphSettingTab) {
         super(settingTab, "link");
         this.previewClass = "line";
+    }
+
+    display(): void {
+        super.display();
+
+        this.allTopElements.forEach(el => {
+            el.addClass("extended-graph-setting-" + this.name);
+        })
     }
 
     protected saveColor(preview: HTMLDivElement, type: string, color: string) {

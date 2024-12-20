@@ -26,7 +26,6 @@ export class GraphControlsUI extends Component {
         
         // @ts-ignore
         this.engine = this.leaf.view.getViewType() === "graph" ? this.leaf.view.dataEngine : this.leaf.view.engine;
-        console.log(this.engine);
 
         this.root = this.engine.controlsEl.createDiv("tree-item graph-control-section mod-extended-graph");
         let collapsible = this.root.createDiv("tree-item-self mod-collapsible");

@@ -8,6 +8,14 @@ export interface ExtendedGraphSettings {
     maxNodes: number;
     globalFilter: string;
     views: GraphViewData[];
+
+    enableTags: boolean;
+    enableLinks: boolean;
+    enableImages: boolean;
+    enableFocusActiveNote: boolean;
+
+    fadeOnDisable: boolean;
+    focusScaleFactor: number;
 }
 
 export const DEFAULT_SETTINGS: ExtendedGraphSettings = {
@@ -32,5 +40,13 @@ export const DEFAULT_SETTINGS: ExtendedGraphSettings = {
             disabledTags: []
         }
     ],
+
+    enableTags: true,
+    enableLinks: true,
+    enableImages: true,
+    enableFocusActiveNote: false,
+
+    fadeOnDisable: false,
+    focusScaleFactor: 1.8,
 };
 

@@ -4,7 +4,28 @@ import { Link } from './link';
 
 export interface Renderer {
     colors: {
+        fill: {
+            a: number;
+            rgb: number;
+        },
+        fillHighlight: {
+            a: number;
+            rgb: number;
+        },
+        fillFocused: {
+            a: number;
+            rgb: number;
+        },
         fillTag: {
+            a: number;
+            rgb: number;
+        },
+        fillUnresolved: {
+            a: number;
+            rgb: number;
+        },
+        fillAttachment: {
+            a: number;
             rgb: number;
         }
     }

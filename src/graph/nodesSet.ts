@@ -10,31 +10,38 @@ import { ExtendedGraphSettings } from "src/settings/settings";
 export class NodesSet {
     nodesMap = new Map<string, NodeWrapper>();
     connectedNodes = new Set<string>();
-    disconnectedNodes = new Set<string>();
-    disabledTags = new Set<string>();
+    disconnectedNodes: Set<string> | null;
+    disabledTags: Set<string> | null;
     
     spritesSize: number = 200;
     
     leaf: WorkspaceLeaf;
     renderer: Renderer;
-    tagsManager: InteractiveManager;
+    tagsManager: InteractiveManager | null;
     app: App;
     settings: ExtendedGraphSettings;
 
-    constructor(leaf: WorkspaceLeaf, renderer: Renderer, tagsManager: InteractiveManager, app: App, settings: ExtendedGraphSettings) {
+    constructor(leaf: WorkspaceLeaf, renderer: Renderer, tagsManager: InteractiveManager | null, app: App, settings: ExtendedGraphSettings) {
         FUNC_NAMES && console.log("[NodesSet] new");
         this.leaf = leaf;
         this.renderer = renderer;
         this.tagsManager = tagsManager;
         this.app = app;
         this.settings = settings;
+
+        if (this.settings.enableTags) {
+            this.disabledTags = new Set<string>();
+        }
+        if (this.settings.enableTags && !this.settings.fadeOnDisable) {
+            this.disconnectedNodes = new Set<string>();
+        }
     }
 
     load() : Promise<void>[] {
         FUNC_NAMES && console.log("[NodesSet] load");
         let requestList: Promise<void>[] = [];
         this.renderer.nodes.forEach((node: Node) => {
-            let nodeWrapper = new NodeWrapper(node, this.app);
+            let nodeWrapper = new NodeWrapper(node, this.app, this.settings);
             requestList.push(this.initNode(nodeWrapper));
         });
         return requestList;
@@ -47,13 +54,8 @@ export class NodesSet {
         });
         this.nodesMap.clear();
         this.connectedNodes.clear();
-        this.disconnectedNodes.clear();
-        this.disabledTags.clear();
-    }
-
-    reset() {
-        this.unload();
-        this.load();
+        this.disconnectedNodes?.clear();
+        this.disabledTags?.clear();
     }
 
     private async initNode(nodeWrapper: NodeWrapper) : Promise<void> {
@@ -83,10 +85,10 @@ export class NodesSet {
     /**
      * Update the background color. Called when the theme changes.
      */
-    updateBackground() : void {
+    updateOpacityLayerColor() : void {
         FUNC_NAMES && console.log("[NodesSet] updateBackground");
         this.nodesMap.forEach(container => {
-            container.updateBackgroundColor(getBackgroundColor(this.renderer));
+            container.updateOpacityLayerColor(getBackgroundColor(this.renderer));
         });
     }
 
@@ -136,7 +138,10 @@ export class NodesSet {
             const newNodesIDs = this.renderer.nodes.map(n => n.id);
 
             // Get the nodes that needs to be removed
-            let nodesToRemove: string[] = newNodesIDs.filter(id => this.disconnectedNodes.has(id));
+            let nodesToRemove: string[] = [];
+            if (this.settings.enableTags) {
+                nodesToRemove = newNodesIDs.filter(id => this.disconnectedNodes?.has(id));
+            }
 
             // Get the nodes that were already existing and need to be reconnected
             let nodesToAdd: string[] = newNodesIDs.filter(id => this.connectedNodes.has(id));
@@ -189,7 +194,8 @@ export class NodesSet {
      * @param app 
      * @returns 
      */
-    getAllTagTypesFromCache(app: App) : Set<string> {
+    getAllTagTypesFromCache(app: App) : Set<string> | null {
+        if (!this.settings.enableTags) return null;
         let types = new Set<string>();
 
         this.nodesMap.forEach(container => {
@@ -209,14 +215,15 @@ export class NodesSet {
      * @param type type of the tag
      */
     disableTag(type: string) : void {
+        if (!this.settings.enableTags) return;
         FUNC_NAMES && console.log("[NodesSet] disableTag");
-        this.disabledTags.add(type);
+        this.disabledTags?.add(type);
         let nodesToDisable: string[] = [];
         this.nodesMap.forEach((wrapper: NodeWrapper, id: string) => {
             if (!wrapper.hasTagType(type)) return;
 
             const wasActive = wrapper.isActive;
-            wrapper.updateArcState(type, this.tagsManager);
+            (this.tagsManager) && wrapper.updateArcState(type, this.tagsManager);
             if(wrapper.isActive != wasActive && !wrapper.isActive) {
                 nodesToDisable.push(id);
             }
@@ -230,14 +237,15 @@ export class NodesSet {
      * @param type type of the tag
      */
     enableTag(type: string) : void {
+        if (!this.settings.enableTags) return;
         FUNC_NAMES && console.log("[NodesSet] enableTag");
-        this.disabledTags.delete(type);
+        this.disabledTags?.delete(type);
         let nodesToEnable: string[] = [];
         this.nodesMap.forEach((wrapper: NodeWrapper, id: string) => {
             if (!wrapper.hasTagType(type)) return;
             
             const wasActive = wrapper.isActive;
-            wrapper.updateArcState(type, this.tagsManager);
+            (this.tagsManager) && wrapper.updateArcState(type, this.tagsManager);
             if(wrapper.isActive != wasActive) {
                 (wrapper.isActive) && nodesToEnable.push(id);
             }
@@ -249,10 +257,11 @@ export class NodesSet {
      * Reset arcs for each node
      */
     resetArcs() : void {
+        if (!this.settings.enableTags) return;
         FUNC_NAMES && console.log("[NodesSet] resetArcs");
         this.nodesMap.forEach((wrapper: NodeWrapper) => {
             wrapper.removeArcs();
-            wrapper.addArcs(this.tagsManager);
+            (this.tagsManager) && wrapper.addArcs(this.tagsManager);
         });
     }
 
@@ -261,6 +270,7 @@ export class NodesSet {
      * @param types types of tags to remove
      */
     removeArcs(types?: string[]) : void {
+        if (!this.settings.enableTags) return;
         FUNC_NAMES && console.log("[NodesSet] removeArcs");
         this.nodesMap.forEach(w => w.removeArcs(types));
     }
@@ -271,50 +281,71 @@ export class NodesSet {
      * @param color new color
      */
     updateArcsColor(type: string, color: Uint8Array) : void {
+        if (!this.settings.enableTags) return;
         FUNC_NAMES && console.log("[NodesSet] updateArcsColor");
-        this.nodesMap.forEach(w => w.hasTagType(type) && (type !== NONE_TYPE) && w.updateArc(type, color, this.tagsManager));
+        this.nodesMap.forEach(w => w.hasTagType(type) && (type !== NONE_TYPE) && (this.tagsManager) && w.updateArc(type, color, this.tagsManager));
     }
 
     disableNodes(ids: string[]) : void {
+        if (!this.settings.enableTags) return;
         FUNC_NAMES && console.log("[NodesSet] disableNodes");
         ids.forEach(id => {
-            this.disconnectedNodes.add(id);
+            this.disconnectedNodes?.add(id);
             this.connectedNodes.delete(id);
         });
-        this.applyAdditionalFilter();
+        // @ts-ignore
+        let engine: any = this.leaf.view.getViewType() === "graph" ? this.leaf.view.dataEngine : this.leaf.view.engine;
+        engine.updateSearch();
     }
 
     enableNodes(ids: string[]) : void {
         FUNC_NAMES && console.log("[NodesSet] enableNodes");
         ids.forEach(id => {
             this.connectedNodes.add(id);
-            this.disconnectedNodes.delete(id);
+            this.disconnectedNodes?.delete(id);
         });
-        this.applyAdditionalFilter();
-    }
-
-    applyAdditionalFilter() {
-        FUNC_NAMES && console.log("[NodesSet] applyAdditionalFilter");
-
         // @ts-ignore
         let engine: any = this.leaf.view.getViewType() === "graph" ? this.leaf.view.dataEngine : this.leaf.view.engine;
         engine.updateSearch();
     }
+
+    highlightNode(file: TFile, highlight: boolean) : void {
+        if (!this.settings.enableFocusActiveNote) return;
+        let nodeWrapper = this.nodesMap.get(file.path);
+        if (!nodeWrapper) return;
+
+        if (highlight) {
+            nodeWrapper.setScale(this.settings.focusScaleFactor);
+            nodeWrapper.updateBackgroundColor(this.renderer.colors.fillFocused.rgb);
+        }
+        else {
+            nodeWrapper.setScale(1);
+            if ("tag" === nodeWrapper.node.type)
+                nodeWrapper.updateBackgroundColor(this.renderer.colors.fillTag.rgb);
+            if ("unresolved" === nodeWrapper.node.type)
+                nodeWrapper.updateBackgroundColor(this.renderer.colors.fillUnresolved.rgb);
+            if ("attachment" === nodeWrapper.node.type)
+                nodeWrapper.updateBackgroundColor(this.renderer.colors.fillAttachment.rgb);
+            else
+                nodeWrapper.updateBackgroundColor(nodeWrapper.node.color.rgb);
+        }
+    }
     
     loadView(viewData: GraphViewData) : void {
+        if (!this.settings.enableTags) return;
         FUNC_NAMES && console.log("[NodesSet] loadView");
         // Enable/Disable tags
         let tagsToDisable: string[] = [];
         let tagsToEnable: string[] = [];
-        this.tagsManager.getTypes().forEach(type => {
-            if (this.tagsManager.isActive(type) && viewData?.disabledTags.includes(type)) {
+        this.tagsManager?.getTypes().forEach(type => {
+            if (this.tagsManager?.isActive(type) && viewData?.disabledTags.includes(type)) {
                 tagsToDisable.push(type);
             }
-            else if (!this.tagsManager.isActive(type) && !viewData?.disabledTags.includes(type)) {
+            else if (!this.tagsManager?.isActive(type) && !viewData?.disabledTags.includes(type)) {
                 tagsToEnable.push(type);
             }
         });
-        this.tagsManager.disable(tagsToDisable);
-        this.tagsManager.enable(tagsToEnable);
+        this.tagsManager?.disable(tagsToDisable);
+        this.tagsManager?.enable(tagsToEnable);
     }
 }

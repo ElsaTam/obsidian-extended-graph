@@ -1,4 +1,4 @@
-import { Plugin, View, WorkspaceLeaf } from 'obsidian';
+import { FileView, Plugin, View, WorkspaceLeaf } from 'obsidian';
 import { GraphsManager } from './graphsManager';
 import { DEFAULT_SETTINGS, ExtendedGraphSettings } from './settings/settings';
 import { WorkspaceLeafExt } from './graph/graphEventsDispatcher';
@@ -20,8 +20,12 @@ export default class GraphExtendedPlugin extends Plugin {
         this.graphsManager.load();
 
         this.registerEvent(this.app.workspace.on('layout-change', () => {
-            this.handleLayoutChange();
+            this.onLayoutChange();
         }));
+        this.registerEvent(this.app.workspace.on('active-leaf-change', (leaf) => {
+            this.onActiveLeafChange(leaf);
+        }));
+
 
         // @ts-ignore
         this.registerEvent(this.app.workspace.on('extended-graph:settings-colorpalette-changed', (interactive: string) => {
@@ -45,7 +49,7 @@ export default class GraphExtendedPlugin extends Plugin {
         await this.saveData(this.settings);
     }
     
-    async handleLayoutChange() {
+    async onLayoutChange() {
         // If we are already waiting for a renderer, don't check a second time
         if (this.waitingTime > 0) return;
 
@@ -56,6 +60,15 @@ export default class GraphExtendedPlugin extends Plugin {
         leaves.forEach(leaf => {
             this.graphsManager.setMenu(leaf as WorkspaceLeafExt);
         });
+    }
+
+    onActiveLeafChange(leaf: WorkspaceLeaf | null) {
+        if (leaf && leaf.view.getViewType() === "markdown" && leaf.view instanceof FileView) {
+            this.graphsManager.highlightFile(leaf.view.file);
+        }
+        else {
+            this.graphsManager.highlightFile(null);
+        }
     }
     
     waitForRenderer(): Promise<void> {

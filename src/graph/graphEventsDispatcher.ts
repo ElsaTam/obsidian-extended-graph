@@ -6,7 +6,6 @@ import { Renderer } from "./renderer";
 import { FUNC_NAMES } from "src/globalVariables";
 import { GraphsManager } from "src/graphsManager";
 import { GraphControlsUI } from "./ui/graphControl";
-import { ExtendedGraphSettings } from "src/settings/settings";
 import GraphExtendedPlugin from "src/main";
 
 export type WorkspaceLeafExt = WorkspaceLeaf & {
@@ -41,7 +40,7 @@ export class GraphEventsDispatcher extends Component {
     canvas: HTMLCanvasElement;
     renderer: Renderer;
     graph: Graph;
-    legendUI: LegendUI;
+    legendUI: LegendUI | null = null;
     viewsUI: GraphViewsUI;
     controlsUI: GraphControlsUI;
     graphsManager: GraphsManager;
@@ -58,8 +57,10 @@ export class GraphEventsDispatcher extends Component {
         this.graph = new Graph(this.renderer, leaf, app, this.plugin);
         this.addChild(this.graph);
 
-        this.legendUI = new LegendUI(this.graph, leaf);
-        this.addChild(this.legendUI);
+        if (this.plugin.settings.enableLinks || this.plugin.settings.enableTags) {
+            this.legendUI = new LegendUI(this.graph, leaf);
+            this.addChild(this.legendUI);
+        }
         this.viewsUI = new GraphViewsUI(this.graph, leaf);
         this.addChild(this.viewsUI);
         this.controlsUI = new GraphControlsUI(this.graph, leaf);
@@ -69,19 +70,24 @@ export class GraphEventsDispatcher extends Component {
 
     onload(): void {
         FUNC_NAMES && console.log("[GraphEventsDispatcher] onload");
-        this.registerEvent(this.leaf.on('extended-graph:add-tag-types', this.onTagTypesAdded.bind(this)));
-        this.registerEvent(this.leaf.on('extended-graph:remove-tag-types', this.onTagTypesRemoved.bind(this)));
-        this.registerEvent(this.leaf.on('extended-graph:clear-tag-types', this.onTagsCleared.bind(this)));
-        this.registerEvent(this.leaf.on('extended-graph:change-tag-color', this.onTagColorChanged.bind(this)));
-        this.registerEvent(this.leaf.on('extended-graph:disable-tags', this.onTagsDisabled.bind(this)));
-        this.registerEvent(this.leaf.on('extended-graph:enable-tags', this.onTagsEnabled.bind(this)));
+
+        if (this.plugin.settings.enableTags) {
+            this.registerEvent(this.leaf.on('extended-graph:add-tag-types', this.onTagTypesAdded.bind(this)));
+            this.registerEvent(this.leaf.on('extended-graph:remove-tag-types', this.onTagTypesRemoved.bind(this)));
+            this.registerEvent(this.leaf.on('extended-graph:clear-tag-types', this.onTagsCleared.bind(this)));
+            this.registerEvent(this.leaf.on('extended-graph:change-tag-color', this.onTagColorChanged.bind(this)));
+            this.registerEvent(this.leaf.on('extended-graph:disable-tags', this.onTagsDisabled.bind(this)));
+            this.registerEvent(this.leaf.on('extended-graph:enable-tags', this.onTagsEnabled.bind(this)));
+        }
         
-        this.registerEvent(this.leaf.on('extended-graph:add-link-types', this.onLinkTypesAdded.bind(this)));
-        this.registerEvent(this.leaf.on('extended-graph:remove-link-types', this.onLinkTypesRemoved.bind(this)));
-        this.registerEvent(this.leaf.on('extended-graph:clear-link-types', this.onLinksCleared.bind(this)));
-        this.registerEvent(this.leaf.on('extended-graph:change-link-color', this.onLinkColorChanged.bind(this)));
-        this.registerEvent(this.leaf.on('extended-graph:disable-links', this.onLinksDisabled.bind(this)));
-        this.registerEvent(this.leaf.on('extended-graph:enable-links', this.onLinksEnabled.bind(this)));
+        if (this.plugin.settings.enableLinks) {
+            this.registerEvent(this.leaf.on('extended-graph:add-link-types', this.onLinkTypesAdded.bind(this)));
+            this.registerEvent(this.leaf.on('extended-graph:remove-link-types', this.onLinkTypesRemoved.bind(this)));
+            this.registerEvent(this.leaf.on('extended-graph:clear-link-types', this.onLinksCleared.bind(this)));
+            this.registerEvent(this.leaf.on('extended-graph:change-link-color', this.onLinkColorChanged.bind(this)));
+            this.registerEvent(this.leaf.on('extended-graph:disable-links', this.onLinksDisabled.bind(this)));
+            this.registerEvent(this.leaf.on('extended-graph:enable-links', this.onLinksEnabled.bind(this)));
+        }
 
         this.registerEvent(this.leaf.on('extended-graph:view-changed', this.onViewChanged.bind(this)));
 
@@ -112,8 +118,11 @@ export class GraphEventsDispatcher extends Component {
             this.leaf.trigger("extended-graph:disable-plugin", this.leaf);
             return;
         }
-        this.graph.nodesSet.updateNodesFromEngine();
-        this.graph.linksSet.updateLinksFromEngine();
+
+        if (this.graph.nodesSet)
+            this.graph.nodesSet.updateNodesFromEngine();
+        if (this.graph.linksSet)
+            this.graph.linksSet.updateLinksFromEngine();
     }
 
     onEngineNeedsUpdate() {
@@ -123,45 +132,47 @@ export class GraphEventsDispatcher extends Component {
 
     onGraphNeedsUpdate() {
         FUNC_NAMES && console.log("[GraphEventsDispatcher] onGraphNeedsUpdate");
-        this.graph.initSets().then(() => {
-            this.graph.nodesSet.resetArcs();
-        });
+        if (this.plugin.settings.enableTags && this.graph.nodesSet) {
+            this.graph.initSets().then(() => {
+                this.graph.nodesSet?.resetArcs();
+            });
+        }
     }
 
     // TAGS
 
     onTagTypesAdded(colorMaps: Map<string, Uint8Array>) {
         FUNC_NAMES && console.log("[GraphEventsDispatcher] onTagTypesAdded");
-        this.graph.nodesSet.resetArcs();
+        this.graph.nodesSet?.resetArcs();
         colorMaps.forEach((color, type) => {
-            this.legendUI.addLegend("tag", type, color);
+            this.legendUI?.addLegend("tag", type, color);
         });
         this.renderer.changed();
     }
 
     onTagTypesRemoved(types: Set<string>) {
         FUNC_NAMES && console.log("[GraphEventsDispatcher] onTagTypesRemoved");
-        this.legendUI.removeLegend("tag", [...types]);
+        this.legendUI?.removeLegend("tag", [...types]);
     }
 
     onTagsCleared(types: string[]) {
         FUNC_NAMES && console.log("[GraphEventsDispatcher] onTagsCleared");
-        this.graph.nodesSet.removeArcs(types);
-        this.legendUI.removeLegend("tag", types);
+        this.graph.nodesSet?.removeArcs(types);
+        this.legendUI?.removeLegend("tag", types);
         this.renderer.changed();
     }
 
     onTagColorChanged(type: string, color: Uint8Array) {
         FUNC_NAMES && console.log("[GraphEventsDispatcher] onTagColorChanged");
-        this.graph.nodesSet.updateArcsColor(type, color);
-        this.legendUI.updateLegend("tag", type, color);
+        this.graph.nodesSet?.updateArcsColor(type, color);
+        this.legendUI?.updateLegend("tag", type, color);
         this.renderer.changed();
     }
 
     onTagsDisabled(types: string[]) {
         FUNC_NAMES && console.log("[GraphEventsDispatcher] onTagsDisabled");
         types.forEach(type => {
-            this.graph.nodesSet.disableTag(type);
+            this.graph.nodesSet?.disableTag(type);
         });
         this.renderer.changed();
     }
@@ -169,7 +180,7 @@ export class GraphEventsDispatcher extends Component {
     onTagsEnabled(types: string[]) {
         FUNC_NAMES && console.log("[GraphEventsDispatcher] onTagsEnabled");
         types.forEach(type => {
-            this.graph.nodesSet.enableTag(type);
+            this.graph.nodesSet?.enableTag(type);
         });
         this.renderer.changed();
     }
@@ -180,28 +191,28 @@ export class GraphEventsDispatcher extends Component {
     onLinkTypesAdded(colorMaps: Map<string, Uint8Array>) {
         FUNC_NAMES && console.log("[GraphEventsDispatcher] onLinkTypesAdded");
         colorMaps.forEach((color, type) => {
-            this.graph.linksSet.updateLinksColor(type, color);
-            this.legendUI.addLegend("link", type, color);
+            this.graph.linksSet?.updateLinksColor(type, color);
+            this.legendUI?.addLegend("link", type, color);
         });
         this.renderer.changed();
     }
 
     onLinkTypesRemoved(types: Set<string>) {
         FUNC_NAMES && console.log("[GraphEventsDispatcher] onLinkTypesRemoved");
-        this.legendUI.removeLegend("link", [...types]);
+        this.legendUI?.removeLegend("link", [...types]);
     }
 
     onLinksCleared(types: string[]) {
         FUNC_NAMES && console.log("[GraphEventsDispatcher] onLinksCleared");
         //this.graph.resetArcs();
-        this.legendUI.removeLegend("link", types);
+        this.legendUI?.removeLegend("link", types);
         this.renderer.changed();
     }
 
     onLinkColorChanged(type: string, color: Uint8Array) {
         FUNC_NAMES && console.log("[GraphEventsDispatcher] onLinkColorChanged");
-        this.graph.linksSet.updateLinksColor(type, color);
-        this.legendUI.updateLegend("link", type, color);
+        this.graph.linksSet?.updateLinksColor(type, color);
+        this.legendUI?.updateLegend("link", type, color);
         this.renderer.changed();
     }
 
@@ -224,22 +235,22 @@ export class GraphEventsDispatcher extends Component {
         const viewData = this.plugin.settings.views.find(v => v.id === id);
         if (!viewData) return;
 
-        this.graph.nodesSet.tagsManager.loadView(viewData);
-        this.graph.linksSet.linksManager.loadView(viewData);
+        if (this.graph.nodesSet && this.graph.nodesSet.tagsManager) {
+            this.graph.nodesSet.tagsManager.loadView(viewData);
+            this.legendUI?.enableAll("tag");
+            viewData.disabledTags.forEach(type => {
+                this.legendUI?.disable("tag", type);
+            });
+        }
+
+        if (this.graph.linksSet) {
+            this.graph.linksSet.linksManager.loadView(viewData);
+            this.legendUI?.enableAll("link");
+            viewData.disabledLinks.forEach(type => {
+                this.legendUI?.disable("link", type);
+            });
+        }
 
         this.graph.setEngineOptions(viewData.engineOptions);
-
-        this.legendUI.enableAll("tag");
-        viewData.disabledTags.forEach(type => {
-            this.legendUI.disable("tag", type);
-        });
-        this.legendUI.enableAll("link");
-        viewData.disabledLinks.forEach(type => {
-            this.legendUI.disable("link", type);
-        });
     }
-
-    // PLUGIN
-
-    
 }

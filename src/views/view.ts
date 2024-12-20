@@ -14,8 +14,8 @@ export class GraphView {
 
     saveGraph(graph: Graph) {
         // @ts-ignore
-        this.data.disabledLinks = graph.linksSet.linksManager.getTypes().filter(type => !graph.linksSet.linksManager.isActive(type));
-        this.data.disabledTags = graph.nodesSet.tagsManager.getTypes().filter(type => !graph.nodesSet.tagsManager.isActive(type));
+        this.data.disabledLinks = graph.linksSet ? graph.linksSet.linksManager.getTypes().filter(type => !graph.linksSet.linksManager.isActive(type)) : [];
+        this.data.disabledTags = (graph.nodesSet && graph.nodesSet.tagsManager) ? graph.nodesSet.tagsManager.getTypes().filter(type => !graph.nodesSet?.tagsManager?.isActive(type)) : [];
         this.data.engineOptions = new EngineOptions(graph.engine.getOptions());
         this.data.engineOptions.search = graph.engine.filterOptions.search.inputEl.value;
     }

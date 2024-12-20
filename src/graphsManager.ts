@@ -13,6 +13,7 @@ export class GraphsManager extends Component {
     currentTheme: string;
     currentStyleSheetHref: string | null | undefined;
     plugin: GraphExtendedPlugin;
+    activeFile: TFile | null = null;
     
 
 
@@ -47,8 +48,10 @@ export class GraphsManager extends Component {
 
     onThemeChange(theme: string) {
         this.dispatchers.forEach(dispatcher => {
-            dispatcher.graph.nodesSet.updateBackground();
-            dispatcher.renderer.changed();
+            if (dispatcher.graph.nodesSet) {
+                dispatcher.graph.nodesSet.updateOpacityLayerColor();
+                dispatcher.renderer.changed();
+            }
         });
     }
 
@@ -134,36 +137,43 @@ export class GraphsManager extends Component {
     }
 
     async handleMetadataCacheChange(file: TFile, data: string, cache: CachedMetadata) {
-        this.dispatchers.forEach(dispatcher => {
-            if (!(dispatcher.graph && dispatcher.renderer)) return;
-    
-            const container = dispatcher.graph.nodesSet.getNodeWrapperFromFile(file);
-            if (!container) return;
-    
-            let newTypes: string[] = [];
-            cache?.tags?.forEach(tagCache => {
-                const type = tagCache.tag.replace('#', '');
-                newTypes.push(type);
+        if (this.plugin.settings.enableTags) {
+            this.dispatchers.forEach(dispatcher => {
+                if (!(dispatcher.graph && dispatcher.renderer)) return;
+        
+                const container = dispatcher.graph.nodesSet?.getNodeWrapperFromFile(file);
+                if (!container) return;
+        
+                let newTypes: string[] = [];
+                cache?.tags?.forEach(tagCache => {
+                    const type = tagCache.tag.replace('#', '');
+                    newTypes.push(type);
+                });
+        
+                const needsUpdate = !container.matchesTagsTypes(newTypes);
+        
+                if (needsUpdate) {
+                    const types = dispatcher.graph.nodesSet?.getAllTagTypesFromCache(this.app);
+                    (types) && dispatcher.graph.nodesSet?.tagsManager?.update(types);
+                }
             });
-    
-            const needsUpdate = !container.matchesTagsTypes(newTypes);
-    
-            if (needsUpdate) {
-                dispatcher.graph.nodesSet.tagsManager.update(dispatcher.graph.nodesSet.getAllTagTypesFromCache(this.app));
-            }
-        });
+        }
     }
 
     updatePalette(interactive: string) : void {
+        if (interactive === "tag" && !this.plugin.settings.enableTags) return;
+        if (interactive === "link" && !this.plugin.settings.enableLinks) return;
         this.dispatchers.forEach(dispatcher => {
             dispatcher.graph.interactiveManagers.get(interactive)?.recomputeColors();
         });
     }
 
     updateTagColor(type: string) : void {
-        this.dispatchers.forEach(dispatcher => {
-            dispatcher.graph.nodesSet.tagsManager.recomputeColor(type);
-        });
+        if (this.plugin.settings.enableTags) {
+            this.dispatchers.forEach(dispatcher => {
+                dispatcher.graph.nodesSet?.tagsManager?.recomputeColor(type);
+            });
+        }
     }
     
     // ENABLE/DISABLE PLUGIN
@@ -199,9 +209,28 @@ export class GraphsManager extends Component {
 
 
         dispatcher.unload();
-        dispatcher.graph.nodesSet.unload();
-        dispatcher.graph.linksSet.unload();
+        dispatcher.graph.nodesSet?.unload();
+        dispatcher.graph.linksSet?.unload();
         this.dispatchers.delete(leaf.id);
         leaf.view.renderer.changed();
+    }
+
+    // HIGHLIGHT CURRENT FILE
+
+    highlightFile(file: TFile | null) : void {
+        if (this.plugin.settings.enableFocusActiveNote) {
+            if (this.activeFile !== file) {
+                this.dispatchers.forEach(dispatcher => {
+                    if (dispatcher.leaf.view.getViewType() !== "graph") return;
+                    if (this.activeFile) {
+                        dispatcher.graph.nodesSet?.highlightNode(this.activeFile, false);
+                    }
+                    if (file) {
+                        dispatcher.graph.nodesSet?.highlightNode(file, true);
+                    }
+                })
+                this.activeFile = file;
+            }
+        }
     }
 }

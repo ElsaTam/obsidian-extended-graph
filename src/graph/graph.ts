@@ -11,9 +11,9 @@ import { ExtendedGraphSettings } from 'src/settings/settings';
 import GraphExtendedPlugin from 'src/main';
 
 export class Graph extends Component {
-    nodesSet: NodesSet;
-    linksSet: LinksSet;
-    linkTypesMap = new Map<string, Set<string>>(); // key: type / value: link ids
+    nodesSet: NodesSet | null;
+    linksSet: LinksSet | null;
+    linkTypesMap: Map<string, Set<string>> | null; // key: type / value: link ids
     interactiveManagers = new Map<string, InteractiveManager>();
 
     engine: any;
@@ -31,12 +31,20 @@ export class Graph extends Component {
         this.plugin = plugin;
 
         // Initialize nodes and links sets
-        this.nodesSet = new NodesSet(leaf, renderer, new InteractiveManager(leaf, plugin.settings, "tag"), app, plugin.settings);
-        this.linksSet = new LinksSet(leaf, renderer, new InteractiveManager(leaf, plugin.settings, "link"));
-        this.interactiveManagers.set("tag", this.nodesSet.tagsManager);
-        this.interactiveManagers.set("link", this.linksSet.linksManager);
-        this.addChild(this.nodesSet.tagsManager);
-        this.addChild(this.linksSet.linksManager);
+        if (this.plugin.settings.enableTags || this.plugin.settings.enableImages || this.plugin.settings.enableFocusActiveNote || this.plugin.settings.enableLinks) {
+            let tagsManager = this.plugin.settings.enableTags ? new InteractiveManager(leaf, plugin.settings, "tag") : null;
+            this.nodesSet = new NodesSet(leaf, renderer, tagsManager, app, plugin.settings);
+            if (this.plugin.settings.enableTags && tagsManager) {
+                this.interactiveManagers.set("tag", tagsManager);
+                this.addChild(tagsManager);
+            }
+        }
+        if (this.plugin.settings.enableLinks) {
+            this.linkTypesMap = new Map<string, Set<string>>();
+            this.linksSet = new LinksSet(leaf, renderer, new InteractiveManager(leaf, plugin.settings, "link"));
+            this.interactiveManagers.set("link", this.linksSet.linksManager);
+            this.addChild(this.linksSet.linksManager);
+        }
 
         // Intercept search filter
         if (this.leaf.view.getViewType() === "graph") {
@@ -54,10 +62,11 @@ export class Graph extends Component {
         this.engine.filterOptions.search.getValue = (function() {
             let prepend = this.plugin.settings.globalFilter ? this.plugin.settings.globalFilter + " " : "";
             let append = "";
-            this.nodesSet.disconnectedNodes.forEach((id: string) => {
-                append += ` -path:"${id}"`;
-            });
-            console.log(prepend + this.engine.filterOptions.search.inputEl.value + append);
+            if (this.nodesSet.disconnectedNodes) {
+                this.nodesSet.disconnectedNodes.forEach((id: string) => {
+                    append += ` -path:"${id}"`;
+                });
+            }
             return prepend + this.engine.filterOptions.search.inputEl.value + append;
         }).bind(this);
         this.setFilter("");
@@ -78,7 +87,6 @@ export class Graph extends Component {
 
     onunload() : void {
         this.engine.filterOptions.search.getValue = (function() {
-            console.log(this.filterOptions.search.inputEl.value);
             return this.filterOptions.search.inputEl.value;
         }).bind(this.engine);
         this.engine.onOptionsChange();
@@ -86,56 +94,60 @@ export class Graph extends Component {
     }
 
     private removeAdditionalData() : void {
-        // Remove invalid nodes
-        let invalidNodes = new Set<string>();
-        this.nodesSet.nodesMap.forEach((nodeWrapper, nodeID) => {
-            if (! this.renderer.nodes.find(n => n.id === nodeID)) {
-                invalidNodes.add(nodeID);
+        if (this.nodesSet) {
+            // Remove invalid nodes
+            let invalidNodes = new Set<string>();
+            this.nodesSet.nodesMap.forEach((nodeWrapper, nodeID) => {
+                if (! this.renderer.nodes.find(n => n.id === nodeID)) {
+                    invalidNodes.add(nodeID);
+                }
+            });
+    
+            if (invalidNodes.size > 0) {
+                for (const nodeID of invalidNodes) {
+                    let wrapper = this.nodesSet.nodesMap.get(nodeID);
+                    wrapper?.parent?.removeChild(wrapper);
+                    wrapper?.destroy();
+                    this.nodesSet.nodesMap.delete(nodeID);
+                    this.nodesSet.connectedNodes.delete(nodeID);
+                    this.nodesSet.disconnectedNodes?.delete(nodeID);
+                }
             }
-        });
-
-        if (invalidNodes.size > 0) {
-            invalidNodes.forEach(nodeID => {
-                let wrapper = this.nodesSet.nodesMap.get(nodeID);
-                wrapper?.parent?.removeChild(wrapper);
-                wrapper?.destroy();
-                this.nodesSet.nodesMap.delete(nodeID);
-                this.nodesSet.connectedNodes.delete(nodeID);
-                this.nodesSet.disconnectedNodes.delete(nodeID);
-            })
         }
 
         // Remove invalid links
-        let invalidLinks = new Set<string>();
-        this.linksSet.linksMap.forEach((linkWrapper, linkID) => {
-            try {
-                this.nodesSet.get(linkWrapper.sourceID);
-                this.nodesSet.get(linkWrapper.targetID);
+        if (this.linksSet && this.nodesSet && this.linkTypesMap) {
+            let invalidLinks = new Set<string>();
+            for (const [linkID, linkWrapper] of this.linksSet.linksMap.entries()) {
+                try {
+                    this.nodesSet.get(linkWrapper.sourceID);
+                    this.nodesSet.get(linkWrapper.targetID);
+                }
+                catch (error) {
+                    invalidLinks.add(linkID);
+                    continue;
+                }
             }
-            catch (error) {
-                invalidLinks.add(linkID);
-                return;
-            }
-        });
-        
-        if (invalidLinks.size > 0) {
-            let invalidLinkTypes = new Set<string>();
-            invalidLinks.forEach(linkID => {
-                this.linkTypesMap.forEach((linkForType, type) => {
-                    if (linkForType.has(linkID)) {
-                        linkForType.delete(linkID);
-                        if (linkForType.size === 0) {
-                            invalidLinkTypes.add(type);
+            
+            if (invalidLinks.size > 0) {
+                let invalidLinkTypes = new Set<string>();
+                for (const linkID of invalidLinks) {
+                    this.linkTypesMap.forEach((linkForType, type) => {
+                        if (linkForType.has(linkID)) {
+                            linkForType.delete(linkID);
+                            if (linkForType.size === 0) {
+                                invalidLinkTypes.add(type);
+                            }
                         }
-                    }
-                });
-                this.linksSet.get(linkID).destroy();
-                this.linksSet.linksMap.delete(linkID);
-                this.linksSet.connectedLinks.delete(linkID);
-                this.linksSet.disconnectedLinks.delete(linkID);
-            });
-            if (invalidLinkTypes.size > 0) {
-                this.linksSet.linksManager.removeTypes(invalidLinkTypes);
+                    });
+                    this.linksSet.get(linkID).destroy();
+                    this.linksSet.linksMap.delete(linkID);
+                    this.linksSet.connectedLinks.delete(linkID);
+                    this.linksSet.disconnectedLinks.delete(linkID);
+                }
+                if (invalidLinkTypes.size > 0) {
+                    this.linksSet.linksManager.removeTypes(invalidLinkTypes);
+                }
             }
         }
     }
@@ -146,66 +158,83 @@ export class Graph extends Component {
         await new Promise(r => setTimeout(r, 200));
 
         let requestList: Promise<void>[] = [];
-        requestList = requestList.concat(this.nodesSet.load());
-        requestList = requestList.concat(this.linksSet.load());
-
+        (this.nodesSet) && (requestList = requestList.concat(this.nodesSet.load()));
+        (this.linksSet) && (requestList = requestList.concat(this.linksSet.load()));
+        
         await Promise.all(requestList);
 
         this.removeAdditionalData();
 
+        // Update node background colors
+        if (this.plugin.settings.fadeOnDisable) {
+            this.nodesSet?.updateOpacityLayerColor();
+        }
+
         // Create link types
-        this.linksSet.linksMap.forEach((linkWrapper, linkID) => {
-            let sourceNode = this.nodesSet.get(linkWrapper.sourceID);
-            const sourceFile = sourceNode.file;
-
-            let types = new Set<string>();
-
-            const frontmatterLinks = this.app.metadataCache.getFileCache(sourceFile)?.frontmatterLinks;
-            if (frontmatterLinks) {
-                // For each link in the frontmatters, check if target matches
-                frontmatterLinks.forEach(linkCache => {
-                    const linkType = linkCache.key.split('.')[0];
-                    const targetID = linkCache.link + ".md";
-                    if (targetID == linkWrapper.targetID) {
-                        // Set the pair
-                        (!this.linkTypesMap.get(linkType)) &&  this.linkTypesMap.set(linkType, new Set<string>());
-                        this.linkTypesMap.get(linkType)?.add(linkID);
-                        types.add(linkType);
+        if (this.linksSet && this.nodesSet && this.linkTypesMap) {
+            for (const [linkID, linkWrapper] of this.linksSet.linksMap) {
+                let sourceNode = this.nodesSet.get(linkWrapper.sourceID);
+                const sourceFile = sourceNode.file;
+    
+                let types = new Set<string>();
+    
+                const frontmatterLinks = this.app.metadataCache.getFileCache(sourceFile)?.frontmatterLinks;
+                if (frontmatterLinks) {
+                    // For each link in the frontmatters, check if target matches
+                    for (const linkCache of frontmatterLinks) {
+                        const linkType = linkCache.key.split('.')[0];
+                        const targetID = linkCache.link + ".md";
+                        if (targetID == linkWrapper.targetID) {
+                            // Set the pair
+                            (!this.linkTypesMap.get(linkType)) &&  this.linkTypesMap.set(linkType, new Set<string>());
+                            this.linkTypesMap.get(linkType)?.add(linkID);
+                            types.add(linkType);
+                        }
                     }
-                });
+                }
+                if (!frontmatterLinks || types.size === 0) {
+                    (!this.linkTypesMap.get(NONE_TYPE)) &&  this.linkTypesMap.set(NONE_TYPE, new Set<string>());
+                    this.linkTypesMap.get(NONE_TYPE)?.add(linkID);
+                    types.add(NONE_TYPE);
+                }
+    
+                linkWrapper.setTypes(types);
             }
-            if (!frontmatterLinks || types.size === 0) {
-                (!this.linkTypesMap.get(NONE_TYPE)) &&  this.linkTypesMap.set(NONE_TYPE, new Set<string>());
-                this.linkTypesMap.get(NONE_TYPE)?.add(linkID);
-                types.add(NONE_TYPE);
-            }
-
-            linkWrapper.setTypes(types);
-        });
+        }
 
         // Initialize colors for each node/link type
-        this.nodesSet.tagsManager.update(this.nodesSet.getAllTagTypesFromCache(this.app));
-        this.linksSet.linksManager.update(this.getAllLinkTypes());
+        if (this.nodesSet) {
+            const types = this.nodesSet.getAllTagTypesFromCache(this.app);
+            types && this.nodesSet.tagsManager?.update(types);
+        }
+        if (this.linksSet) {
+            const types = this.getAllLinkTypes();
+            types && this.linksSet?.linksManager.update(types);
+        }
     }
 
-    getAllLinkTypes() : Set<string> {
+    getAllLinkTypes() : Set<string> | null {
+        if (!this.linksSet) return null;
         FUNC_NAMES && console.log("[Graph] getAllLinkTypes");
-        return new Set<string>(this.linkTypesMap.keys());
+        return new Set<string>(this.linkTypesMap?.keys());
     }
 
-    getLinks(types: string[]) : Set<string> {
-        let links = new Set<string>();
-        types.forEach(type => {
-            this.linkTypesMap.get(type)?.forEach(linkID => {
+    getLinks(types: string[]) : Set<string> | null {
+        if (!this.linksSet) return null;
+        const links = new Set<string>();
+        for (const type of types) {
+            this.linkTypesMap?.get(type)?.forEach(linkID => {
                 links.add(linkID);
             })
-        });
+        }
         return links;
     }
 
     disableLinkTypes(types: string[]) {
+        if (!this.linksSet) return;
         FUNC_NAMES && console.log("[LinksSet] disableLinkTypes");
-        this.linksSet.disableLinks(this.getLinks(types)).then((hasChanged) => {
+        const links = this.getLinks(types);
+        (links) && this.linksSet?.disableLinks(links).then((hasChanged) => {
             if (hasChanged) {
                 this.leaf.trigger('extended-graph:engine-needs-update');
             }
@@ -213,8 +242,10 @@ export class Graph extends Component {
     }
 
     enableLinkTypes(types: string[]) {
+        if (!this.linksSet) return;
         FUNC_NAMES && console.log("[LinksSet] enableLinkTypes");
-        this.linksSet.enableLinks(this.getLinks(types)).then((hasChanged) => {
+        const links = this.getLinks(types);
+        (links) && this.linksSet?.enableLinks(links).then((hasChanged) => {
             if (hasChanged) {
                 this.leaf.trigger('extended-graph:engine-needs-update');
             }
@@ -222,16 +253,32 @@ export class Graph extends Component {
     }
         
     updateWorker() : void {
+        if (!this.linksSet && !this.nodesSet) return;
         FUNC_NAMES && console.log("[LinksSet] updateWorker");
+
         let nodes: any = {};
-        this.nodesSet.connectedNodes.forEach(id => {
-            nodes[id] = [this.nodesSet.get(id).node.x, this.nodesSet.get(id).node.y];
-        });
+        if (this.nodesSet) {
+            for (const id of this.nodesSet.connectedNodes) {
+                nodes[id] = [this.nodesSet.get(id).node.x, this.nodesSet.get(id).node.y];
+            }
+        }
+        else {
+            for (const node of this.renderer.nodes) {
+                nodes[node.id] = [node.x, node.y];
+            }
+        }
 
         let links: any = [];
-        this.linksSet.connectedLinks.forEach(id => {
-            links.push([this.linksSet.get(id).sourceID, this.linksSet.get(id).targetID]);
-        });
+        if (this.linksSet) {
+            for (const id of this.linksSet.connectedLinks) {
+                links.push([this.linksSet.get(id).sourceID, this.linksSet.get(id).targetID]);
+            }
+        }
+        else {
+            for (const link of this.renderer.links) {
+                links.push([link.source.id, link.target.id]);
+            }
+        }
 
         this.renderer.worker.postMessage({
             nodes: nodes,

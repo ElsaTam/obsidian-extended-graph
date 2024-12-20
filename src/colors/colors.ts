@@ -7,17 +7,14 @@ export function getColor(palette: string, x: number) : Uint8Array {
 
 export function int2rgb(int: number): Uint8Array {
     return new Uint8Array([
-        (int >> 16) & 0xFF,
-        (int >> 8) & 0xFF,
-        int & 0xFF,
+        Math.floor(int / (256*256)),
+        Math.floor(int / 256) % 256,
+        int % 256,
     ]);
 }
 
 export function rgb2int(rgb: Uint8Array): number {
-    let int = rgb[0];
-    int = (int << 8) + rgb[1];
-    int = (int << 8) + rgb[2];
-    return int;
+    return rgb[0] * (256*256) + rgb[1] * 256 + rgb[2];
 }
 
 export function rgb2hsv(rgb: Uint8Array) : { h: number, s: number, v: number } {
@@ -68,7 +65,7 @@ export function hsv2rgb(hsv: {h: number, s: number, v: number}) : Uint8Array {
 }
 
 export function rgb2hex(rgb: Uint8Array) : number {
-    const binaryRGB = rgb[0] << 16 | rgb[1] << 8 | rgb[2];      
+    const binaryRGB = rgb[0] << 16 | rgb[1] << 8 | rgb[2];    
     return binaryRGB;
 }
 
@@ -82,6 +79,10 @@ export function hex2rgb(hex: string) : Uint8Array {
         parseInt(result[2], 16),
         parseInt(result[3], 16)
     ]);
+}
+
+export function int2hex(int: number) : number {
+    return rgb2hex(int2rgb(int));
 }
 
 export function randomColor(baseColor?: {h: number, s: number, v: number}) {

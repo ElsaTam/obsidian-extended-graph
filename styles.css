@@ -121,6 +121,11 @@ body {
         border-radius: var(--radius-s);
     }
 
+    .extended-graph-setting-tag   { display: var(--display-tag-features);   }
+    .extended-graph-setting-link  { display: var(--display-link-features);  }
+    .extended-graph-setting-image { display: var(--display-image-features); }
+    .extended-graph-setting-focus { display: var(--display-focus-features); }
+
     .settings-colors-container > .setting-item {
         justify-content: flex-start;
             

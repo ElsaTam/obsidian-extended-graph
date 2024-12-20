@@ -1,8 +1,10 @@
 import { App, TFile } from 'obsidian';
 import { Assets, Circle, Container, Graphics, Sprite, Texture } from 'pixi.js';
 import { InteractiveManager } from './interactiveManager';
-import { FUNC_NAMES, NODE_CIRCLE_RADIUS, NODE_CIRCLE_X, NODE_CIRCLE_Y, NONE_TYPE, REMOVE_INACTIVE_NODES } from 'src/globalVariables';
+import { FUNC_NAMES, NODE_CIRCLE_RADIUS, NODE_CIRCLE_X, NODE_CIRCLE_Y, NONE_TYPE } from 'src/globalVariables';
 import { Renderer } from './renderer';
+import { int2hex, int2rgb, rgb2hex } from 'src/colors/colors';
+import { ExtendedGraphSettings } from 'src/settings/settings';
 
 export interface Node {
     circle: Graphics,
@@ -19,8 +21,10 @@ export interface Node {
     x: number;
     y: number;
     rendered: boolean;
+    type: string;
     forward: {[id: string] : Node};
     reverse: {[id: string] : Node};
+    getFillColor: () => {rgb: number, a: number};
 }
 
 class Arc extends Graphics {
@@ -32,12 +36,13 @@ class Arc extends Graphics {
 }
 
 export interface NodeGraphics {
-    sprite: Sprite;
-    tagArcs: Map<string, Arc>;
+    sprite: Sprite | null;
+    borderFactor: number | null;
+    tagArcs: Map<string, Arc> | null;
+    maxArcSize: number | null;
+    opacityLayer: Graphics | null;
     background: Graphics;
     size: number;
-    borderFactor: number;
-    maxArcSize: number;
 }
 
 export class NodeWrapper extends Container {
@@ -46,10 +51,11 @@ export class NodeWrapper extends Container {
     name: string;
     file: TFile;
     imageUri: string | null;
-    tagTypes: string[];
+    tagTypes: string[] | null;
     isActive: boolean = true;
+    scaleFactor: number = 1;
 
-    constructor(node: Node, app: App) {
+    constructor(node: Node, app: App, settings: ExtendedGraphSettings) {
         FUNC_NAMES && console.log("[NodeWrapper] new");
         super();
         this.node = node;
@@ -57,13 +63,15 @@ export class NodeWrapper extends Container {
 
         // Set values
         this.nodeGraphics = {
-            sprite: new Sprite(),
-            tagArcs: new Map<string, Arc>(),
+            sprite: settings.enableImages ? new Sprite()                : null,
+            borderFactor: settings.enableImages ? 0.06                  : null,
+            tagArcs: settings.enableTags ? new Map<string, Arc>()       : null,
+            maxArcSize: settings.enableTags ? Math.PI / 2               : null,
+            opacityLayer: settings.fadeOnDisable ? new Graphics()       : null,
             background: new Graphics(),
             size: 1,
-            borderFactor: 0.06,
-            maxArcSize: Math.PI / 2
         };
+        this.tagTypes = settings.enableTags ? [] : null;
 
         // Get TFile
         const file = app.vault.getFileByPath(node.id);
@@ -71,7 +79,7 @@ export class NodeWrapper extends Container {
         this.file = file;
 
         // Get Tags
-        this.updateTags(app);
+        (settings.enableTags) && this.updateTags(app);
     }
 
     // =========================== INITIALIZATION =========================== //
@@ -85,49 +93,59 @@ export class NodeWrapper extends Container {
         }
 
         FUNC_NAMES && console.log("[NodeWrapper] init");
-        // Get image URI
-        const metadata = app.metadataCache.getFileCache(this.file);
-        const frontmatter = metadata?.frontmatter;
-        const imageLink = frontmatter ? frontmatter[keyProperty]?.replace("[[", "").replace("]]", "") : null;
-        const imageFile = imageLink ? app.metadataCache.getFirstLinkpathDest(imageLink, ".") : null;
-        this.imageUri = imageFile ? app.vault.getResourcePath(imageFile) : null;
 
-        // Load texture
-        if (this.imageUri) {
-            await Assets.load(this.imageUri).then((texture: Texture) => {
-                this.nodeGraphics.size = Math.min(texture.width, texture.height);
+        if (this.nodeGraphics.sprite) {
+            
+            // Get image URI
+            const metadata = app.metadataCache.getFileCache(this.file);
+            const frontmatter = metadata?.frontmatter;
+            const imageLink = frontmatter ? frontmatter[keyProperty]?.replace("[[", "").replace("]]", "") : null;
+            const imageFile = imageLink ? app.metadataCache.getFirstLinkpathDest(imageLink, ".") : null;
+            this.imageUri = imageFile ? app.vault.getResourcePath(imageFile) : null;
 
-                // Sprite
-                this.nodeGraphics.sprite = Sprite.from(texture);
-                this.nodeGraphics.sprite.name = "image";
-                this.nodeGraphics.sprite.anchor.set(0.5);
-                this.addChild(this.nodeGraphics.sprite);
-                this.nodeGraphics.sprite.scale.set((1 - this.nodeGraphics.borderFactor));
-        
-                // Mask
-                let mask = new Graphics()
-                    .beginFill(0xFFFFFF)
-                    .drawCircle(0, 0, 0.5 * this.nodeGraphics.size)
-                    .endFill();
-                this.nodeGraphics.sprite.mask = mask;
-                this.nodeGraphics.sprite.addChild(mask);
-            });
-        }
-        else {
-            this.nodeGraphics.size = 1;
+            // Load texture
+            if (this.imageUri) {
+                await Assets.load(this.imageUri).then((texture: Texture) => {
+                    this.nodeGraphics.size = Math.min(texture.width, texture.height);
+
+                    // Sprite
+                    this.nodeGraphics.sprite = Sprite.from(texture);
+                    this.nodeGraphics.sprite.name = "image";
+                    this.nodeGraphics.sprite.anchor.set(0.5);
+                    this.addChild(this.nodeGraphics.sprite);
+                    this.nodeGraphics.sprite.scale.set((1 - (this.nodeGraphics.borderFactor ? this.nodeGraphics.borderFactor : 0)));
+            
+                    // Mask
+                    let mask = new Graphics()
+                        .beginFill(0xFFFFFF)
+                        .drawCircle(0, 0, 0.5 * this.nodeGraphics.size)
+                        .endFill();
+                    this.nodeGraphics.sprite.mask = mask;
+                    this.nodeGraphics.sprite.addChild(mask);
+                });
+            }
+            else {
+                this.nodeGraphics.size = 1;
+            }
         }
 
         // Background
-        this.nodeGraphics.background
-            .beginFill(0xFFFFFF)
-            .drawCircle(0, 0, 0.5 * this.nodeGraphics.size)
-            .endFill();
-        this.nodeGraphics.background.alpha = 0;
-        this.nodeGraphics.background.scale.set(1.01);
-        this.addChild(this.nodeGraphics.background);
+        this.updateBackgroundColor();
+        this.addChildAt(this.nodeGraphics.background, 0);
+
+        // Opacity layer
+        if (this.nodeGraphics.opacityLayer) {
+            this.nodeGraphics.opacityLayer
+                .beginFill(0xFFFFFF)
+                .drawCircle(0, 0, 0.5 * this.nodeGraphics.size)
+                .endFill();
+            this.nodeGraphics.opacityLayer.alpha = 0;
+            this.nodeGraphics.opacityLayer.scale.set(1.1);
+            this.addChildAt(this.nodeGraphics.opacityLayer, 1);
+        }
         
         // Scale
-        this.scale.set(NODE_CIRCLE_RADIUS * 2 / this.nodeGraphics.size);
+        this.scale.set(this.scaleFactor * NODE_CIRCLE_RADIUS * 2 / this.nodeGraphics.size);
 
         // Because of async, make sure the container is not already added
         if (this.node.circle?.getChildByName(this.name)) {
@@ -136,6 +154,8 @@ export class NodeWrapper extends Container {
 
         this.x = NODE_CIRCLE_X;
         this.y = NODE_CIRCLE_Y;
+
+        this.initListener();
     }
 
     async waitReady(renderer: Renderer) : Promise<boolean> {
@@ -157,6 +177,14 @@ export class NodeWrapper extends Container {
         });
     }
 
+    setScale(factor?: number) {
+        console.log("setScale", factor)
+        if (factor) {
+            this.scaleFactor = factor;
+        }
+        this.scale.set(this.scaleFactor * NODE_CIRCLE_RADIUS * 2 / this.nodeGraphics.size);
+    }
+
     // ============================= TAG TYPES ============================== //
 
     /**
@@ -164,13 +192,18 @@ export class NodeWrapper extends Container {
      * @param app 
      */
     updateTags(app: App) : void {
+        if (!this.tagTypes) {
+            throw new Error("[Extended graph] tagTypes is null")
+        }
         FUNC_NAMES && console.log("[NodeWrapper] updateTags");
-        const metadata = app.metadataCache.getFileCache(this.file);
         this.tagTypes = [];
-        metadata?.tags?.forEach(tagCache => {
-            const tag = tagCache.tag.replace('#', '');
-            this.tagTypes.push(tag);
-        });
+        const metadata = app.metadataCache.getFileCache(this.file);
+        if (metadata && metadata.tags) {
+            for (const tagCache of metadata.tags) {
+                const tag = tagCache.tag.replace('#', '');
+                this.tagTypes.push(tag);
+            }
+        }
         if (this.tagTypes.length == 0) {
             this.tagTypes.push(NONE_TYPE);
         }
@@ -182,6 +215,9 @@ export class NodeWrapper extends Container {
      * @returns list of tag types
      */
     getTagsTypes(app?: App) : string[] {
+        if (!this.tagTypes) {
+            throw new Error("[Extended graph] tagTypes is null")
+        }
         (app) && this.updateTags(app);
         return this.tagTypes;
     }
@@ -193,6 +229,9 @@ export class NodeWrapper extends Container {
      * @returns true if it matches
      */
     matchesTagsTypes(types: string[]) : boolean {
+        if (!this.tagTypes) {
+            throw new Error("[Extended graph] tagTypes is null")
+        }
         return types.sort().join(',') === this.tagTypes.join(',');
     }
 
@@ -208,6 +247,9 @@ export class NodeWrapper extends Container {
      * @returns the associated arc
      */
     getArc(type: string) : Arc {
+        if (!this.nodeGraphics.tagArcs) {
+            throw new Error("[Extended graph] nodeGraphics.tagArcs is null")
+        }
         let arc = this.nodeGraphics.tagArcs.get(type);
         if (!arc) {
             throw new Error(`No arc of type ${type} for node ${this.name}.`);
@@ -220,16 +262,22 @@ export class NodeWrapper extends Container {
      * @param manager tatgs manager
      */
     addArcs(manager: InteractiveManager) {
+        if (!this.nodeGraphics.tagArcs) {
+            throw new Error("[Extended graph] nodeGraphics.tagArcs is null")
+        }
+        if (!this.nodeGraphics.maxArcSize) {
+            throw new Error("[Extended graph] nodeGraphics.maxArcSize is null")
+        }
         FUNC_NAMES && console.log("[NodeWrapper] addArcs");
         const allTypes = manager.getTypes();
         allTypes.remove(NONE_TYPE);
         const nTags = allTypes.length;
         const arcSize = Math.min(2 * Math.PI / nTags, this.nodeGraphics.maxArcSize);
     
-        this.getTagsTypes().forEach(type => {
-            if (type === NONE_TYPE) return;
+        for (const type of this.getTagsTypes()) {
+            if (type === NONE_TYPE) continue;
             const oldArc = this.getChildByName(this.getArcName(type));
-            if (oldArc) return;
+            if (oldArc) continue;
 
             try {
                 const color = manager.getColor(type);
@@ -239,7 +287,7 @@ export class NodeWrapper extends Container {
                 this.nodeGraphics.tagArcs.set(type, arc);
             }
             catch (error) { }
-        });
+        }
     }
 
     /**
@@ -249,6 +297,12 @@ export class NodeWrapper extends Container {
      * @param tagsManager tags manager
      */
     updateArc(type: string, color: Uint8Array, manager: InteractiveManager) : void {
+        if (!this.nodeGraphics.tagArcs) {
+            throw new Error("[Extended graph] nodeGraphics.tagArcs is null")
+        }
+        if (!this.nodeGraphics.maxArcSize) {
+            throw new Error("[Extended graph] nodeGraphics.maxArcSize is null")
+        }
         FUNC_NAMES && console.log("[NodeWrapper] updateArc");
         this.removeArc(type);
         const allTypes = manager.getTypes();
@@ -267,6 +321,9 @@ export class NodeWrapper extends Container {
      * @param manager tags manager
      */
     updateArcState(type: string, manager: InteractiveManager) : void {
+        if (!this.nodeGraphics.tagArcs) {
+            throw new Error("[Extended graph] nodeGraphics.tagArcs is null")
+        }
         FUNC_NAMES && console.log("[NodeWrapper] updateArcState");
         if (type !== NONE_TYPE) {
             // Update the transparency of the arc
@@ -283,7 +340,7 @@ export class NodeWrapper extends Container {
         }
         this.isActive = isNodeActive;
 
-        if (!REMOVE_INACTIVE_NODES) {
+        if (this.nodeGraphics.opacityLayer) {
             // If the node still has active tags
             if (isNodeActive) {
                 this.children.forEach((child: Graphics) => {
@@ -291,19 +348,20 @@ export class NodeWrapper extends Container {
                         child.alpha = 1;
                     }
                 })
-                this.nodeGraphics.background.alpha = 0;
+                this.nodeGraphics.opacityLayer.alpha = 0;
             }
             // Else, if the node doesn't have any active tag
             else {
-                this.children.forEach((child: Graphics) => {
+                for (let child of this.children) {
                     if (child.name && !child.name.startsWith("arc-")) {
                         child.alpha = this.nodeGraphics.tagArcs.get(child.name)?.isActive ? 1 : 0.1;
                     }
                     else {
                         child.alpha = 0.1;
                     }
-                })
-                this.nodeGraphics.background.alpha = 1;
+                }
+                this.nodeGraphics.opacityLayer.alpha = this.nodeGraphics.sprite ? 1 : 0.8;
+                console.log(this);
             }
         }
     }
@@ -313,6 +371,9 @@ export class NodeWrapper extends Container {
      * @param type tag type
      */
     removeArc(type: string) {
+        if (!this.nodeGraphics.tagArcs) {
+            throw new Error("[Extended graph] nodeGraphics.tagArcs is null")
+        }
         FUNC_NAMES && console.log("[NodeWrapper] removeArc");
         this.removeChild(this.getArc(type));
         this.nodeGraphics.tagArcs.delete(type);
@@ -322,6 +383,9 @@ export class NodeWrapper extends Container {
      * Remove all arcs
      */
     removeArcs(types?: string[]) {
+        if (!this.nodeGraphics.tagArcs) {
+            throw new Error("[Extended graph] nodeGraphics.tagArcs is null")
+        }
         FUNC_NAMES && console.log("[NodeWrapper] removeArcs");
         this.nodeGraphics.tagArcs.forEach((arc, type) => (!types || types.includes(type)) && this.removeChild(arc));
         this.nodeGraphics.tagArcs.clear();
@@ -358,11 +422,32 @@ export class NodeWrapper extends Container {
 
     // ========================= ALPHA / BACKGROUND ========================= //
     
-    updateBackgroundColor(backgroundColor: Uint8Array) : void {
+    updateOpacityLayerColor(backgroundColor: Uint8Array) : void {
+        if (!this.nodeGraphics.opacityLayer) return;
         FUNC_NAMES && console.log("[NodeWrapper] updateBackgroundColor");
-        this.nodeGraphics.background.clear();
-        this.nodeGraphics.background.beginFill(backgroundColor)
+        this.nodeGraphics.opacityLayer.clear();
+        this.nodeGraphics.opacityLayer.beginFill(backgroundColor)
             .drawCircle(0, 0, 0.5 * this.nodeGraphics.size)
             .endFill();
+    }
+
+    updateBackgroundColor(color?: number) : void {
+        FUNC_NAMES && console.log("[NodeWrapper] updateBackgroundColor");
+        this.nodeGraphics.background.clear();
+        this.nodeGraphics.background.beginFill(color ? color : this.node.getFillColor().rgb)
+            .drawCircle(0, 0, 0.5 * this.nodeGraphics.size)
+            .endFill();
+    }
+
+    // =============================== EVENTS ================================ //
+
+    initListener() {
+        this.eventMode = 'static';
+        this.on('mouseenter', e => {
+            this.updateBackgroundColor();
+        });
+        this.on('mouseleave', e => {
+            this.updateBackgroundColor();
+        });
     }
 }
