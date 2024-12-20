@@ -33,7 +33,11 @@ The plugin allows you to save the settings of the current view so that you can q
 
 ## 4 - Extended graph options
 
-For the moment, the only option available in the graph is to save the current settings as the default view settings. This is the only thing you can change in the default view.
+You can save the current settings for the default view settings.
+
+The "Filter" is the global filter that will be added at the beginning of every query, regardless the selected view.
+
+You can copy the full filter currently applied. Useful if you disabled nodes from the tag buttons and want to apply the same filter to a graph without the plugin.
 
 ![](doc/images/options.webp)
 
@@ -47,9 +51,15 @@ Link types correspond to the property key in which the link is found. If the lin
 
 ## 6 - Settings
 
+![](doc/images/settings-general.webp)
+
+![](doc/images/settings-features.webp)
+
 The colour palettes are those used in matplotlib, thanks to Timothy Gebhard's [js-colormaps](https://github.com/timothygebhard/js-colormaps) project (released under MIT licence).
 
-![](doc/images/settings.webp)
+![](doc/images/settings-interactive.webp)
+
+![](doc/images/settings-images-focus.webp)
 
 # Demo
 
