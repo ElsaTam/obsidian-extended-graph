@@ -1,7 +1,7 @@
 import { Component, Modal, setIcon, WorkspaceLeaf } from "obsidian";
 import { Graph } from "../graph";
 import { GraphViewData } from "src/views/viewData";
-import { DEFAULT_VIEW_ID, NONE_TYPE } from "src/globalVariables";
+import { DEFAULT_VIEW_ID } from "src/globalVariables";
 
 export class GraphViewsUI extends Component {
     viewContent: HTMLElement;
@@ -9,7 +9,10 @@ export class GraphViewsUI extends Component {
     leaf: WorkspaceLeaf;
     currentViewID: string;
 
+    isOpen: boolean;
+
     root: HTMLDivElement;
+    toggleDiv: HTMLDivElement;
     select: HTMLSelectElement;
     saveButton: HTMLButtonElement;
     addButton: HTMLButtonElement;
@@ -22,7 +25,21 @@ export class GraphViewsUI extends Component {
         this.leaf = leaf;
         this.viewContent = this.leaf.containerEl.getElementsByClassName("view-content")[0] as HTMLElement;
         this.root = this.viewContent.createDiv();
-        this.root?.addClass("graph-views-container");
+        this.root.addClass("graph-views-container");
+        
+        // TOGGLE BUTTON
+        let graphControls = this.viewContent.querySelector(".graph-controls") as HTMLDivElement;
+        this.toggleDiv = graphControls.createDiv("clickable-icon graph-controls-button mod-views");
+        this.toggleDiv.ariaLabel = "Open views settings";
+        setIcon(this.toggleDiv, "eye");
+        this.toggleDiv.onClickEvent(() => {
+            if (this.isOpen) {
+                this.close();
+            }
+            else {
+                this.open();
+            }
+        });
 
         // TITLE
         let title = this.root.createSpan();
@@ -79,10 +96,14 @@ export class GraphViewsUI extends Component {
 
         // CURRENT VIEW ID
         this.currentViewID = this.select.value;
+
+        // CLOSE BY DEFAULT
+        this.close();
     }
 
     onunload(): void {
         this.root.parentNode?.removeChild(this.root);
+        this.toggleDiv.parentNode?.removeChild(this.toggleDiv);
     }
 
     addOption(key: string, name: string) : void {
@@ -131,5 +152,17 @@ export class GraphViewsUI extends Component {
     private displaySaveDeleteButton() {
         this.saveButton.style.display   = this.select.value !== DEFAULT_VIEW_ID ? "" : "none";
         this.deleteButton.style.display = this.select.value !== DEFAULT_VIEW_ID ? "" : "none";
+    }
+
+    open() {
+        this.root.removeClass("is-closed");
+        this.toggleDiv.addClass("is-active");
+        this.isOpen = true;
+    }
+
+    close() {
+        this.root.addClass("is-closed");
+        this.toggleDiv.removeClass("is-active");
+        this.isOpen = false;
     }
 }

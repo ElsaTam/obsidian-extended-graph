@@ -32,6 +32,10 @@ body {
     gap: var(--size-4-3);
 }
 
+.graph-legend-container.is-closed {
+    display: none;
+}
+
 .graph-legend-row {
     display: flex;
     align-items: center;
@@ -71,6 +75,10 @@ body {
     gap: var(--size-4-3);
 }
 
+.graph-views-container.is-closed {
+    display: none;
+}
+
 .graph-views-container select {
     width: 200px;
     appearance: auto;
@@ -90,21 +98,36 @@ body {
     padding: var(--size-4-1) var(--size-4-3);
 }
 
-/* TOGGLE */
+/* GRAPH CONTROLS */
 
-.graph-toggle {
-    position: absolute;
-    left: 0;
-    bottom: 0;
-    padding: var(--size-4-6) var(--size-4-3);
-    z-index: 20;
+.graph-controls.is-close .mod-extended-graph-toggle {
+    --icon-color-active: var(--text-normal);
+    display: flex;
 }
 
-.graph-toggle button.is-active {
+.mod-extended-graph-toggle.is-active {
     background-color: var(--interactive-accent);
 }
 
+.mod-views.is-active,
+.mod-legend.is-active {
+    background-color: hsla(var(--accent-h), var(--accent-s), var(--accent-l), 0.2);
+}
+
+
+.separator-exended-graph {
+    --hr-thickness: 1px;
+    margin-block: 0.5rem;
+}
+
+.graph-controls.is-close .graph-controls-button.mod-views,
+.graph-controls.is-close .graph-controls-button.mod-legend {
+    display: flex;
+    margin-top: var(--size-4-2);
+}
+
 /* SETTINGS */
+
 .extended-graph-settings {
 
     textarea {

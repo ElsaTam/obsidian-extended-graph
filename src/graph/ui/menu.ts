@@ -4,17 +4,19 @@ export class MenuUI extends Component {
     viewContent: HTMLElement;
     leaf: WorkspaceLeaf;
 
-    button: HTMLButtonElement;
+    button: HTMLDivElement;
     enabled: boolean;
 
     constructor(leaf: WorkspaceLeaf) {
         super();
         this.leaf = leaf;
         this.viewContent = this.leaf.containerEl.getElementsByClassName("view-content")[0] as HTMLElement;
-        let container = this.viewContent.createDiv();
-        container?.addClass("graph-toggle");
+        let graphControls = this.viewContent.querySelector(".graph-controls") as HTMLDivElement;
 
-        this.button = container.createEl("button");
+        let hr = graphControls.createEl("hr");
+        hr.addClass("separator-exended-graph");
+
+        this.button = graphControls.createDiv("clickable-icon graph-controls-button mod-extended-graph-toggle");
         setIcon(this.button, "sparkles");
         
         this.button.addEventListener('click', (function() {

@@ -320,14 +320,16 @@ export class NodesSet {
         }
         else {
             nodeWrapper.setScale(1);
-            if ("tag" === nodeWrapper.node.type)
-                nodeWrapper.updateBackgroundColor(this.renderer.colors.fillTag.rgb);
-            if ("unresolved" === nodeWrapper.node.type)
-                nodeWrapper.updateBackgroundColor(this.renderer.colors.fillUnresolved.rgb);
-            if ("attachment" === nodeWrapper.node.type)
-                nodeWrapper.updateBackgroundColor(this.renderer.colors.fillAttachment.rgb);
-            else
+            if (nodeWrapper.node.color)
                 nodeWrapper.updateBackgroundColor(nodeWrapper.node.color.rgb);
+            else if ("tag" === nodeWrapper.node.type)
+                nodeWrapper.updateBackgroundColor(this.renderer.colors.fillTag.rgb);
+            else if ("unresolved" === nodeWrapper.node.type)
+                nodeWrapper.updateBackgroundColor(this.renderer.colors.fillUnresolved.rgb);
+            else if ("attachment" === nodeWrapper.node.type)
+                nodeWrapper.updateBackgroundColor(this.renderer.colors.fillAttachment.rgb);
+            else 
+                nodeWrapper.updateBackgroundColor(this.renderer.colors.fill.rgb);
         }
     }
     

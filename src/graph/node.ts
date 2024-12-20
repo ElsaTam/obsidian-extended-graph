@@ -178,7 +178,6 @@ export class NodeWrapper extends Container {
     }
 
     setScale(factor?: number) {
-        console.log("setScale", factor)
         if (factor) {
             this.scaleFactor = factor;
         }
@@ -361,7 +360,6 @@ export class NodeWrapper extends Container {
                     }
                 }
                 this.nodeGraphics.opacityLayer.alpha = this.nodeGraphics.sprite ? 1 : 0.8;
-                console.log(this);
             }
         }
     }
