@@ -120,6 +120,10 @@ body {
     margin-block: 0.5rem;
 }
 
+.graph-controls:not(.is-close) .separator-exended-graph {
+    display: none;
+}
+
 .graph-controls.is-close .graph-controls-button.mod-views,
 .graph-controls.is-close .graph-controls-button.mod-legend {
     display: flex;

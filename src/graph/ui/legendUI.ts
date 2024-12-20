@@ -114,7 +114,6 @@ export class LegendUI extends Component {
                 this.open();
             }
         });
-        console.log(this.toggleDiv);
 
         this.legendRows = new Map<string, LegendRow>();
         this.root = this.viewContent.createDiv();
@@ -124,11 +123,17 @@ export class LegendUI extends Component {
             (manager) && this.legendRows.set(name, new LegendRow(name, manager, this.root));
         }
 
-        this.close();
+        if (this.graph.plugin.settings.collapseLegend) {
+            this.close();
+        }
+        else {
+            this.open();
+        }
     }
 
     onunload(): void {
         this.root.parentNode?.removeChild(this.root);
+        this.toggleDiv.parentNode?.removeChild(this.toggleDiv);
     }
 
     updateLegend(row: string, type: string, color: Uint8Array) {
@@ -165,11 +170,15 @@ export class LegendUI extends Component {
         this.root.removeClass("is-closed");
         this.toggleDiv.addClass("is-active");
         this.isOpen = true;
+        this.graph.plugin.settings.collapseLegend = false;
+        this.graph.plugin.saveSettings();
     }
 
     close() {
         this.root.addClass("is-closed");
         this.toggleDiv.removeClass("is-active");
         this.isOpen = false;
+        this.graph.plugin.settings.collapseLegend = true;
+        this.graph.plugin.saveSettings();
     }
 }

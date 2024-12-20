@@ -7,8 +7,9 @@ import { NodesSet } from './nodesSet';
 import { LinksSet } from './linksSet';
 import { DEFAULT_VIEW_ID, FUNC_NAMES, NONE_TYPE } from 'src/globalVariables';
 import { EngineOptions } from 'src/views/viewData';
-import { ExtendedGraphSettings } from 'src/settings/settings';
 import GraphExtendedPlugin from 'src/main';
+import { GraphsManager } from 'src/graphsManager';
+import { GraphEventsDispatcher } from './graphEventsDispatcher';
 
 export class Graph extends Component {
     nodesSet: NodesSet | null;
@@ -21,19 +22,21 @@ export class Graph extends Component {
     app: App;
     leaf: WorkspaceLeaf;
     plugin: GraphExtendedPlugin;
+    dispatcher: GraphEventsDispatcher;
 
-    constructor(renderer: Renderer, leaf: WorkspaceLeaf, app: App, plugin: GraphExtendedPlugin) {
+    constructor(dispatcher: GraphEventsDispatcher, leaf: WorkspaceLeaf, app: App) {
         FUNC_NAMES && console.log("[Graph] new");
         super();
-        this.renderer = renderer;
+        this.dispatcher = dispatcher;
+        this.renderer = dispatcher.renderer;
         this.app = app;
         this.leaf = leaf;
-        this.plugin = plugin;
+        this.plugin = dispatcher.plugin;
 
         // Initialize nodes and links sets
         if (this.plugin.settings.enableTags || this.plugin.settings.enableImages || this.plugin.settings.enableFocusActiveNote || this.plugin.settings.enableLinks) {
-            let tagsManager = this.plugin.settings.enableTags ? new InteractiveManager(leaf, plugin.settings, "tag") : null;
-            this.nodesSet = new NodesSet(leaf, renderer, tagsManager, app, plugin.settings);
+            let tagsManager = this.plugin.settings.enableTags ? new InteractiveManager(leaf, dispatcher.plugin.settings, "tag") : null;
+            this.nodesSet = new NodesSet(leaf, dispatcher.renderer, tagsManager, app, dispatcher.plugin.settings);
             if (this.plugin.settings.enableTags && tagsManager) {
                 this.interactiveManagers.set("tag", tagsManager);
                 this.addChild(tagsManager);
@@ -41,7 +44,7 @@ export class Graph extends Component {
         }
         if (this.plugin.settings.enableLinks) {
             this.linkTypesMap = new Map<string, Set<string>>();
-            this.linksSet = new LinksSet(leaf, renderer, new InteractiveManager(leaf, plugin.settings, "link"));
+            this.linksSet = new LinksSet(leaf, dispatcher.renderer, new InteractiveManager(leaf, dispatcher.plugin.settings, "link"));
             this.interactiveManagers.set("link", this.linksSet.linksManager);
             this.addChild(this.linksSet.linksManager);
         }
@@ -288,15 +291,6 @@ export class Graph extends Component {
         });
     }
 
-    newView(name: string) : string {
-        FUNC_NAMES && console.log("[Graph] newView");
-        let view = new GraphView(name);
-        view.setID();
-        view.saveGraph(this);
-        this.app.workspace.trigger('extended-graph:view-needs-saving', view.data);
-        return view.data.id;
-    }
-
     setFilter(filter: string) {
         this.engine.filterOptions.search.setValue(filter);
         this.engine.updateSearch();
@@ -304,6 +298,15 @@ export class Graph extends Component {
 
     setEngineOptions(options: EngineOptions) {
         this.engine.setOptions(options);
+    }
+
+    newView(name: string) : string {
+        FUNC_NAMES && console.log("[Graph] newView");
+        let view = new GraphView(name);
+        view.setID();
+        view.saveGraph(this);
+        this.app.workspace.trigger('extended-graph:view-needs-saving', view.data);
+        return view.data.id;
     }
 
     saveView(id: string) : void {

@@ -97,8 +97,13 @@ export class GraphViewsUI extends Component {
         // CURRENT VIEW ID
         this.currentViewID = this.select.value;
 
-        // CLOSE BY DEFAULT
-        this.close();
+
+        if (this.graph.plugin.settings.collapseView) {
+            this.close();
+        }
+        else {
+            this.open();
+        }
     }
 
     onunload(): void {
@@ -158,11 +163,15 @@ export class GraphViewsUI extends Component {
         this.root.removeClass("is-closed");
         this.toggleDiv.addClass("is-active");
         this.isOpen = true;
+        this.graph.plugin.settings.collapseView = false;
+        this.graph.plugin.saveSettings();
     }
 
     close() {
         this.root.addClass("is-closed");
         this.toggleDiv.removeClass("is-active");
         this.isOpen = false;
+        this.graph.plugin.settings.collapseView = true;
+        this.graph.plugin.saveSettings();
     }
 }

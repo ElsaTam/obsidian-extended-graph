@@ -54,17 +54,17 @@ export class GraphEventsDispatcher extends Component {
 
         this.renderer = this.leaf.view.renderer;
         this.canvas = this.renderer.interactiveEl;
-        this.graph = new Graph(this.renderer, leaf, app, this.plugin);
+        this.graph = new Graph(this, leaf, app);
         this.addChild(this.graph);
 
+        this.controlsUI = new GraphControlsUI(this.graph, leaf);
+        this.addChild(this.controlsUI);
+        this.viewsUI = new GraphViewsUI(this.graph, leaf);
+        this.addChild(this.viewsUI);
         if (this.plugin.settings.enableLinks || this.plugin.settings.enableTags) {
             this.legendUI = new LegendUI(this.graph, leaf);
             this.addChild(this.legendUI);
         }
-        this.viewsUI = new GraphViewsUI(this.graph, leaf);
-        this.addChild(this.viewsUI);
-        this.controlsUI = new GraphControlsUI(this.graph, leaf);
-        this.addChild(this.controlsUI);
         this.viewsUI.updateViewsList(plugin.settings.views);
     }
 
@@ -234,6 +234,8 @@ export class GraphEventsDispatcher extends Component {
         FUNC_NAMES && console.log("[GraphEventsDispatcher] onViewChanged");
         const viewData = this.plugin.settings.views.find(v => v.id === id);
         if (!viewData) return;
+
+        console.log(this.graph.engine.getOptions());
 
         if (this.graph.nodesSet && this.graph.nodesSet.tagsManager) {
             this.graph.nodesSet.tagsManager.loadView(viewData);
