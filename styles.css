@@ -11,10 +11,18 @@ body {
     box-shadow: var(--shadow-s);
     border-radius: var(--radius-m);
     padding: var(--size-4-2);
-    z-index: 10;
 
     &:hover {
         --ext-graph-background-container-opacity: 1;
+    }
+}
+
+.is-phone .graph-legend-container,
+.is-phone .graph-views-container {
+    --input-height: 30px;
+
+    button, select {
+        font-size: var(--font-ui-smaller);
     }
 }
 
@@ -65,10 +73,21 @@ body {
 
 /* VIEWS */
 
+@media (width > 800px) {
+    .graph-views-container {
+        max-width: calc(100% - var(--graph-controls-width) - 3 * var(--size-4-3));
+    }
+}
+
+@media (width < 800px) {
+    .graph-views-container {
+        max-width: calc(100% - var(--icon-size) - 2 * var(--size-2-3) - 3 * var(--size-4-3));
+    }
+}
+
 .graph-views-container {
     position: absolute;
     top: var(--size-4-3); left: var(--size-4-3);
-    max-width: calc(100% - var(--graph-controls-width) - 3 * var(--size-4-3));
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -80,7 +99,7 @@ body {
 }
 
 .graph-views-container select {
-    width: 200px;
+    max-width: 200px;
     appearance: auto;
 }
 
@@ -99,6 +118,10 @@ body {
 }
 
 /* GRAPH CONTROLS */
+
+.graph-controls {
+    z-index: 1;
+}
 
 .graph-controls.is-close .mod-extended-graph-toggle {
     --icon-color-active: var(--text-normal);
@@ -135,6 +158,19 @@ body {
 }
 
 /* SETTINGS */
+
+.is-phone .extended-graph-settings .settings-colors-container {
+    input[type="color"] {
+        width: calc(var(--swatch-width) + 4px);
+        height: 100%;
+    }
+    button {
+        width: fit-content;
+    }
+    .preview {
+        display: none;
+    }
+}
 
 .extended-graph-settings {
 
@@ -230,6 +266,13 @@ body {
     .settings-selection-container {
         gap: var(--size-4-2);
         padding: 0.75em 0;
+        flex-wrap: wrap;
+        justify-content: space-between;
+
+        &::after {
+            content: "";
+            flex: auto;
+        }
 
         label {
             border: 1px solid var(--background-modifier-border);
