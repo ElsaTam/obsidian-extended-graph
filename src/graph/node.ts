@@ -107,6 +107,7 @@ export class NodeWrapper extends Container {
             if (this.imageUri) {
                 await Assets.load(this.imageUri).then((texture: Texture) => {
                     this.nodeGraphics.size = Math.min(texture.width, texture.height);
+                    console.log(this.nodeGraphics.size);
 
                     // Sprite
                     this.nodeGraphics.sprite = Sprite.from(texture);
@@ -412,10 +413,12 @@ export class NodeWrapper extends Container {
 
     updateBackgroundColor(color?: number) : void {
         FUNC_NAMES && console.log("[NodeWrapper] updateBackgroundColor");
+        let resFactor = 4; // increase the factor to avoid seeing edges when node is big
         this.nodeGraphics.background.clear();
         this.nodeGraphics.background.beginFill(color ? color : this.node.getFillColor().rgb)
-            .drawCircle(0, 0, 0.5 * this.nodeGraphics.size)
+            .drawCircle(0, 0, resFactor * 0.5 * this.nodeGraphics.size)
             .endFill();
+        this.nodeGraphics.background.scale.set(1 / resFactor);
     }
 
     // =============================== EVENTS ================================ //
