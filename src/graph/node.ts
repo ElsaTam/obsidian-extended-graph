@@ -197,10 +197,15 @@ export class NodeWrapper extends Container {
         FUNC_NAMES && console.log("[NodeWrapper] updateTags");
         this.tagTypes = [];
         const metadata = app.metadataCache.getFileCache(this.file);
-        if (metadata && metadata.tags) {
+        if (metadata?.tags) {
             for (const tagCache of metadata.tags) {
                 const tag = tagCache.tag.replace('#', '');
                 this.tagTypes.push(tag);
+            }
+        }
+        if (metadata?.frontmatter?.tags) {
+            for (const tag of metadata.frontmatter.tags) {
+                this.tagTypes.push(tag.replace('#', ''));
             }
         }
         if (this.tagTypes.length == 0) {
