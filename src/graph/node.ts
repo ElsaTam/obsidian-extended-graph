@@ -109,7 +109,6 @@ export class NodeWrapper extends Container {
             if (this.imageUri) {
                 await Assets.load(this.imageUri).then((texture: Texture) => {
                     this.nodeGraphics.size = Math.min(texture.width, texture.height);
-                    console.log(this.nodeGraphics.size);
 
                     // Sprite
                     this.nodeGraphics.sprite = Sprite.from(texture);

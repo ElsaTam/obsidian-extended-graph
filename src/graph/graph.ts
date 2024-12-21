@@ -191,10 +191,11 @@ export class Graph extends Component {
                     // For each link in the frontmatters, check if target matches
                     for (const linkCache of frontmatterLinks) {
                         const linkType = linkCache.key.split('.')[0];
+                        if (!this.plugin.settings.selectedInteractives["link"].includes(linkType)) continue;
                         const targetID = this.app.metadataCache.getFirstLinkpathDest(linkCache.link, ".")?.path;
                         if (targetID === linkWrapper.targetID) {
                             // Set the pair
-                            (!this.linkTypesMap.get(linkType)) &&  this.linkTypesMap.set(linkType, new Set<string>());
+                            (!this.linkTypesMap.get(linkType)) && this.linkTypesMap.set(linkType, new Set<string>());
                             this.linkTypesMap.get(linkType)?.add(linkID);
                             types.add(linkType);
                         }
