@@ -43,6 +43,7 @@ export interface NodeGraphics {
     opacityLayer: Graphics | null;
     background: Graphics;
     size: number;
+    circleRadius: number; // increase the resolution of the circle
 }
 
 export class NodeWrapper extends Container {
@@ -70,6 +71,7 @@ export class NodeWrapper extends Container {
             opacityLayer: settings.fadeOnDisable ? new Graphics()       : null,
             background: new Graphics(),
             size: 1,
+            circleRadius: 10,
         };
         this.tagTypes = settings.enableTags ? [] : null;
 
@@ -111,6 +113,8 @@ export class NodeWrapper extends Container {
 
                     // Sprite
                     this.nodeGraphics.sprite = Sprite.from(texture);
+                    this.nodeGraphics.sprite.width = this.nodeGraphics.size;
+                    this.nodeGraphics.sprite.height = this.nodeGraphics.size;
                     this.nodeGraphics.sprite.name = "image";
                     this.nodeGraphics.sprite.anchor.set(0.5);
                     this.addChild(this.nodeGraphics.sprite);
@@ -119,8 +123,10 @@ export class NodeWrapper extends Container {
                     // Mask
                     let mask = new Graphics()
                         .beginFill(0xFFFFFF)
-                        .drawCircle(0, 0, 0.5 * this.nodeGraphics.size)
+                        .drawCircle(0, 0, this.nodeGraphics.circleRadius)
                         .endFill();
+                    mask.width = this.nodeGraphics.size;
+                    mask.height = this.nodeGraphics.size;
                     this.nodeGraphics.sprite.mask = mask;
                     this.nodeGraphics.sprite.addChild(mask);
                 });
@@ -136,17 +142,14 @@ export class NodeWrapper extends Container {
 
         // Opacity layer
         if (this.nodeGraphics.opacityLayer) {
-            this.nodeGraphics.opacityLayer
-                .beginFill(0xFFFFFF)
-                .drawCircle(0, 0, 0.5 * this.nodeGraphics.size)
-                .endFill();
+            this.updateOpacityLayerColor(0xFFFFFF);
             this.nodeGraphics.opacityLayer.alpha = 0;
             this.nodeGraphics.opacityLayer.scale.set(1.1);
             this.addChildAt(this.nodeGraphics.opacityLayer, 1);
         }
         
         // Scale
-        this.scale.set(this.scaleFactor * NODE_CIRCLE_RADIUS * 2 / this.nodeGraphics.size);
+        this.setScale();
 
         // Because of async, make sure the container is not already added
         if (this.node.circle?.getChildByName(this.name)) {
@@ -402,23 +405,25 @@ export class NodeWrapper extends Container {
 
     // ========================= ALPHA / BACKGROUND ========================= //
     
-    updateOpacityLayerColor(backgroundColor: Uint8Array) : void {
+    updateOpacityLayerColor(backgroundColor: any) : void {
         if (!this.nodeGraphics.opacityLayer) return;
         FUNC_NAMES && console.log("[NodeWrapper] updateBackgroundColor");
         this.nodeGraphics.opacityLayer.clear();
         this.nodeGraphics.opacityLayer.beginFill(backgroundColor)
-            .drawCircle(0, 0, 0.5 * this.nodeGraphics.size)
+            .drawCircle(0, 0, this.nodeGraphics.circleRadius)
             .endFill();
+        this.nodeGraphics.opacityLayer.width = this.nodeGraphics.size;
+        this.nodeGraphics.opacityLayer.height = this.nodeGraphics.size;
     }
 
     updateBackgroundColor(color?: number) : void {
         FUNC_NAMES && console.log("[NodeWrapper] updateBackgroundColor");
-        let resFactor = 4; // increase the factor to avoid seeing edges when node is big
         this.nodeGraphics.background.clear();
         this.nodeGraphics.background.beginFill(color ? color : this.node.getFillColor().rgb)
-            .drawCircle(0, 0, resFactor * 0.5 * this.nodeGraphics.size)
+            .drawCircle(0, 0, this.nodeGraphics.circleRadius)
             .endFill();
-        this.nodeGraphics.background.scale.set(1 / resFactor);
+        this.nodeGraphics.background.width = this.nodeGraphics.size;
+        this.nodeGraphics.background.height = this.nodeGraphics.size;
     }
 
     // =============================== EVENTS ================================ //

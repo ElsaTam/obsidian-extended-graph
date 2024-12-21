@@ -234,6 +234,8 @@ export class GraphEventsDispatcher extends Component {
         const viewData = this.plugin.settings.views.find(v => v.id === id);
         if (!viewData) return;
 
+        console.log(this.graph.linkTypesMap);
+
         if (this.graph.nodesSet && this.graph.nodesSet.tagsManager) {
             this.graph.nodesSet.tagsManager.loadView(viewData);
             this.legendUI?.enableAll("tag");
