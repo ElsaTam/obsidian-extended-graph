@@ -19,7 +19,7 @@ export class NodesSet {
     renderer: Renderer;
     tagsManager: InteractiveManager | null;
     app: App;
-    settings: ExtendedGraphSettings;
+    settingsOnCreation: ExtendedGraphSettings;
 
     constructor(leaf: WorkspaceLeaf, renderer: Renderer, tagsManager: InteractiveManager | null, app: App, settings: ExtendedGraphSettings) {
         FUNC_NAMES && console.log("[NodesSet] new");
@@ -27,12 +27,12 @@ export class NodesSet {
         this.renderer = renderer;
         this.tagsManager = tagsManager;
         this.app = app;
-        this.settings = settings;
+        this.settingsOnCreation = structuredClone(settings);
 
-        if (this.settings.enableTags) {
+        if (this.settingsOnCreation.enableTags) {
             this.disabledTags = new Set<string>();
         }
-        if (this.settings.enableTags && !this.settings.fadeOnDisable) {
+        if (this.settingsOnCreation.enableTags && !this.settingsOnCreation.fadeOnDisable) {
             this.disconnectedNodes = new Set<string>();
         }
     }
@@ -41,7 +41,7 @@ export class NodesSet {
         FUNC_NAMES && console.log("[NodesSet] load");
         let requestList: Promise<void>[] = [];
         this.renderer.nodes.forEach((node: Node) => {
-            let nodeWrapper = new NodeWrapper(node, this.app, this.settings);
+            let nodeWrapper = new NodeWrapper(node, this.app, this.settingsOnCreation);
             requestList.push(this.initNode(nodeWrapper));
         });
         return requestList;
@@ -60,7 +60,7 @@ export class NodesSet {
 
     private async initNode(nodeWrapper: NodeWrapper) : Promise<void> {
         FUNC_NAMES && console.log("[NodesSet] initNode");
-        await nodeWrapper.init(this.app, this.settings.imageProperty, this.renderer).then(() => {
+        await nodeWrapper.init(this.app, this.settingsOnCreation.imageProperty, this.renderer).then(() => {
             nodeWrapper.node.circle.addChild(nodeWrapper);
             this.nodesMap.set(nodeWrapper.node.id, nodeWrapper);
             this.connectedNodes.add(nodeWrapper.node.id);
@@ -139,7 +139,7 @@ export class NodesSet {
 
             // Get the nodes that needs to be removed
             let nodesToRemove: string[] = [];
-            if (this.settings.enableTags) {
+            if (this.settingsOnCreation.enableTags) {
                 nodesToRemove = newNodesIDs.filter(id => this.disconnectedNodes?.has(id));
             }
 
@@ -195,7 +195,7 @@ export class NodesSet {
      * @returns 
      */
     getAllTagTypesFromCache(app: App) : Set<string> | null {
-        if (!this.settings.enableTags) return null;
+        if (!this.settingsOnCreation.enableTags) return null;
         let types = new Set<string>();
 
         this.nodesMap.forEach(container => {
@@ -215,7 +215,7 @@ export class NodesSet {
      * @param type type of the tag
      */
     disableTag(type: string) : void {
-        if (!this.settings.enableTags) return;
+        if (!this.settingsOnCreation.enableTags) return;
         FUNC_NAMES && console.log("[NodesSet] disableTag");
         this.disabledTags?.add(type);
         let nodesToDisable: string[] = [];
@@ -229,7 +229,7 @@ export class NodesSet {
             }
         });
 
-        (nodesToDisable.length > 0) && this.disableNodes(nodesToDisable);
+        (!this.settingsOnCreation.fadeOnDisable && nodesToDisable.length > 0) && this.disableNodes(nodesToDisable);
     }
 
     /**
@@ -237,7 +237,7 @@ export class NodesSet {
      * @param type type of the tag
      */
     enableTag(type: string) : void {
-        if (!this.settings.enableTags) return;
+        if (!this.settingsOnCreation.enableTags) return;
         FUNC_NAMES && console.log("[NodesSet] enableTag");
         this.disabledTags?.delete(type);
         let nodesToEnable: string[] = [];
@@ -257,7 +257,7 @@ export class NodesSet {
      * Reset arcs for each node
      */
     resetArcs() : void {
-        if (!this.settings.enableTags) return;
+        if (!this.settingsOnCreation.enableTags) return;
         FUNC_NAMES && console.log("[NodesSet] resetArcs");
         this.nodesMap.forEach((wrapper: NodeWrapper) => {
             wrapper.removeArcs();
@@ -270,7 +270,7 @@ export class NodesSet {
      * @param types types of tags to remove
      */
     removeArcs(types?: string[]) : void {
-        if (!this.settings.enableTags) return;
+        if (!this.settingsOnCreation.enableTags) return;
         FUNC_NAMES && console.log("[NodesSet] removeArcs");
         this.nodesMap.forEach(w => w.removeArcs(types));
     }
@@ -281,13 +281,13 @@ export class NodesSet {
      * @param color new color
      */
     updateArcsColor(type: string, color: Uint8Array) : void {
-        if (!this.settings.enableTags) return;
+        if (!this.settingsOnCreation.enableTags) return;
         FUNC_NAMES && console.log("[NodesSet] updateArcsColor");
         this.nodesMap.forEach(w => w.hasTagType(type) && (type !== NONE_TYPE) && (this.tagsManager) && w.updateArc(type, color, this.tagsManager));
     }
 
     disableNodes(ids: string[]) : void {
-        if (!this.settings.enableTags) return;
+        if (!this.settingsOnCreation.enableTags) return;
         FUNC_NAMES && console.log("[NodesSet] disableNodes");
         ids.forEach(id => {
             this.disconnectedNodes?.add(id);
@@ -310,12 +310,12 @@ export class NodesSet {
     }
 
     highlightNode(file: TFile, highlight: boolean) : void {
-        if (!this.settings.enableFocusActiveNote) return;
+        if (!this.settingsOnCreation.enableFocusActiveNote) return;
         let nodeWrapper = this.nodesMap.get(file.path);
         if (!nodeWrapper) return;
 
         if (highlight) {
-            nodeWrapper.setScale(this.settings.focusScaleFactor);
+            nodeWrapper.setScale(this.settingsOnCreation.focusScaleFactor);
             nodeWrapper.updateBackgroundColor(this.renderer.colors.fillFocused.rgb);
         }
         else {
@@ -331,23 +331,5 @@ export class NodesSet {
             else 
                 nodeWrapper.updateBackgroundColor(this.renderer.colors.fill.rgb);
         }
-    }
-    
-    loadView(viewData: GraphViewData) : void {
-        if (!this.settings.enableTags) return;
-        FUNC_NAMES && console.log("[NodesSet] loadView");
-        // Enable/Disable tags
-        let tagsToDisable: string[] = [];
-        let tagsToEnable: string[] = [];
-        this.tagsManager?.getTypes().forEach(type => {
-            if (this.tagsManager?.isActive(type) && viewData?.disabledTags.includes(type)) {
-                tagsToDisable.push(type);
-            }
-            else if (!this.tagsManager?.isActive(type) && !viewData?.disabledTags.includes(type)) {
-                tagsToEnable.push(type);
-            }
-        });
-        this.tagsManager?.disable(tagsToDisable);
-        this.tagsManager?.enable(tagsToEnable);
     }
 }

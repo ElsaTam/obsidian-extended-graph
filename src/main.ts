@@ -50,15 +50,22 @@ export default class GraphExtendedPlugin extends Plugin {
     }
     
     async onLayoutChange() {
-        // If we are already waiting for a renderer, don't check a second time
-        if (this.waitingTime > 0) return;
+
+        // Restart the research
+        this.waitingTime = 0;
 
         // Check if a renderer (a graph) is active
-        await this.waitForRenderer();
-
-        const leaves = this.getAllGraphLeaves();
-        leaves.forEach(leaf => {
-            this.graphsManager.setMenu(leaf as WorkspaceLeafExt);
+        this.waitForRenderer().then(found => {
+            if (found) {
+                const leaves = this.getAllGraphLeaves();
+                this.graphsManager.syncWithLeaves(leaves);
+                leaves.forEach(leaf => {
+                    this.graphsManager.onNewLeafOpen(leaf as WorkspaceLeafExt);
+                });
+            }
+            else {
+                this.graphsManager.syncWithLeaves([]);
+            }
         });
     }
 
@@ -71,14 +78,19 @@ export default class GraphExtendedPlugin extends Plugin {
         }
     }
     
-    waitForRenderer(): Promise<void> {
+    waitForRenderer(): Promise<boolean> {
         return new Promise((resolve) => {
             const intervalId = setInterval(() => {
                 this.waitingTime += 500;
-                if (this.isGraphOpen() || this.waitingTime > 5000) {
+                if (this.isGraphOpen()) {
                     this.waitingTime = 0;
                     clearInterval(intervalId);
-                    resolve();
+                    resolve(true);
+                }
+                else if (this.waitingTime > 5000) {
+                    this.waitingTime = 0;
+                    clearInterval(intervalId);
+                    resolve(false)
                 }
             }, 500);
         });

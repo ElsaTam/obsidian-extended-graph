@@ -130,6 +130,10 @@ body {
     margin-top: var(--size-4-2);
 }
 
+.graph-control-section:nth-last-child(1 of .graph-control-section) {
+    border-bottom: none;
+}
+
 /* SETTINGS */
 
 .extended-graph-settings {

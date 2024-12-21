@@ -10,6 +10,7 @@ import { EngineOptions } from 'src/views/viewData';
 import GraphExtendedPlugin from 'src/main';
 import { GraphsManager } from 'src/graphsManager';
 import { GraphEventsDispatcher } from './graphEventsDispatcher';
+import { ExtendedGraphSettings } from 'src/settings/settings';
 
 export class Graph extends Component {
     nodesSet: NodesSet | null;
@@ -92,8 +93,12 @@ export class Graph extends Component {
         this.engine.filterOptions.search.getValue = (function() {
             return this.filterOptions.search.inputEl.value;
         }).bind(this.engine);
-        this.engine.onOptionsChange();
-        this.engine.updateSearch();
+
+        let graphCorePlugin = this.plugin.app.internalPlugins.getPluginById("graph");
+        let defaultViewData = this.plugin.settings.views.find(v => v.id === DEFAULT_VIEW_ID);
+        (defaultViewData) && this.setEngineOptions(defaultViewData.engineOptions);
+        // @ts-ignore
+        (graphCorePlugin && defaultViewData) && (graphCorePlugin.instance.options.search = defaultViewData.engineOptions.search);
     }
 
     private removeAdditionalData() : void {

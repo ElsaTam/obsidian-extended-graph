@@ -94,8 +94,6 @@ export class LinksSet {
         let promises: Promise<void>[] = [];
         ids.forEach(id => {
             const linkWrapper = this.get(id);
-            if (!linkWrapper.isActive) return;
-            
             promises.push(linkWrapper.waitReady(this.renderer).then((ready) => {
                 if (ready) {
                     linkWrapper.setRenderable(false);
@@ -123,8 +121,6 @@ export class LinksSet {
         let promises: Promise<void>[] = [];
         ids.forEach(id => {
             const linkWrapper = this.get(id);
-            if (linkWrapper.isActive) return;
-            
             promises.push(linkWrapper.waitReady(this.renderer).then((ready) => {
                 if (ready) {
                     linkWrapper.connect();
@@ -203,26 +199,5 @@ export class LinksSet {
                 linkWrapper.setColor(color);
             }
         });
-    }
-    
-    /**
-     * Update the links with a new view
-     * @param viewData 
-     */
-    loadView(viewData: GraphViewData) : void {
-        FUNC_NAMES && console.log("[LinksSet] loadView");
-        let linksManager = this.linksManager;
-        let linksToDisable: string[] = [];
-        let linksToEnable: string[] = [];
-        linksManager.getTypes().forEach(type => {
-            if (linksManager.isActive(type) && viewData?.disabledLinks.includes(type)) {
-                linksToDisable.push(type);
-            }
-            else if (!linksManager.isActive(type) && !viewData?.disabledLinks.includes(type)) {
-                linksToEnable.push(type);
-            }
-        });
-        linksManager.disable(linksToDisable);
-        linksManager.enable(linksToEnable);
     }
 }

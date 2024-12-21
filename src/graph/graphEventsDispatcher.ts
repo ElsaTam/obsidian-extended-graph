@@ -3,7 +3,7 @@ import { Graph } from "./graph";
 import { LegendUI } from "./ui/legendUI";
 import { GraphViewsUI } from "./ui/viewsUI";
 import { Renderer } from "./renderer";
-import { FUNC_NAMES } from "src/globalVariables";
+import { DEFAULT_VIEW_ID, FUNC_NAMES } from "src/globalVariables";
 import { GraphsManager } from "src/graphsManager";
 import { GraphControlsUI } from "./ui/graphControl";
 import GraphExtendedPlugin from "src/main";
@@ -26,7 +26,6 @@ export type WorkspaceLeafExt = WorkspaceLeaf & {
     on(name: "extended-graph:change-link-color", callback: (type: string, color: Uint8Array) => any)    : EventRef;
     on(name: "extended-graph:disable-links",     callback: (type: string[]) => any)                     : EventRef;
     on(name: "extended-graph:enable-links",      callback: (type: string[]) => any)                     : EventRef;
-    on(name: "extended-graph:view-changed", callback: (name: string) => any) : EventRef;
 
     view: {
         renderer: Renderer
@@ -89,11 +88,11 @@ export class GraphEventsDispatcher extends Component {
             this.registerEvent(this.leaf.on('extended-graph:enable-links', this.onLinksEnabled.bind(this)));
         }
 
-        this.registerEvent(this.leaf.on('extended-graph:view-changed', this.onViewChanged.bind(this)));
-
         this.registerEvent(this.leaf.on('extended-graph:graph-ready', this.onGraphReady.bind(this)));
         this.registerEvent(this.leaf.on('extended-graph:engine-needs-update', this.onEngineNeedsUpdate.bind(this)));
         this.registerEvent(this.leaf.on('extended-graph:graph-needs-update',  this.onGraphNeedsUpdate.bind(this)));
+
+        this.onViewChanged(DEFAULT_VIEW_ID);
     }
 
     onunload(): void {
@@ -234,8 +233,6 @@ export class GraphEventsDispatcher extends Component {
         FUNC_NAMES && console.log("[GraphEventsDispatcher] onViewChanged");
         const viewData = this.plugin.settings.views.find(v => v.id === id);
         if (!viewData) return;
-
-        console.log(this.graph.engine.getOptions());
 
         if (this.graph.nodesSet && this.graph.nodesSet.tagsManager) {
             this.graph.nodesSet.tagsManager.loadView(viewData);

@@ -51,7 +51,7 @@ export class GraphViewsUI extends Component {
         this.select.addEventListener('change', event => {
             this.currentViewID = this.select.value;
             this.displaySaveDeleteButton();
-            this.leaf.trigger('extended-graph:view-changed', this.select.value);
+            this.graph.dispatcher.onViewChanged(this.select.value);
         });
 
         // ADD BUTTON

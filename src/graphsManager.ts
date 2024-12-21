@@ -1,17 +1,17 @@
-import { App, CachedMetadata, Component, TFile } from "obsidian";
+import { App, CachedMetadata, Component, TFile, WorkspaceLeaf } from "obsidian";
 import { GraphEventsDispatcher, WorkspaceLeafExt } from "./graph/graphEventsDispatcher";
 import GraphExtendedPlugin from "./main";
 import { GraphViewData } from "./views/viewData";
 import { MenuUI } from "./graph/ui/menu";
+import { DEFAULT_VIEW_ID } from "./globalVariables";
 
 
 export class GraphsManager extends Component {
     dispatchers = new Map<string, GraphEventsDispatcher>();
     menus = new Map<string, MenuUI>();
+    isInit = new Map<string, boolean>();
     app: App;
     themeObserver: MutationObserver;
-    currentTheme: string;
-    currentStyleSheetHref: string | null | undefined;
     plugin: GraphExtendedPlugin;
     activeFile: TFile | null = null;
     
@@ -21,19 +21,14 @@ export class GraphsManager extends Component {
         super();
         this.plugin = plugin;
         this.app = app;
-        this.currentTheme = this.getTheme();
-        this.currentStyleSheetHref = this.getStyleSheetHref();
     }
 
     onload(): void {
         this.registerEvent(this.app.metadataCache.on('changed', (file: TFile, data: string, cache: CachedMetadata) => {
-            this.handleMetadataCacheChange(file, data, cache);
+            this.onMetadataCacheChange(file, data, cache);
         }));
-
-        this.listenToThemeChange();
         
-        // @ts-ignore
-        this.registerEvent(this.app.workspace.on('extended-graph:theme-change', this.onThemeChange.bind(this)));
+        this.registerEvent(this.app.workspace.on('css-change', this.onThemeChange.bind(this)));
         // @ts-ignore
         this.registerEvent(this.app.workspace.on('extended-graph:view-needs-saving', this.onViewNeedsSaving.bind(this)));
         // @ts-ignore
@@ -46,13 +41,39 @@ export class GraphsManager extends Component {
         }
     }
 
-    onThemeChange(theme: string) {
+    // EVENTS
+
+    onThemeChange() {
         this.dispatchers.forEach(dispatcher => {
             if (dispatcher.graph.nodesSet) {
                 dispatcher.graph.nodesSet.updateOpacityLayerColor();
                 dispatcher.renderer.changed();
             }
         });
+    }
+
+    async onMetadataCacheChange(file: TFile, data: string, cache: CachedMetadata) {
+        if (this.plugin.settings.enableTags) {
+            this.dispatchers.forEach(dispatcher => {
+                if (!(dispatcher.graph && dispatcher.renderer)) return;
+        
+                const container = dispatcher.graph.nodesSet?.getNodeWrapperFromFile(file);
+                if (!container) return;
+        
+                let newTypes: string[] = [];
+                cache?.tags?.forEach(tagCache => {
+                    const type = tagCache.tag.replace('#', '');
+                    newTypes.push(type);
+                });
+        
+                const needsUpdate = !container.matchesTagsTypes(newTypes);
+        
+                if (needsUpdate) {
+                    const types = dispatcher.graph.nodesSet?.getAllTagTypesFromCache(this.app);
+                    (types) && dispatcher.graph.nodesSet?.tagsManager?.update(types);
+                }
+            });
+        }
     }
 
     async onViewNeedsSaving(viewData: GraphViewData) {
@@ -80,46 +101,33 @@ export class GraphsManager extends Component {
             dispatcher.viewsUI.updateViewsList(this.plugin.settings.views);
         });
     }
-    
-    private listenToThemeChange(): void {
-        this.themeObserver = new MutationObserver(() => {
-            const newTheme = this.getTheme();
-            const newStyleSheetHref = this.getStyleSheetHref();
-            if (newTheme !== this.currentTheme || (newStyleSheetHref !== this.currentStyleSheetHref)) {
-                this.app.workspace.trigger('extended-graph:theme-change', this.currentTheme);
-                this.currentTheme = newTheme;
-                this.currentStyleSheetHref = newStyleSheetHref;
-            }
-        });
-        
-        this.themeObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
-        this.themeObserver.observe(document.head, { childList: true, subtree: true, attributes: true, attributeFilter: ['href'] });
+
+    onPluginEnabled(leaf: WorkspaceLeafExt) : void {
+        this.enablePlugin(leaf);
     }
 
-    private getTheme() : string {
-        return this.app.vault.getConfig('theme') as string;
+    onPluginDisabled(leaf: WorkspaceLeafExt) : void {
+        this.disablePlugin(leaf);
     }
 
-    private getStyleSheetHref() : string | null | undefined {
-        return document.querySelector('link[rel="stylesheet"][href*="theme"]')?.getAttribute('href');
-    }
+    onNewLeafOpen(leaf: WorkspaceLeafExt) : void {
+        if (this.isInit.get(leaf.id)) return;
 
-    addGraph(leaf: WorkspaceLeafExt) : GraphEventsDispatcher {
-        if (leaf.view.renderer.nodes.length > this.plugin.settings.maxNodes) {
-            throw new Error("Too many nodes, plugin is disables in this graph");
+        // Add menu UI
+        this.setMenu(leaf);
+
+        // If global graph, set the engine options to default
+        if (leaf.view.getViewType() === "graph") {
+            // @ts-ignore
+            let engine = leaf.view.dataEngine;
+            let defaultView = this.plugin.settings.views.find(v => v.id === DEFAULT_VIEW_ID);
+            if (defaultView) engine.setOptions(defaultView.engineOptions);
         }
 
-        let dispatcher = this.getGraphEventsDispatcher(leaf);
-        if (dispatcher) return dispatcher;
-
-        dispatcher = new GraphEventsDispatcher(leaf, this.app, this.plugin, this);
-
-        this.dispatchers.set(leaf.id, dispatcher);
-        dispatcher.load();
-        leaf.view.addChild(dispatcher);
-
-        return dispatcher;
+        this.isInit.set(leaf.id, true);
     }
+
+    // MENU
 
     setMenu(leaf: WorkspaceLeafExt) : MenuUI {
         let menuUI = this.menus.get(leaf.id);
@@ -132,33 +140,7 @@ export class GraphsManager extends Component {
         return menuUI;
     }
 
-    getGraphEventsDispatcher(leaf: WorkspaceLeafExt) : GraphEventsDispatcher | undefined {
-        return this.dispatchers.get(leaf.id);
-    }
-
-    async handleMetadataCacheChange(file: TFile, data: string, cache: CachedMetadata) {
-        if (this.plugin.settings.enableTags) {
-            this.dispatchers.forEach(dispatcher => {
-                if (!(dispatcher.graph && dispatcher.renderer)) return;
-        
-                const container = dispatcher.graph.nodesSet?.getNodeWrapperFromFile(file);
-                if (!container) return;
-        
-                let newTypes: string[] = [];
-                cache?.tags?.forEach(tagCache => {
-                    const type = tagCache.tag.replace('#', '');
-                    newTypes.push(type);
-                });
-        
-                const needsUpdate = !container.matchesTagsTypes(newTypes);
-        
-                if (needsUpdate) {
-                    const types = dispatcher.graph.nodesSet?.getAllTagTypesFromCache(this.app);
-                    (types) && dispatcher.graph.nodesSet?.tagsManager?.update(types);
-                }
-            });
-        }
-    }
+    // SETTINGS UPDATE
 
     updatePalette(interactive: string) : void {
         if (interactive === "tag" && !this.plugin.settings.enableTags) return;
@@ -178,8 +160,21 @@ export class GraphsManager extends Component {
     
     // ENABLE/DISABLE PLUGIN
 
-    onPluginEnabled(leaf: WorkspaceLeafExt) : void {
-        this.enablePlugin(leaf);
+    addGraph(leaf: WorkspaceLeafExt) : GraphEventsDispatcher {
+        if (leaf.view.renderer.nodes.length > this.plugin.settings.maxNodes) {
+            throw new Error("Too many nodes, plugin is disables in this graph");
+        }
+
+        let dispatcher = this.dispatchers.get(leaf.id);
+        if (dispatcher) return dispatcher;
+
+        dispatcher = new GraphEventsDispatcher(leaf, this.app, this.plugin, this);
+
+        this.dispatchers.set(leaf.id, dispatcher);
+        dispatcher.load();
+        leaf.view.addChild(dispatcher);
+
+        return dispatcher;
     }
 
     enablePlugin(leaf: WorkspaceLeafExt) : void {
@@ -198,21 +193,33 @@ export class GraphsManager extends Component {
         }
     }
 
-    onPluginDisabled(leaf: WorkspaceLeafExt) : void {
-        this.disablePlugin(leaf);
+    disablePlugin(leaf: WorkspaceLeafExt) : void {
+        this.disablePluginFromLeafID(leaf.id);
+        leaf.view.renderer.changed();
     }
 
-    disablePlugin(leaf: WorkspaceLeafExt) : void {
-        let dispatcher = this.dispatchers.get(leaf.id);
-        this.menus.get(leaf.id)?.disable();
+    disablePluginFromLeafID(leafID: string) {
+        let dispatcher = this.dispatchers.get(leafID);
+        this.menus.get(leafID)?.disable();
         if (!dispatcher) return;
-
 
         dispatcher.unload();
         dispatcher.graph.nodesSet?.unload();
         dispatcher.graph.linksSet?.unload();
-        this.dispatchers.delete(leaf.id);
-        leaf.view.renderer.changed();
+        this.dispatchers.delete(leafID);
+    }
+
+    syncWithLeaves(leaves: WorkspaceLeaf[]) : void {
+        const currentActiveLeavesID = leaves.map(l => l.id);
+        const currentUsedLeavesID = Array.from(this.isInit.keys());
+
+        // Remove dispatchers from closed leaves
+        for (const id of currentUsedLeavesID) {
+            if (! currentActiveLeavesID.includes(id)) {
+                this.disablePluginFromLeafID(id);
+                this.isInit.delete(id);
+            }
+        }
     }
 
     // HIGHLIGHT CURRENT FILE
