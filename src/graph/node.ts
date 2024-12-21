@@ -1,4 +1,4 @@
-import { App, TFile } from 'obsidian';
+import { App, getAllTags, TFile } from 'obsidian';
 import { Assets, Circle, Container, Graphics, Sprite, Texture } from 'pixi.js';
 import { InteractiveManager } from './interactiveManager';
 import { FUNC_NAMES, NODE_CIRCLE_RADIUS, NODE_CIRCLE_X, NODE_CIRCLE_Y, NONE_TYPE } from 'src/globalVariables';
@@ -79,7 +79,7 @@ export class NodeWrapper extends Container {
         this.file = file;
 
         // Get Tags
-        (settings.enableTags) && this.updateTags(app);
+        (settings.enableTags) && this.updateTags(app, settings);
     }
 
     // =========================== INITIALIZATION =========================== //
@@ -190,39 +190,18 @@ export class NodeWrapper extends Container {
      * Update tags list from the cache
      * @param app 
      */
-    updateTags(app: App) : void {
+    updateTags(app: App, settings: ExtendedGraphSettings) : string[] {
         if (!this.tagTypes) {
             throw new Error("[Extended graph] tagTypes is null")
         }
         FUNC_NAMES && console.log("[NodeWrapper] updateTags");
-        this.tagTypes = [];
         const metadata = app.metadataCache.getFileCache(this.file);
-        if (metadata?.tags) {
-            for (const tagCache of metadata.tags) {
-                const tag = tagCache.tag.replace('#', '');
-                this.tagTypes.push(tag);
-            }
+        let tags = metadata ? getAllTags(metadata)?.map(t => t.replace('#', '')) : [];
+        tags = tags?.filter(t => settings.selectedInteractives["tag"].includes(t));
+        if (tags?.length == 0) {
+            tags.push(NONE_TYPE);
         }
-        if (metadata?.frontmatter?.tags) {
-            for (const tag of metadata.frontmatter.tags) {
-                this.tagTypes.push(tag.replace('#', ''));
-            }
-        }
-        if (this.tagTypes.length == 0) {
-            this.tagTypes.push(NONE_TYPE);
-        }
-    }
-
-    /**
-     * Get all tag types for this node.
-     * @param app if not null, the app will be used to retrieve the tags from the cache
-     * @returns list of tag types
-     */
-    getTagsTypes(app?: App) : string[] {
-        if (!this.tagTypes) {
-            throw new Error("[Extended graph] tagTypes is null")
-        }
-        (app) && this.updateTags(app);
+        this.tagTypes = tags ? tags : [];
         return this.tagTypes;
     }
 
@@ -240,7 +219,7 @@ export class NodeWrapper extends Container {
     }
 
     hasTagType(type: string) : boolean {
-        return this.getTagsTypes().includes(type);
+        return this.tagTypes ? this.tagTypes.includes(type) : false;
     }
 
     // ============================== TAG ARCS ============================== //
@@ -266,11 +245,8 @@ export class NodeWrapper extends Container {
      * @param manager tatgs manager
      */
     addArcs(manager: InteractiveManager) {
-        if (!this.nodeGraphics.tagArcs) {
-            throw new Error("[Extended graph] nodeGraphics.tagArcs is null")
-        }
-        if (!this.nodeGraphics.maxArcSize) {
-            throw new Error("[Extended graph] nodeGraphics.maxArcSize is null")
+        if (!(this.tagTypes && this.nodeGraphics.tagArcs && this.nodeGraphics.maxArcSize)) {
+            return;
         }
         FUNC_NAMES && console.log("[NodeWrapper] addArcs");
         const allTypes = manager.getTypes();
@@ -278,7 +254,7 @@ export class NodeWrapper extends Container {
         const nTags = allTypes.length;
         const arcSize = Math.min(2 * Math.PI / nTags, this.nodeGraphics.maxArcSize);
     
-        for (const type of this.getTagsTypes()) {
+        for (const type of this.tagTypes) {
             if (type === NONE_TYPE) continue;
             const oldArc = this.getChildByName(this.getArcName(type));
             if (oldArc) continue;

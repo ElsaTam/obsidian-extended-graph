@@ -1,4 +1,4 @@
-import { ColorComponent, DropdownComponent, setIcon, Setting, TextComponent } from "obsidian";
+import { ColorComponent, DropdownComponent, getAllTags, setIcon, Setting, TextComponent } from "obsidian";
 import { cmOptions } from "src/colors/colormaps";
 import { ExtendedGraphSettingTab } from "./settingTab";
 import { capitalizeFirstLetter } from "src/helperFunctions";
@@ -11,6 +11,8 @@ export abstract class SettingInteractives {
     
     settingInteractiveColor: Setting;
     colorsContainer: HTMLDivElement;
+    settingInteractiveFilter: Setting;
+    selectionContainer: HTMLDivElement;
     canvasPalette: HTMLCanvasElement;
     colorItems = new Map<string, Setting>();
     allTopElements: HTMLElement[] = [];
@@ -31,6 +33,7 @@ export abstract class SettingInteractives {
                 .settingEl
         );
 
+        // COLOR PALETTE
         let settingPalette = new Setting(containerEl)
             .setName(`Color palette (${this.name}s)`)
             .setDesc(`Choose the color palette for the ${this.name}s visualizations`)
@@ -49,6 +52,7 @@ export abstract class SettingInteractives {
         this.canvasPalette.height = 20;
         plot_colormap(this.canvasPalette.id, this.settingTab.plugin.settings.colormaps[this.name], false);
         
+        // SPECIFIC COLORS
         this.settingInteractiveColor = new Setting(containerEl)
             .setName(`Specific ${this.name} colors`)
             .setDesc(`Choose specific ${this.name} colors that will not be affected by the color palette`)
@@ -66,6 +70,27 @@ export abstract class SettingInteractives {
         this.settingTab.plugin.settings.interactiveColors[this.name].forEach((interactive) => {
             this.addColor(interactive.type, interactive.color);
         })
+
+        // FILTER TAGS
+        this.settingInteractiveFilter = new Setting(containerEl)
+            .setName(`${this.name}s selection`)
+            .setDesc(`Choose which ${this.name}s should be considered by the plugin`);
+        this.allTopElements.push(this.settingInteractiveFilter.settingEl);
+        
+        this.selectionContainer = containerEl.createDiv("settings-selection-container");
+        this.allTopElements.push(this.selectionContainer);
+
+        let allTypes = this.getAllTypes();
+        for (const tag of allTypes) {
+            const isActive = this.settingTab.plugin.settings.selectedInteractives[this.name].includes(tag);
+            let label = this.selectionContainer.createEl("label");
+            let text = label.createSpan({text: tag});
+            let toggle = label.createEl("input", {type: "checkbox"});
+            isActive ? this.selectInteractive(label, toggle) : this.deselectInteractive(label, toggle);
+            toggle.addEventListener("change", e => {
+                toggle.checked ? this.selectInteractive(label, toggle) : this.deselectInteractive(label, toggle);
+            })
+        }
     }
 
     private addColor(type?: string, color?: string) : Setting {
@@ -127,6 +152,26 @@ export abstract class SettingInteractives {
         this.saveColor(preview, type, color);
     }
 
+    private selectInteractive(label: HTMLLabelElement, toggle: HTMLInputElement) {
+        label.addClass("is-active");
+        toggle.checked = true;
+        if (!this.settingTab.plugin.settings.selectedInteractives[this.name].includes(label.innerText)) {
+            this.settingTab.plugin.settings.selectedInteractives[this.name].push(label.innerText);
+            console.log(this.settingTab.plugin.settings.selectedInteractives[this.name]);
+            this.settingTab.plugin.saveSettings();
+        }
+    }
+
+    private deselectInteractive(label: HTMLLabelElement, toggle: HTMLInputElement) {
+        label.removeClass("is-active");
+        toggle.checked = false;
+        if (this.settingTab.plugin.settings.selectedInteractives[this.name].includes(label.innerText)) {
+            this.settingTab.plugin.settings.selectedInteractives[this.name].remove(label.innerText);
+            console.log(this.settingTab.plugin.settings.selectedInteractives[this.name]);
+            this.settingTab.plugin.saveSettings();
+        }
+    }
+
     protected async saveColors(changedType: string) {
         this.settingTab.plugin.settings.interactiveColors[this.name] = [];
         this.colorItems.forEach(colorSetting => {
@@ -144,6 +189,7 @@ export abstract class SettingInteractives {
     protected abstract isNameValid(name: string) : boolean;
     protected abstract getPlaceholder() : string;
     protected abstract updatePreview(preview: HTMLDivElement, type?: string, color?: string) : void;
+    protected abstract getAllTypes() : string[];
 }
 
 
@@ -196,6 +242,18 @@ export class SettingTags extends SettingInteractives {
         //preview.innerText = type ? "#" + type : "";
         this.updateCSS(preview, color);
     }
+
+    protected getAllTypes(): string[] {
+        let allTypes = new Set<string>();
+        for (const file of this.settingTab.app.vault.getFiles()) {
+            let metadataCache = this.settingTab.app.metadataCache.getCache(file.path);
+            if (!metadataCache) continue;
+            let tags = getAllTags(metadataCache)?.map(t => t.replace('#', ''));
+            if (!tags) continue;
+            allTypes = new Set<string>([...allTypes, ...tags]);
+        }
+        return [...allTypes].sort();
+    }
 }
 
 
@@ -231,5 +289,16 @@ export class SettingLinks extends SettingInteractives {
 
     protected updatePreview(preview: HTMLDivElement, type?: string, color?: string) {
         this.updateCSS(preview, color);
+    }
+
+    protected getAllTypes(): string[] {
+        let allTypes = new Set<string>();
+        for (const file of this.settingTab.app.vault.getFiles()) {
+            let frontmatterLinks = this.settingTab.app.metadataCache.getCache(file.path)?.frontmatterLinks;
+            if (!frontmatterLinks) continue;
+            let types = frontmatterLinks.map(l => l.key.split('.')[0]);
+            allTypes = new Set<string>([...allTypes, ...types]);
+        }
+        return [...allTypes].sort();
     }
 }

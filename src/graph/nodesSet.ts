@@ -199,13 +199,9 @@ export class NodesSet {
         let types = new Set<string>();
 
         this.nodesMap.forEach(container => {
-            let nodeTypes = container.getTagsTypes(app);
-            nodeTypes.forEach(type => types.add(type));
+            let nodeTypes = container.updateTags(app, this.settingsOnCreation);
+            types = new Set<string>([...types, ...nodeTypes]);
         });
-
-        if (types.size == 0) {
-            types.add("none");
-        }
         
         return types;
     }

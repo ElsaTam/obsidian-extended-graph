@@ -174,8 +174,8 @@ body {
         }
 
         input[type="text"] {
-            border-color: color-mix(in srgb, var(--background-modifier-border), var(--interactive-color) 30%);
-            background: color-mix(in srgb, var(--background-modifier-form-field), var(--interactive-color) 5%);
+            border-color: color-mix(in srgb, var(--background-modifier-border), var(--interactive-color) 15%);
+            background: color-mix(in srgb, var(--background-modifier-form-field), var(--interactive-color) 2%);
         }
 
         .preview {
@@ -225,6 +225,36 @@ body {
             border-radius: var(--radius-s);
             height: 5px;
         }
+    }
+
+    .settings-selection-container {
+        gap: var(--size-4-2);
+        padding: 0.75em 0;
+
+        label {
+            border: 1px solid var(--background-modifier-border);
+            border-radius: var(--radius-s);
+            padding: var(--size-2-2);
+            display: flex;
+            align-items: center;
+            gap: var(--size-2-2);
+            color: var(--text-faint);
+
+            input[type=checkbox] {
+                margin: 0;
+            }
+        }
+
+        label:hover {
+            border-color: var(--background-modifier-border-hover);
+        }
+
+        label.is-active {
+            color: var(--text-normal);
+            border-color: var(--background-modifier-border-focus);
+            background-color: var(--background-modifier-form-field);
+        }
+
     }
 
 }

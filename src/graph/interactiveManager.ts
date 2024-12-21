@@ -119,6 +119,9 @@ export class InteractiveManager extends Component {
         let allTypesWithoutNone = new Set<string>(allTypes);
         allTypesWithoutNone.delete(NONE_TYPE);
         types.forEach(type => {
+            if (type !== NONE_TYPE && !this.settings.selectedInteractives[this.name].includes(type)) {
+                return;
+            }
             if (this.interactives.has(type)) return;
 
             let color: Uint8Array;
