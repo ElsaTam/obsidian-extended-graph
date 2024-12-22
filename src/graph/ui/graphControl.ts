@@ -41,7 +41,7 @@ export class GraphControlsUI extends Component {
 
         this.treeItemChildren = this.root.createDiv("tree-item-children");
         this.createSaveSettingsAsDefault();
-        new Setting(this.treeItemChildren).setName("Filter").setHeading();
+        new Setting(this.treeItemChildren).setName("Filter");
         this.settingGlobalFilter = this.createGlobalFilter();
         this.createCopyFilter();
 
@@ -58,15 +58,14 @@ export class GraphControlsUI extends Component {
     }
 
     createSaveSettingsAsDefault() : Setting {
-        return new Setting(this.treeItemChildren)
-            .setName("Save settings as default")
-            .addButton(cb => {
-                setIcon(cb.buttonEl, "save");
-                cb.buttonEl.addClass("save-button");
-                cb.onClick(event => {
-                    this.saveSettingsAsDefault();
-                });
-            });
+        let setting = new Setting(this.treeItemChildren)
+            .setName("Save settings as default");
+        let icon = setting.controlEl.createDiv("clickable-icon save-button");
+        setIcon(icon, "save");
+        icon.addEventListener('click', e => {
+            this.saveSettingsAsDefault();
+        });
+        return setting;
     }
 
     createGlobalFilter() : Setting {
@@ -97,16 +96,15 @@ export class GraphControlsUI extends Component {
     }
 
     createCopyFilter() : Setting {
-        return new Setting(this.treeItemChildren)
-            .setName("Copy full filter")
-            .addButton(cb => {
-                setIcon(cb.buttonEl, "copy");
-                cb.buttonEl.addClass("copy-button");
-                cb.onClick(e => {
-                    navigator.clipboard.writeText(this.dispatcher.graph.engine.filterOptions.search.getValue());
-                    new Notice(`Extended Graph: full filter copied to clipboard.`);
-                });
-            })
+        let setting = new Setting(this.treeItemChildren)
+            .setName("Copy full filter");
+        let icon = setting.controlEl.createDiv("clickable-icon copy-button");
+        setIcon(icon, "copy");
+        icon.addEventListener('click', e => {
+            navigator.clipboard.writeText(this.dispatcher.graph.engine.filterOptions.search.getValue());
+            new Notice(`Extended Graph: full filter copied to clipboard.`);
+        });
+        return setting;
     }
 
     onunload(): void {
