@@ -9,7 +9,7 @@ import { DEFAULT_VIEW_ID, FUNC_NAMES, NONE_TYPE } from 'src/globalVariables';
 import { EngineOptions } from 'src/views/viewData';
 import GraphExtendedPlugin from 'src/main';
 import { GraphsManager } from 'src/graphsManager';
-import { GraphEventsDispatcher } from './graphEventsDispatcher';
+import { GraphEventsDispatcher, WorkspaceLeafExt } from './graphEventsDispatcher';
 import { ExtendedGraphSettings } from 'src/settings/settings';
 
 export class Graph extends Component {
@@ -18,53 +18,49 @@ export class Graph extends Component {
     linkTypesMap: Map<string, Set<string>> | null; // key: type / value: link ids
     interactiveManagers = new Map<string, InteractiveManager>();
 
+    dispatcher: GraphEventsDispatcher;
     engine: any;
     renderer: Renderer;
-    app: App;
-    leaf: WorkspaceLeaf;
-    plugin: GraphExtendedPlugin;
-    dispatcher: GraphEventsDispatcher;
+    settings: ExtendedGraphSettings;
 
-    constructor(dispatcher: GraphEventsDispatcher, leaf: WorkspaceLeaf, app: App) {
+    constructor(dispatcher: GraphEventsDispatcher) {
         FUNC_NAMES && console.log("[Graph] new");
         super();
         this.dispatcher = dispatcher;
-        this.renderer = dispatcher.renderer;
-        this.app = app;
-        this.leaf = leaf;
-        this.plugin = dispatcher.plugin;
+        this.renderer = dispatcher.leaf.view.renderer;
+        this.settings = structuredClone(dispatcher.graphsManager.plugin.settings);
 
         // Initialize nodes and links sets
-        if (this.plugin.settings.enableTags || this.plugin.settings.enableImages || this.plugin.settings.enableFocusActiveNote || this.plugin.settings.enableLinks) {
-            let tagsManager = this.plugin.settings.enableTags ? new InteractiveManager(leaf, dispatcher.plugin.settings, "tag") : null;
-            this.nodesSet = new NodesSet(leaf, dispatcher.renderer, tagsManager, app, dispatcher.plugin.settings);
-            if (this.plugin.settings.enableTags && tagsManager) {
+        if (this.settings.enableTags || this.settings.enableImages || this.settings.enableFocusActiveNote || this.settings.enableLinks) {
+            let tagsManager = this.settings.enableTags ? new InteractiveManager(dispatcher.leaf, this.settings, "tag") : null;
+            this.nodesSet = new NodesSet(this, tagsManager);
+            if (this.settings.enableTags && tagsManager) {
                 this.interactiveManagers.set("tag", tagsManager);
                 this.addChild(tagsManager);
             }
         }
-        if (this.plugin.settings.enableLinks) {
+        if (this.settings.enableLinks) {
             this.linkTypesMap = new Map<string, Set<string>>();
-            this.linksSet = new LinksSet(leaf, dispatcher.renderer, new InteractiveManager(leaf, dispatcher.plugin.settings, "link"));
+            this.linksSet = new LinksSet(this, new InteractiveManager(dispatcher.leaf, this.settings, "link"));
             this.interactiveManagers.set("link", this.linksSet.linksManager);
             this.addChild(this.linksSet.linksManager);
         }
 
         // Intercept search filter
-        if (this.leaf.view.getViewType() === "graph") {
+        if (dispatcher.leaf.view.getViewType() === "graph") {
             // @ts-ignore
-            this.engine =  this.leaf.view.dataEngine;
+            this.engine =  this.dispatcher.leaf.view.dataEngine;
         }
-        else if(this.leaf.view.getViewType() === "localgraph") {
+        else if(dispatcher.leaf.view.getViewType() === "localgraph") {
             // @ts-ignore
-            this.engine =  this.leaf.view.engine;
+            this.engine =  this.dispatcher.leaf.view.engine;
         }
         else {
             throw new Error("[Extended Graph plugin] Leaf is not a graph.")
         }
         
         this.engine.filterOptions.search.getValue = (function() {
-            let prepend = this.plugin.settings.globalFilter ? this.plugin.settings.globalFilter + " " : "";
+            let prepend = this.settings.globalFilter ? this.settings.globalFilter + " " : "";
             let append = "";
             if (this.nodesSet.disconnectedNodes) {
                 this.nodesSet.disconnectedNodes.forEach((id: string) => {
@@ -85,7 +81,7 @@ export class Graph extends Component {
             // creating a lot of Promises.
             this.removeAdditionalData();
 
-            this.leaf.trigger('extended-graph:graph-ready');
+            this.dispatcher.onGraphReady();
         });
     }
 
@@ -94,8 +90,8 @@ export class Graph extends Component {
             return this.filterOptions.search.inputEl.value;
         }).bind(this.engine);
 
-        let graphCorePlugin = this.plugin.app.internalPlugins.getPluginById("graph");
-        let defaultViewData = this.plugin.settings.views.find(v => v.id === DEFAULT_VIEW_ID);
+        let graphCorePlugin = this.dispatcher.graphsManager.plugin.app.internalPlugins.getPluginById("graph");
+        let defaultViewData = this.settings.views.find(v => v.id === DEFAULT_VIEW_ID);
         (defaultViewData) && this.setEngineOptions(defaultViewData.engineOptions);
         // @ts-ignore
         (graphCorePlugin && defaultViewData) && (graphCorePlugin.instance.options.search = defaultViewData.engineOptions.search);
@@ -174,7 +170,7 @@ export class Graph extends Component {
         this.removeAdditionalData();
 
         // Update node background colors
-        if (this.plugin.settings.fadeOnDisable) {
+        if (this.settings.fadeOnDisable) {
             this.nodesSet?.updateOpacityLayerColor();
         }
 
@@ -186,13 +182,13 @@ export class Graph extends Component {
     
                 let types = new Set<string>();
     
-                const frontmatterLinks = this.app.metadataCache.getFileCache(sourceFile)?.frontmatterLinks;
+                const frontmatterLinks = this.dispatcher.graphsManager.plugin.app.metadataCache.getFileCache(sourceFile)?.frontmatterLinks;
                 if (frontmatterLinks) {
                     // For each link in the frontmatters, check if target matches
                     for (const linkCache of frontmatterLinks) {
                         const linkType = linkCache.key.split('.')[0];
-                        if (!this.plugin.settings.selectedInteractives["link"].includes(linkType)) continue;
-                        const targetID = this.app.metadataCache.getFirstLinkpathDest(linkCache.link, ".")?.path;
+                        if (!this.settings.selectedInteractives["link"].includes(linkType)) continue;
+                        const targetID = this.dispatcher.graphsManager.plugin.app.metadataCache.getFirstLinkpathDest(linkCache.link, ".")?.path;
                         if (targetID === linkWrapper.targetID) {
                             // Set the pair
                             (!this.linkTypesMap.get(linkType)) && this.linkTypesMap.set(linkType, new Set<string>());
@@ -213,7 +209,7 @@ export class Graph extends Component {
 
         // Initialize colors for each node/link type
         if (this.nodesSet) {
-            const types = this.nodesSet.getAllTagTypesFromCache(this.app);
+            const types = this.nodesSet.getAllTagTypesFromCache(this.dispatcher.graphsManager.plugin.app);
             types && this.nodesSet.tagsManager?.update(types);
         }
         if (this.linksSet) {
@@ -245,7 +241,7 @@ export class Graph extends Component {
         const links = this.getLinks(types);
         (links) && this.linksSet?.disableLinks(links).then((hasChanged) => {
             if (hasChanged) {
-                this.leaf.trigger('extended-graph:engine-needs-update');
+                this.dispatcher.onEngineNeedsUpdate();
             }
         });
     }
@@ -256,7 +252,7 @@ export class Graph extends Component {
         const links = this.getLinks(types);
         (links) && this.linksSet?.enableLinks(links).then((hasChanged) => {
             if (hasChanged) {
-                this.leaf.trigger('extended-graph:engine-needs-update');
+                this.dispatcher.onEngineNeedsUpdate();
             }
         });
     }
@@ -311,23 +307,23 @@ export class Graph extends Component {
         let view = new GraphView(name);
         view.setID();
         view.saveGraph(this);
-        this.app.workspace.trigger('extended-graph:view-needs-saving', view.data);
+        this.dispatcher.graphsManager.onViewNeedsSaving(view.data);
         return view.data.id;
     }
 
     saveView(id: string) : void {
         FUNC_NAMES && console.log("[Graph] saveView");
         if (id === DEFAULT_VIEW_ID) return;
-        let viewData = this.plugin.settings.views.find(v => v.id == id);
+        let viewData = this.settings.views.find(v => v.id == id);
         if (!viewData) return;
         let view = new GraphView(viewData?.name);
         view.setID(id);
         view.saveGraph(this);
-        this.app.workspace.trigger('extended-graph:view-needs-saving', view.data);
+        this.dispatcher.graphsManager.onViewNeedsSaving(view.data);
     }
 
     deleteView(id: string) : void {
-        this.app.workspace.trigger('extended-graph:view-needs-deletion', id);
+        this.dispatcher.graphsManager.onViewNeedsDeletion(id);
     }
 
     test() : void {

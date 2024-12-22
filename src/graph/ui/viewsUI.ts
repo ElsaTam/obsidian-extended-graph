@@ -2,11 +2,14 @@ import { Component, Modal, setIcon, WorkspaceLeaf } from "obsidian";
 import { Graph } from "../graph";
 import { GraphViewData } from "src/views/viewData";
 import { DEFAULT_VIEW_ID } from "src/globalVariables";
+import GraphExtendedPlugin from "src/main";
+import { GraphEventsDispatcher } from "../graphEventsDispatcher";
 
 export class GraphViewsUI extends Component {
+    dispatcher: GraphEventsDispatcher;
+    plugin: GraphExtendedPlugin;
+
     viewContent: HTMLElement;
-    graph: Graph;
-    leaf: WorkspaceLeaf;
     currentViewID: string;
 
     isOpen: boolean;
@@ -19,11 +22,11 @@ export class GraphViewsUI extends Component {
     deleteButton: HTMLButtonElement;
     
 
-    constructor(graphicsManager: Graph, leaf: WorkspaceLeaf) {
+    constructor(dispatcher: GraphEventsDispatcher) {
         super();
-        this.graph = graphicsManager;
-        this.leaf = leaf;
-        this.viewContent = this.leaf.containerEl.getElementsByClassName("view-content")[0] as HTMLElement;
+        this.dispatcher = dispatcher;
+        this.plugin = dispatcher.graphsManager.plugin;
+        this.viewContent = dispatcher.leaf.containerEl.getElementsByClassName("view-content")[0] as HTMLElement;
         this.root = this.viewContent.createDiv();
         this.root.addClass("graph-views-container");
         
@@ -51,7 +54,7 @@ export class GraphViewsUI extends Component {
         this.select.addEventListener('change', event => {
             this.currentViewID = this.select.value;
             this.displaySaveDeleteButton();
-            this.graph.dispatcher.onViewChanged(this.select.value);
+            this.dispatcher.onViewChanged(this.select.value);
         });
 
         // ADD BUTTON
@@ -61,7 +64,7 @@ export class GraphViewsUI extends Component {
         addText.innerText = "Add view";
 
         this.addButton.addEventListener('click', event => {
-            let modal = new Modal(this.leaf.app);
+            let modal = new Modal(this.plugin.app);
             modal.setTitle("New view name");
             modal.modalEl.addClass("graph-modal-new-view");
             let input = modal.contentEl.createEl("input");
@@ -84,21 +87,21 @@ export class GraphViewsUI extends Component {
         this.saveButton = this.root.createEl("button");
         setIcon(this.saveButton, "save");
         this.saveButton.addEventListener('click', event => {
-            this.graph.saveView(this.select.value);
+            this.dispatcher.graph.saveView(this.select.value);
         });
 
         // DELETE BUTTON
         this.deleteButton = this.root.createEl("button");
         setIcon(this.deleteButton, "trash-2");
         this.deleteButton.addEventListener('click', event => {
-            this.graph.deleteView(this.select.value);
+            this.dispatcher.graph.deleteView(this.select.value);
         });
 
         // CURRENT VIEW ID
         this.currentViewID = this.select.value;
 
 
-        if (this.graph.plugin.settings.collapseView) {
+        if (this.plugin.settings.collapseView) {
             this.close();
         }
         else {
@@ -130,7 +133,7 @@ export class GraphViewsUI extends Component {
     }
 
     newView(name: string) {
-        const id = this.graph.newView(name);
+        const id = this.dispatcher.graph.newView(name);
         this.currentViewID = id;
     }
     
@@ -163,15 +166,15 @@ export class GraphViewsUI extends Component {
         this.root.removeClass("is-closed");
         this.toggleDiv.addClass("is-active");
         this.isOpen = true;
-        this.graph.plugin.settings.collapseView = false;
-        this.graph.plugin.saveSettings();
+        this.plugin.settings.collapseView = false;
+        this.plugin.saveSettings();
     }
 
     close() {
         this.root.addClass("is-closed");
         this.toggleDiv.removeClass("is-active");
         this.isOpen = false;
-        this.graph.plugin.settings.collapseView = true;
-        this.graph.plugin.saveSettings();
+        this.plugin.settings.collapseView = true;
+        this.plugin.saveSettings();
     }
 }

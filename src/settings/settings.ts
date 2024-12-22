@@ -17,6 +17,7 @@ export interface ExtendedGraphSettings {
 
     fadeOnDisable: boolean;
     focusScaleFactor: number;
+    linkCurves: boolean;
 
     // NOT SET BY THE USER
     collapseView: boolean;
@@ -57,6 +58,7 @@ export const DEFAULT_SETTINGS: ExtendedGraphSettings = {
 
     fadeOnDisable: false,
     focusScaleFactor: 1.8,
+    linkCurves: false,
 
     collapseView: true,
     collapseLegend: true,

@@ -7,32 +7,27 @@ import { DEFAULT_VIEW_ID } from "./globalVariables";
 
 
 export class GraphsManager extends Component {
-    dispatchers = new Map<string, GraphEventsDispatcher>();
     menus = new Map<string, MenuUI>();
     isInit = new Map<string, boolean>();
-    app: App;
     themeObserver: MutationObserver;
-    plugin: GraphExtendedPlugin;
     activeFile: TFile | null = null;
+    
+    plugin: GraphExtendedPlugin;
+    dispatchers = new Map<string, GraphEventsDispatcher>();
     
 
 
-    constructor(plugin: GraphExtendedPlugin, app: App) {
+    constructor(plugin: GraphExtendedPlugin) {
         super();
         this.plugin = plugin;
-        this.app = app;
     }
 
     onload(): void {
-        this.registerEvent(this.app.metadataCache.on('changed', (file: TFile, data: string, cache: CachedMetadata) => {
+        this.registerEvent(this.plugin.app.metadataCache.on('changed', (file: TFile, data: string, cache: CachedMetadata) => {
             this.onMetadataCacheChange(file, data, cache);
         }));
         
-        this.registerEvent(this.app.workspace.on('css-change', this.onThemeChange.bind(this)));
-        // @ts-ignore
-        this.registerEvent(this.app.workspace.on('extended-graph:view-needs-saving', this.onViewNeedsSaving.bind(this)));
-        // @ts-ignore
-        this.registerEvent(this.app.workspace.on('extended-graph:view-needs-deletion', this.onViewNeedsDeletion.bind(this)));
+        this.registerEvent(this.plugin.app.workspace.on('css-change', this.onThemeChange.bind(this)));
     }
 
     onunload(): void {
@@ -47,7 +42,7 @@ export class GraphsManager extends Component {
         this.dispatchers.forEach(dispatcher => {
             if (dispatcher.graph.nodesSet) {
                 dispatcher.graph.nodesSet.updateOpacityLayerColor();
-                dispatcher.renderer.changed();
+                dispatcher.graph.renderer.changed();
             }
         });
     }
@@ -55,7 +50,7 @@ export class GraphsManager extends Component {
     async onMetadataCacheChange(file: TFile, data: string, cache: CachedMetadata) {
         if (this.plugin.settings.enableTags) {
             this.dispatchers.forEach(dispatcher => {
-                if (!(dispatcher.graph && dispatcher.renderer)) return;
+                if (!(dispatcher.graph && dispatcher.graph.renderer)) return;
         
                 const container = dispatcher.graph.nodesSet?.getNodeWrapperFromFile(file);
                 if (!container) return;
@@ -69,7 +64,7 @@ export class GraphsManager extends Component {
                 const needsUpdate = !container.matchesTagsTypes(newTypes);
         
                 if (needsUpdate) {
-                    const types = dispatcher.graph.nodesSet?.getAllTagTypesFromCache(this.app);
+                    const types = dispatcher.graph.nodesSet?.getAllTagTypesFromCache(this.plugin.app);
                     (types) && dispatcher.graph.nodesSet?.tagsManager?.update(types);
                 }
             });
@@ -168,7 +163,7 @@ export class GraphsManager extends Component {
         let dispatcher = this.dispatchers.get(leaf.id);
         if (dispatcher) return dispatcher;
 
-        dispatcher = new GraphEventsDispatcher(leaf, this.app, this.plugin, this);
+        dispatcher = new GraphEventsDispatcher(leaf, this);
 
         this.dispatchers.set(leaf.id, dispatcher);
         dispatcher.load();

@@ -5,3 +5,5 @@ export const FUNC_NAMES: boolean = false;
 export const NODE_CIRCLE_RADIUS: number = 100;
 export const NODE_CIRCLE_X: number = 100;
 export const NODE_CIRCLE_Y: number = 100;
+export const ARC_THICKNESS: number = 0.09;
+export const ARC_INSET: number = 0.03;

@@ -2,12 +2,15 @@ import { Component, Modal, setIcon, Setting, WorkspaceLeaf } from "obsidian";
 import { Graph } from "../graph";
 import { EngineOptions, GraphViewData } from "src/views/viewData";
 import { DEFAULT_VIEW_ID, NONE_TYPE } from "src/globalVariables";
+import { GraphEventsDispatcher } from "../graphEventsDispatcher";
+import { ExtendedGraphSettings } from "src/settings/settings";
+import GraphExtendedPlugin from "src/main";
 
 export class GraphControlsUI extends Component {
+    dispatcher: GraphEventsDispatcher;
+    plugin: GraphExtendedPlugin;
+
     viewContent: HTMLElement;
-    graph: Graph;
-    leaf: WorkspaceLeaf;
-    engine: any;
 
     isCollapsed: boolean;
 
@@ -18,16 +21,13 @@ export class GraphControlsUI extends Component {
     optionListeners: (t: any) => any;
     
 
-    constructor(graphicsManager: Graph, leaf: WorkspaceLeaf) {
+    constructor(dispatcher: GraphEventsDispatcher) {
         super();
-        this.graph = graphicsManager;
-        this.leaf = leaf;
-        this.viewContent = this.leaf.containerEl.getElementsByClassName("view-content")[0] as HTMLElement;
-        
-        // @ts-ignore
-        this.engine = this.leaf.view.getViewType() === "graph" ? this.leaf.view.dataEngine : this.leaf.view.engine;
+        this.dispatcher = dispatcher;
+        this.plugin = dispatcher.graphsManager.plugin;
+        this.viewContent = this.dispatcher.leaf.containerEl.getElementsByClassName("view-content")[0] as HTMLElement;
 
-        this.root = this.engine.controlsEl.createDiv("tree-item graph-control-section mod-extended-graph");
+        this.root = this.dispatcher.graph.engine.controlsEl.createDiv("tree-item graph-control-section mod-extended-graph");
         let collapsible = this.root.createDiv("tree-item-self mod-collapsible");
         this.collapseIcon = collapsible.createDiv("tree-item-icon collapse-icon is-collapsed");
         setIcon(this.collapseIcon, "right-triangle");
@@ -71,21 +71,21 @@ export class GraphControlsUI extends Component {
             .setClass("mod-search-setting")
             .addTextArea(cb => {
                 cb.setPlaceholder("Global filter")
-                  .setValue(this.graph.plugin.settings.globalFilter);
+                  .setValue(this.plugin.settings.globalFilter);
                 cb.inputEl.addClass("search-input-container");
                 cb.inputEl.onblur = (e => {
-                    if (this.graph.plugin.settings.globalFilter !== cb.getValue()) {
-                        this.graph.plugin.settings.globalFilter = cb.getValue();
-                        this.graph.plugin.saveSettings();
-                        this.engine.updateSearch();
+                    if (this.plugin.settings.globalFilter !== cb.getValue()) {
+                        this.plugin.settings.globalFilter = cb.getValue();
+                        this.plugin.saveSettings();
+                        this.dispatcher.graph.engine.updateSearch();
                     }
                 });
                 cb.inputEl.onkeydown = (e => {
                     if ("Enter" === e.key) {
                         e.preventDefault();
-                        this.graph.plugin.settings.globalFilter = cb.getValue();
-                        this.graph.plugin.saveSettings();
-                        this.engine.updateSearch();
+                        this.plugin.settings.globalFilter = cb.getValue();
+                        this.plugin.saveSettings();
+                        this.dispatcher.graph.engine.updateSearch();
                     }
                 });
             });
@@ -97,7 +97,7 @@ export class GraphControlsUI extends Component {
             .addButton(cb => {
                 setIcon(cb.buttonEl, "copy");
                 cb.onClick(e => {
-                    navigator.clipboard.writeText(this.engine.filterOptions.search.getValue());
+                    navigator.clipboard.writeText(this.dispatcher.graph.engine.filterOptions.search.getValue());
                     new Notice(`Extended Graph: full filter copied to clipboard.`);
                 });
             })
@@ -123,10 +123,10 @@ export class GraphControlsUI extends Component {
     }
 
     saveSettingsAsDefault() {
-        let viewData = this.graph.plugin.settings.views.find(v => v.id === DEFAULT_VIEW_ID);
+        let viewData = this.plugin.settings.views.find(v => v.id === DEFAULT_VIEW_ID);
         if (!viewData) return;
-        viewData.engineOptions = new EngineOptions(this.graph.engine.getOptions());
-        viewData.engineOptions.search = this.graph.engine.filterOptions.search.inputEl.value;
-        this.graph.app.workspace.trigger('extended-graph:view-needs-saving', viewData);
+        viewData.engineOptions = new EngineOptions(this.dispatcher.graph.engine.getOptions());
+        viewData.engineOptions.search = this.dispatcher.graph.engine.filterOptions.search.inputEl.value;
+        this.dispatcher.graphsManager.onViewNeedsSaving(viewData);
     }
 }

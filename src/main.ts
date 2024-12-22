@@ -15,7 +15,7 @@ export default class GraphExtendedPlugin extends Plugin {
         await this.loadSettings();
         this.addSettingTab(new ExtendedGraphSettingTab(this.app, this));
 
-        this.graphsManager = new GraphsManager(this, this.app);
+        this.graphsManager = new GraphsManager(this);
         this.addChild(this.graphsManager);
         this.graphsManager.load();
 

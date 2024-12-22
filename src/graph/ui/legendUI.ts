@@ -2,6 +2,8 @@ import { Component, setIcon, WorkspaceLeaf } from "obsidian";
 import { Graph } from "../graph";
 import { InteractiveManager } from "../interactiveManager";
 import { NONE_TYPE } from "src/globalVariables";
+import { GraphEventsDispatcher } from "../graphEventsDispatcher";
+import GraphExtendedPlugin from "src/main";
 
 class LegendRow {
     name: string;
@@ -85,9 +87,10 @@ class LegendRow {
 }
 
 export class LegendUI extends Component {
+    dispatcher: GraphEventsDispatcher;
+    plugin: GraphExtendedPlugin;
+
     viewContent: HTMLElement;
-    graph: Graph;
-    leaf: WorkspaceLeaf;
     legendRows: Map<string, LegendRow>;
 
     isOpen: boolean;
@@ -95,11 +98,11 @@ export class LegendUI extends Component {
     root: HTMLDivElement;
     toggleDiv: HTMLDivElement;
 
-    constructor(graphicsManager: Graph, leaf: WorkspaceLeaf) {
+    constructor(dispatcher: GraphEventsDispatcher) {
         super();
-        this.graph = graphicsManager;
-        this.leaf = leaf;
-        this.viewContent = this.leaf.containerEl.getElementsByClassName("view-content")[0] as HTMLElement;
+        this.dispatcher = dispatcher;
+        this.plugin = dispatcher.graphsManager.plugin;
+        this.viewContent = dispatcher.leaf.containerEl.getElementsByClassName("view-content")[0] as HTMLElement;
     
         // TOGGLE BUTTON
         let graphControls = this.viewContent.querySelector(".graph-controls") as HTMLDivElement;
@@ -119,11 +122,11 @@ export class LegendUI extends Component {
         this.root = this.viewContent.createDiv();
         this.root?.addClass("graph-legend-container");
         for (const name of ["tag", "link"]) {
-            const manager = this.graph.interactiveManagers.get(name);
+            const manager = this.dispatcher.graph.interactiveManagers.get(name);
             (manager) && this.legendRows.set(name, new LegendRow(name, manager, this.root));
         }
 
-        if (this.graph.plugin.settings.collapseLegend) {
+        if (this.plugin.settings.collapseLegend) {
             this.close();
         }
         else {
@@ -170,15 +173,15 @@ export class LegendUI extends Component {
         this.root.removeClass("is-closed");
         this.toggleDiv.addClass("is-active");
         this.isOpen = true;
-        this.graph.plugin.settings.collapseLegend = false;
-        this.graph.plugin.saveSettings();
+        this.plugin.settings.collapseLegend = false;
+        this.plugin.saveSettings();
     }
 
     close() {
         this.root.addClass("is-closed");
         this.toggleDiv.removeClass("is-active");
         this.isOpen = false;
-        this.graph.plugin.settings.collapseLegend = true;
-        this.graph.plugin.saveSettings();
+        this.plugin.settings.collapseLegend = true;
+        this.plugin.saveSettings();
     }
 }

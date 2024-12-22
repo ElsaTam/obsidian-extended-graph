@@ -1,7 +1,7 @@
 import { App, getAllTags, TFile } from 'obsidian';
 import { Assets, Circle, Container, Graphics, Sprite, Texture } from 'pixi.js';
 import { InteractiveManager } from './interactiveManager';
-import { FUNC_NAMES, NODE_CIRCLE_RADIUS, NODE_CIRCLE_X, NODE_CIRCLE_Y, NONE_TYPE } from 'src/globalVariables';
+import { ARC_INSET, ARC_THICKNESS, FUNC_NAMES, NODE_CIRCLE_RADIUS, NODE_CIRCLE_X, NODE_CIRCLE_Y, NONE_TYPE } from 'src/globalVariables';
 import { Renderer } from './renderer';
 import { int2hex, int2rgb, rgb2hex } from 'src/colors/colors';
 import { ExtendedGraphSettings } from 'src/settings/settings';
@@ -24,12 +24,14 @@ export interface Node {
     type: string;
     forward: {[id: string] : Node};
     reverse: {[id: string] : Node};
+    renderer: Renderer;
     getFillColor: () => {rgb: number, a: number};
+    getSize: () => number;
 }
 
 class Arc extends Graphics {
-    thickness: number = 0.09;
-    inset: number = 0.03;
+    thickness: number = ARC_THICKNESS;
+    inset: number = ARC_INSET;
     gap: number = 0.2;
     isActive: boolean = true;
     name: string;

@@ -5,20 +5,20 @@ import { Renderer } from "./renderer";
 import { GraphViewData } from "src/views/viewData";
 import { FUNC_NAMES, NONE_TYPE } from "src/globalVariables";
 import { Graphics } from "pixi.js";
+import { WorkspaceLeafExt } from "./graphEventsDispatcher";
+import { Graph } from "./graph";
 
 export class LinksSet {
     linksMap = new Map<string, LinkWrapper>();
     connectedLinks = new Set<string>();
     disconnectedLinks = new Set<string>();
 
-    leaf: WorkspaceLeaf;
-    renderer: Renderer;
+    graph: Graph;
     linksManager: InteractiveManager;
 
-    constructor(leaf: WorkspaceLeaf, renderer: Renderer, linksManager: InteractiveManager) {
+    constructor(graph: Graph, linksManager: InteractiveManager) {
         FUNC_NAMES && console.log("[LinksSet] new");
-        this.leaf = leaf;
-        this.renderer = renderer;
+        this.graph = graph;
         this.linksManager = linksManager;
     }
 
@@ -26,9 +26,9 @@ export class LinksSet {
         FUNC_NAMES && console.log("[LinksSet] load");
         let requestList: Promise<void>[] = [];
         
-        this.renderer.links.forEach((link: Link) => {
+        this.graph.renderer.links.forEach((link: Link) => {
             if (this.linksMap.get(getLinkID(link))) return;
-            let linkWrapper = new LinkWrapper(link, link.source.id, link.target.id);
+            let linkWrapper = new LinkWrapper(link, link.source.id, link.target.id, this.graph.settings);
             requestList.push(this.initLink(linkWrapper));
         })
 
@@ -37,8 +37,7 @@ export class LinksSet {
 
     unload() {
         this.linksMap.forEach(wrapper => {
-            if (wrapper.link.px)
-                (wrapper.link.px.children[0] as Graphics).removeChild(wrapper);
+            wrapper.disconnect();
             wrapper.destroy();
         });
         this.linksMap.clear();
@@ -52,7 +51,7 @@ export class LinksSet {
      */
     private async initLink(linkWrapper: LinkWrapper) : Promise<void> {
         FUNC_NAMES && console.log("[LinksSet] initLink");
-        await linkWrapper.init(this.renderer).then(() => {
+        await linkWrapper.init(this.graph.renderer).then(() => {
             linkWrapper.connect();
             this.linksMap.set(linkWrapper.id, linkWrapper);
             this.connectedLinks.add(linkWrapper.id);
@@ -94,7 +93,7 @@ export class LinksSet {
         let promises: Promise<void>[] = [];
         ids.forEach(id => {
             const linkWrapper = this.get(id);
-            promises.push(linkWrapper.waitReady(this.renderer).then((ready) => {
+            promises.push(linkWrapper.waitReady(this.graph.renderer).then((ready) => {
                 if (ready) {
                     linkWrapper.setRenderable(false);
                 }
@@ -121,7 +120,7 @@ export class LinksSet {
         let promises: Promise<void>[] = [];
         ids.forEach(id => {
             const linkWrapper = this.get(id);
-            promises.push(linkWrapper.waitReady(this.renderer).then((ready) => {
+            promises.push(linkWrapper.waitReady(this.graph.renderer).then((ready) => {
                 if (ready) {
                     linkWrapper.connect();
                     linkWrapper.setRenderable(true);
@@ -146,7 +145,7 @@ export class LinksSet {
         FUNC_NAMES && console.log("[LinksSet] updateLinksFromEngine");
         
         // Current links set by the Obsidian engine
-        const newLinksIDs = this.renderer.links.map(l => getLinkID(l));
+        const newLinksIDs = this.graph.renderer.links.map(l => getLinkID(l));
         
         // Get the links that needs to be removed
         let linksToRemove: string[] = newLinksIDs.filter(id => this.disconnectedLinks.has(id));
@@ -158,7 +157,7 @@ export class LinksSet {
         let linksToCreate: string[] = newLinksIDs.filter(id => !linksToRemove.includes(id) && !linksToAdd.includes(id));
 
         for (const id of linksToAdd) {
-            let link = this.renderer.links.find(l => getLinkID(l) === id);
+            let link = this.graph.renderer.links.find(l => getLinkID(l) === id);
             if (!link) continue;
 
             try {
@@ -172,7 +171,7 @@ export class LinksSet {
             }
         }
         for (const id of linksToRemove) {
-            let link = this.renderer.links.find(l => getLinkID(l) === id);
+            let link = this.graph.renderer.links.find(l => getLinkID(l) === id);
             if (!link) continue;
             const linkWrapper = this.get(id);
 
@@ -180,10 +179,10 @@ export class LinksSet {
             linkWrapper.setRenderable(false);
         }
         if (linksToRemove.length > 0) {
-            this.leaf.trigger('extended-graph:engine-needs-update');
+            this.graph.dispatcher.onEngineNeedsUpdate();
         }
         else if (linksToCreate.length > 0) {
-            this.leaf.trigger('extended-graph:graph-needs-update');
+            this.graph.dispatcher.onGraphNeedsUpdate();
         }
     }
 

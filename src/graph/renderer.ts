@@ -4,6 +4,22 @@ import { Link } from './link';
 
 export interface Renderer {
     colors: {
+        circle: {
+            a: number;
+            rgb: number;
+        },
+        arrow: {
+            a: number;
+            rgb: number;
+        },
+        line: {
+            a: number;
+            rgb: number;
+        },
+        lineHighlight: {
+            a: number;
+            rgb: number;
+        },
         fill: {
             a: number;
             rgb: number;
@@ -41,5 +57,6 @@ export interface Renderer {
     scale: number;
     worker: Worker,
     interactiveEl: HTMLCanvasElement,
+    idleFrames: number,
     changed(): void;
 }

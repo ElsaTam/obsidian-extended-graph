@@ -71,7 +71,7 @@ export abstract class SettingInteractives {
             this.addColor(interactive.type, interactive.color);
         })
 
-        // FILTER TAGS
+        // FILTER TYPES
         this.settingInteractiveFilter = new Setting(containerEl)
             .setName(`${this.name}s selection`)
             .setDesc(`Choose which ${this.name}s should be considered by the plugin`);
@@ -93,7 +93,7 @@ export abstract class SettingInteractives {
         }
     }
 
-    private addColor(type?: string, color?: string) : Setting {
+    protected addColor(type?: string, color?: string) : Setting {
         let colorSetting = new Setting(this.colorsContainer);
         let uuid = crypto.randomUUID();
         this.colorItems.set(uuid, colorSetting);
@@ -131,7 +131,7 @@ export abstract class SettingInteractives {
         color ? parent?.style.setProperty("--interactive-color", color) : parent?.style.setProperty("--interactive-color", "transparent");
     }
 
-    private removeColorSetting(uuid: string) {
+    protected removeColorSetting(uuid: string) {
         const colorSetting = this.colorItems.get(uuid);
         if (!colorSetting) return;
 
@@ -140,7 +140,7 @@ export abstract class SettingInteractives {
         this.saveColors(uuid);
     }
 
-    private saveColorSetting(uuid: string) {
+    protected saveColorSetting(uuid: string) {
         const colorSetting = this.colorItems.get(uuid);
         if (!colorSetting) return;
 
@@ -152,7 +152,7 @@ export abstract class SettingInteractives {
         this.saveColor(preview, type, color);
     }
 
-    private selectInteractive(label: HTMLLabelElement, toggle: HTMLInputElement) {
+    protected selectInteractive(label: HTMLLabelElement, toggle: HTMLInputElement) {
         label.addClass("is-active");
         toggle.checked = true;
         if (!this.settingTab.plugin.settings.selectedInteractives[this.name].includes(label.innerText)) {
@@ -162,7 +162,7 @@ export abstract class SettingInteractives {
         }
     }
 
-    private deselectInteractive(label: HTMLLabelElement, toggle: HTMLInputElement) {
+    protected deselectInteractive(label: HTMLLabelElement, toggle: HTMLInputElement) {
         label.removeClass("is-active");
         toggle.checked = false;
         if (this.settingTab.plugin.settings.selectedInteractives[this.name].includes(label.innerText)) {
@@ -267,9 +267,29 @@ export class SettingLinks extends SettingInteractives {
     display(): void {
         super.display();
 
+        let linkCurves = new Setting(this.settingTab.containerEl)
+            .setName(`Curved links (WIP)`)
+            .setDesc(`Replace the straight lines of the link with curves`)
+            .addToggle(cb => {
+                cb.setValue(this.settingTab.plugin.settings.linkCurves);
+                cb.onChange(value => {
+                    this.settingTab.plugin.settings.linkCurves = value;
+                    this.settingTab.plugin.saveSettings();
+                })
+            });
+        this.allTopElements.push(linkCurves.settingEl);
+
         this.allTopElements.forEach(el => {
             el.addClass("extended-graph-setting-" + this.name);
         })
+
+        let labels = this.settingTab.containerEl.querySelectorAll(`.settings-selection-container.extended-graph-setting-${this.name} label`);
+        let imageLabel = Array.from(labels).find(l => (l as HTMLLabelElement).innerText === this.settingTab.plugin.settings.imageProperty) as HTMLLabelElement;
+        if (imageLabel) {
+            let cb = imageLabel.querySelector("input") as HTMLInputElement ;
+            this.deselectInteractive(imageLabel, cb);
+            imageLabel.parentNode?.removeChild(imageLabel);
+        }
     }
 
     protected saveColor(preview: HTMLDivElement, type: string, color: string) {
