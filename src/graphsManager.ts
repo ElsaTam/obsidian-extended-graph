@@ -94,14 +94,6 @@ export class GraphsManager extends Component {
         });
     }
 
-    onPluginEnabled(leaf: WorkspaceLeafExt) : void {
-        this.enablePlugin(leaf);
-    }
-
-    onPluginDisabled(leaf: WorkspaceLeafExt) : void {
-        this.disablePlugin(leaf);
-    }
-
     onNewLeafOpen(leaf: WorkspaceLeafExt) : void {
         // Add menu UI
         let menu = this.setMenu(leaf);
@@ -133,8 +125,9 @@ export class GraphsManager extends Component {
         menuUI = new MenuUI(leaf);
         leaf.view.addChild(menuUI);
         this.menus.set(leaf.id, menuUI);
-        this.registerEvent(leaf.on('extended-graph:disable-plugin', this.onPluginDisabled.bind(this)));
-        this.registerEvent(leaf.on('extended-graph:enable-plugin', this.onPluginEnabled.bind(this)));
+        this.registerEvent(leaf.on('extended-graph:disable-plugin', this.disablePlugin.bind(this)));
+        this.registerEvent(leaf.on('extended-graph:enable-plugin', this.enablePlugin.bind(this)));
+        this.registerEvent(leaf.on('extended-graph:reset-plugin', this.resetPlugin.bind(this)));
         return menuUI;
     }
 
@@ -205,6 +198,11 @@ export class GraphsManager extends Component {
         dispatcher.graph.nodesSet?.unload();
         dispatcher.graph.linksSet?.unload();
         this.dispatchers.delete(leafID);
+    }
+
+    resetPlugin(leaf: WorkspaceLeafExt) : void {
+        this.disablePlugin(leaf);
+        this.enablePlugin(leaf);
     }
 
     syncWithLeaves(leaves: WorkspaceLeaf[]) : void {

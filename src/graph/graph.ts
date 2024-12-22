@@ -5,12 +5,11 @@ import { InteractiveManager } from './interactiveManager';
 import { GraphView } from 'src/views/view';
 import { NodesSet } from './nodesSet';
 import { LinksSet } from './linksSet';
-import { DEFAULT_VIEW_ID, FUNC_NAMES, NONE_TYPE } from 'src/globalVariables';
+import { DEFAULT_VIEW_ID, INVALID_KEYS, NONE_TYPE } from 'src/globalVariables';
 import { EngineOptions } from 'src/views/viewData';
-import GraphExtendedPlugin from 'src/main';
-import { GraphsManager } from 'src/graphsManager';
-import { GraphEventsDispatcher, WorkspaceLeafExt } from './graphEventsDispatcher';
+import { GraphEventsDispatcher } from './graphEventsDispatcher';
 import { ExtendedGraphSettings } from 'src/settings/settings';
+import { getAPI as getDataviewAPI } from "obsidian-dataview";
 
 export class Graph extends Component {
     nodesSet: NodesSet | null;
@@ -166,44 +165,83 @@ export class Graph extends Component {
 
         this.removeAdditionalData();
 
-        // Update node background colors
+        // Update node opacity layer colors
         if (this.settings.fadeOnDisable) {
             this.nodesSet?.updateOpacityLayerColor();
         }
 
+        this.initLinkTypes();
+        this.initColors();
+    }
+
+    initLinkTypes() : void {
+        let setType = (function(type: string, id: string, types: Set<string>) {
+            if (this.settings.unselectedInteractives["link"].includes(type)) return;
+            if (INVALID_KEYS["link"].includes(type)) return;
+
+            if (this.linksSet && this.nodesSet && this.linkTypesMap) {
+                (!this.linkTypesMap.get(type)) && this.linkTypesMap.set(type, new Set<string>());
+                this.linkTypesMap.get(type)?.add(id);
+                types.add(type);
+            }
+        }).bind(this);
+
         // Create link types
         if (this.linksSet && this.nodesSet && this.linkTypesMap) {
+            const dv = getDataviewAPI();
             for (const [linkID, linkWrapper] of this.linksSet.linksMap) {
                 let sourceNode = this.nodesSet.get(linkWrapper.sourceID);
                 const sourceFile = sourceNode.file;
+                if (!sourceFile) continue;
     
                 let types = new Set<string>();
-    
-                const frontmatterLinks = this.dispatcher.graphsManager.plugin.app.metadataCache.getFileCache(sourceFile)?.frontmatterLinks;
-                if (frontmatterLinks) {
-                    // For each link in the frontmatters, check if target matches
-                    for (const linkCache of frontmatterLinks) {
-                        const linkType = linkCache.key.split('.')[0];
-                        if (!this.settings.selectedInteractives["link"].includes(linkType)) continue;
-                        const targetID = this.dispatcher.graphsManager.plugin.app.metadataCache.getFirstLinkpathDest(linkCache.link, ".")?.path;
-                        if (targetID === linkWrapper.targetID) {
-                            // Set the pair
-                            (!this.linkTypesMap.get(linkType)) && this.linkTypesMap.set(linkType, new Set<string>());
-                            this.linkTypesMap.get(linkType)?.add(linkID);
-                            types.add(linkType);
+
+                // Links with dataview inline properties
+                if (dv) {
+                    let sourcePage = dv.page(linkWrapper.sourceID);
+                    for (const [key, value] of Object.entries(sourcePage)) {
+                        if (key === "file" || key === this.settings.imageProperty) continue;
+                        if (value === null || value === undefined || value === '') continue;
+
+                        if ((typeof value === "object") && ("path" in value) && (value.path === linkWrapper.targetID)) {
+                            setType(key, linkID, types);
+                        }
+
+                        if (Array.isArray(value)) {
+                            for (const link of value) {
+                                if (link.path === linkWrapper.targetID) {
+                                    setType(key, linkID, types);
+                                }
+                            }
                         }
                     }
                 }
-                if (!frontmatterLinks || types.size === 0) {
-                    (!this.linkTypesMap.get(NONE_TYPE)) &&  this.linkTypesMap.set(NONE_TYPE, new Set<string>());
-                    this.linkTypesMap.get(NONE_TYPE)?.add(linkID);
-                    types.add(NONE_TYPE);
+    
+                // Links in the frontmatter
+                else {
+                    const frontmatterLinks = this.dispatcher.graphsManager.plugin.app.metadataCache.getFileCache(sourceFile)?.frontmatterLinks;
+                    if (frontmatterLinks) {
+                        // For each link in the frontmatters, check if target matches
+                        for (const linkCache of frontmatterLinks) {
+                            const linkType = linkCache.key.split('.')[0];
+                            const targetID = this.dispatcher.graphsManager.plugin.app.metadataCache.getFirstLinkpathDest(linkCache.link, ".")?.path;
+                            if (targetID === linkWrapper.targetID) {
+                                setType(linkType, linkID, types);
+                            }
+                        }
+                    }
+                }
+
+                if (types.size === 0) {
+                    setType(NONE_TYPE, linkID, types);
                 }
     
                 linkWrapper.setTypes(types);
             }
         }
+    }
 
+    initColors() : void {
         // Initialize colors for each node/link type
         if (this.nodesSet) {
             const types = this.nodesSet.getAllTagTypesFromCache(this.dispatcher.graphsManager.plugin.app);

@@ -4,7 +4,8 @@ export class MenuUI extends Component {
     viewContent: HTMLElement;
     leaf: WorkspaceLeaf;
 
-    button: HTMLDivElement;
+    buttonEnable: HTMLDivElement;
+    buttonReset: HTMLDivElement;
     enabled: boolean;
 
     constructor(leaf: WorkspaceLeaf) {
@@ -15,30 +16,49 @@ export class MenuUI extends Component {
 
         let hr = graphControls.createEl("hr");
         hr.addClass("separator-exended-graph");
+        this.createEnableButton(graphControls);
+        this.createResetButton(graphControls);
+    }
 
-        this.button = graphControls.createDiv("clickable-icon graph-controls-button mod-extended-graph-toggle");
-        setIcon(this.button, "sparkles");
+    createEnableButton(graphControls: HTMLDivElement) {
+        this.buttonEnable = graphControls.createDiv("clickable-icon graph-controls-button mod-extended-graph-toggle");
+        setIcon(this.buttonEnable, "sparkles");
         
-        this.button.addEventListener('click', (function() {
+        this.buttonEnable.addEventListener('click', (function() {
             if (!this.enabled) {
                 this.enable();
-                leaf.trigger("extended-graph:enable-plugin", leaf);
+                this.leaf.trigger("extended-graph:enable-plugin", this.leaf);
             } else {
                 this.disable();
-                leaf.trigger("extended-graph:disable-plugin", leaf);
+                this.leaf.trigger("extended-graph:disable-plugin", this.leaf);
             }
         }).bind(this));
     }
 
+    createResetButton(graphControls: HTMLDivElement) {
+        this.buttonReset = graphControls.createDiv("clickable-icon graph-controls-button mod-extended-graph-reset");
+        setIcon(this.buttonReset, "rotate-ccw");
+        
+        this.buttonReset.addEventListener('click', (function() {
+            if (this.enabled) {
+                this.leaf.trigger("extended-graph:reset-plugin", this.leaf);
+            }
+        }).bind(this));
+        
+        this.buttonReset.style.display = "none";
+    }
+
     enable() {
         this.enabled = true;
-        this.button.addClass("is-active");
-        setTooltip(this.button, "Enable Extended Graph Plugin", {placement: 'top'});
+        this.buttonEnable.addClass("is-active");
+        this.buttonReset.style.display = "";
+        setTooltip(this.buttonEnable, "Enable Extended Graph Plugin", {placement: 'top'});
     }
 
     disable() {
         this.enabled = false;
-        this.button.removeClass("is-active");
-        setTooltip(this.button, "Disable Extended Graph Plugin", {placement: 'top'});
+        this.buttonEnable.removeClass("is-active");
+        this.buttonReset.style.display = "none";
+        setTooltip(this.buttonEnable, "Disable Extended Graph Plugin", {placement: 'top'});
     }
 }

@@ -7,3 +7,7 @@ export const NODE_CIRCLE_X: number = 100;
 export const NODE_CIRCLE_Y: number = 100;
 export const ARC_THICKNESS: number = 0.09;
 export const ARC_INSET: number = 0.03;
+export const INVALID_KEYS: {[interactive: string]: string[]} = {
+    "tag": [NONE_TYPE],
+    "link": ["tags", "file", NONE_TYPE],
+}

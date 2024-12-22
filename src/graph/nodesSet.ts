@@ -163,7 +163,7 @@ export class NodesSet {
      * Get the node wrapper corresponding to a file
      * @param file the file
      */
-    getNodeWrapperFromFile(file: TFile) : NodeWrapper {
+    getNodeWrapperFromFile(file: TFile) : NodeWrapper | null {
         let foundContainer = null;
         this.nodesMap.forEach((container: NodeWrapper) => {
             if (container.file === file) {
@@ -171,8 +171,7 @@ export class NodesSet {
                 return;
             }
         });
-        if (foundContainer) return foundContainer;
-        throw new Error(`No node wrapper found for file ${file.name}.`);
+        return foundContainer;
     }
 
     /**

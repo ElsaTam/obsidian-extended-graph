@@ -1,7 +1,7 @@
 import { App, getAllTags, TFile } from 'obsidian';
 import { Assets, Container, Graphics, Sprite, Texture } from 'pixi.js';
 import { InteractiveManager } from './interactiveManager';
-import { ARC_INSET, ARC_THICKNESS, FUNC_NAMES, NODE_CIRCLE_RADIUS, NODE_CIRCLE_X, NODE_CIRCLE_Y, NONE_TYPE } from 'src/globalVariables';
+import { ARC_INSET, ARC_THICKNESS, FUNC_NAMES, INVALID_KEYS, NODE_CIRCLE_RADIUS, NODE_CIRCLE_X, NODE_CIRCLE_Y, NONE_TYPE } from 'src/globalVariables';
 import { Renderer } from './renderer';
 import { ExtendedGraphSettings } from 'src/settings/settings';
 
@@ -49,9 +49,9 @@ export interface NodeGraphics {
 
 export class NodeWrapper extends Container {
     node: Node;
-    nodeGraphics: NodeGraphics;
+    nodeGraphics: NodeGraphics | null;
     name: string;
-    file: TFile;
+    file: TFile | null;
     imageUri: string | null;
     tagTypes: string[] | null;
     isActive: boolean = true;
@@ -62,26 +62,29 @@ export class NodeWrapper extends Container {
         this.node = node;
         this.name = node.id;
 
+        // Get TFile
+        this.file = app.vault.getFileByPath(node.id);
+
         // Set values
-        this.nodeGraphics = {
-            sprite: settings.enableImages ? new Sprite()                : null,
-            borderFactor: settings.enableImages ? 0.06                  : null,
-            tagArcs: settings.enableTags ? new Map<string, Arc>()       : null,
-            maxArcSize: settings.enableTags ? Math.PI / 2               : null,
-            opacityLayer: settings.fadeOnDisable ? new Graphics()       : null,
-            background: new Graphics(),
-            size: 1,
-            circleRadius: 10,
-        };
+        if (this.file) {
+            this.nodeGraphics = {
+                sprite: settings.enableImages ? new Sprite()                : null,
+                borderFactor: settings.enableImages ? 0.06                  : null,
+                tagArcs: settings.enableTags ? new Map<string, Arc>()       : null,
+                maxArcSize: settings.enableTags ? Math.PI / 2               : null,
+                opacityLayer: settings.fadeOnDisable ? new Graphics()       : null,
+                background: new Graphics(),
+                size: 1,
+                circleRadius: 10,
+            };
+        }
+        else {
+            this.nodeGraphics = null;
+        }
         this.tagTypes = settings.enableTags ? [] : null;
 
-        // Get TFile
-        const file = app.vault.getFileByPath(node.id);
-        if (!file) throw new Error(`Could not find TFile for node ${node.id}.`)
-        this.file = file;
-
         // Get Tags
-        (settings.enableTags) && this.updateTags(app, settings);
+        (settings.enableTags && this.file) && this.updateTags(app, settings);
     }
 
     // =========================== INITIALIZATION =========================== //
@@ -92,69 +95,73 @@ export class NodeWrapper extends Container {
             return Promise.reject<void>();
         }
 
-        if (this.nodeGraphics.sprite) {
-            
-            // Get image URI
-            const metadata = app.metadataCache.getFileCache(this.file);
-            const frontmatter = metadata?.frontmatter;
-            const imageLink = frontmatter ? frontmatter[keyProperty]?.replace("[[", "").replace("]]", "") : null;
-            const imageFile = imageLink ? app.metadataCache.getFirstLinkpathDest(imageLink, ".") : null;
-            this.imageUri = imageFile ? app.vault.getResourcePath(imageFile) : null;
+        if (this.file && this.nodeGraphics) {
 
-            // Load texture
-            if (this.imageUri) {
-                await Assets.load(this.imageUri).then((texture: Texture) => {
-                    this.nodeGraphics.size = Math.min(texture.width, texture.height);
+            if (this.nodeGraphics.sprite) {
+                
+                // Get image URI
+                const metadata = app.metadataCache.getFileCache(this.file);
+                const frontmatter = metadata?.frontmatter;
+                const imageLink = frontmatter ? frontmatter[keyProperty]?.replace("[[", "").replace("]]", "") : null;
+                const imageFile = imageLink ? app.metadataCache.getFirstLinkpathDest(imageLink, ".") : null;
+                this.imageUri = imageFile ? app.vault.getResourcePath(imageFile) : null;
 
-                    // Sprite
-                    this.nodeGraphics.sprite = Sprite.from(texture);
-                    this.nodeGraphics.sprite.width = this.nodeGraphics.size;
-                    this.nodeGraphics.sprite.height = this.nodeGraphics.size;
-                    this.nodeGraphics.sprite.name = "image";
-                    this.nodeGraphics.sprite.anchor.set(0.5);
-                    this.addChild(this.nodeGraphics.sprite);
-                    this.nodeGraphics.sprite.scale.set((1 - (this.nodeGraphics.borderFactor ? this.nodeGraphics.borderFactor : 0)));
-            
-                    // Mask
-                    let mask = new Graphics()
-                        .beginFill(0xFFFFFF)
-                        .drawCircle(0, 0, this.nodeGraphics.circleRadius)
-                        .endFill();
-                    mask.width = this.nodeGraphics.size;
-                    mask.height = this.nodeGraphics.size;
-                    this.nodeGraphics.sprite.mask = mask;
-                    this.nodeGraphics.sprite.addChild(mask);
-                });
+                // Load texture
+                if (this.imageUri) {
+                    await Assets.load(this.imageUri).then((texture: Texture) => {
+                        if (!this.nodeGraphics) return;
+                        this.nodeGraphics.size = Math.min(texture.width, texture.height);
+
+                        // Sprite
+                        this.nodeGraphics.sprite = Sprite.from(texture);
+                        this.nodeGraphics.sprite.width = this.nodeGraphics.size;
+                        this.nodeGraphics.sprite.height = this.nodeGraphics.size;
+                        this.nodeGraphics.sprite.name = "image";
+                        this.nodeGraphics.sprite.anchor.set(0.5);
+                        this.addChild(this.nodeGraphics.sprite);
+                        this.nodeGraphics.sprite.scale.set((1 - (this.nodeGraphics.borderFactor ? this.nodeGraphics.borderFactor : 0)));
+                
+                        // Mask
+                        let mask = new Graphics()
+                            .beginFill(0xFFFFFF)
+                            .drawCircle(0, 0, this.nodeGraphics.circleRadius)
+                            .endFill();
+                        mask.width = this.nodeGraphics.size;
+                        mask.height = this.nodeGraphics.size;
+                        this.nodeGraphics.sprite.mask = mask;
+                        this.nodeGraphics.sprite.addChild(mask);
+                    });
+                }
+                else {
+                    this.nodeGraphics.size = 1;
+                }
             }
-            else {
-                this.nodeGraphics.size = 1;
+
+            // Background
+            this.updateBackgroundColor();
+            this.addChildAt(this.nodeGraphics.background, 0);
+
+            // Opacity layer
+            if (this.nodeGraphics.opacityLayer) {
+                this.updateOpacityLayerColor(0xFFFFFF);
+                this.nodeGraphics.opacityLayer.alpha = 0;
+                this.nodeGraphics.opacityLayer.scale.set(1.1);
+                this.addChildAt(this.nodeGraphics.opacityLayer, 1);
             }
+            
+            // Scale
+            this.setScale();
+
+            // Because of async, make sure the container is not already added
+            if (this.node.circle?.getChildByName(this.name)) {
+                return Promise.reject<void>();
+            }
+
+            this.x = NODE_CIRCLE_X;
+            this.y = NODE_CIRCLE_Y;
+
+            this.initListener();
         }
-
-        // Background
-        this.updateBackgroundColor();
-        this.addChildAt(this.nodeGraphics.background, 0);
-
-        // Opacity layer
-        if (this.nodeGraphics.opacityLayer) {
-            this.updateOpacityLayerColor(0xFFFFFF);
-            this.nodeGraphics.opacityLayer.alpha = 0;
-            this.nodeGraphics.opacityLayer.scale.set(1.1);
-            this.addChildAt(this.nodeGraphics.opacityLayer, 1);
-        }
-        
-        // Scale
-        this.setScale();
-
-        // Because of async, make sure the container is not already added
-        if (this.node.circle?.getChildByName(this.name)) {
-            return Promise.reject<void>();
-        }
-
-        this.x = NODE_CIRCLE_X;
-        this.y = NODE_CIRCLE_Y;
-
-        this.initListener();
     }
 
     async waitReady(renderer: Renderer) : Promise<boolean> {
@@ -176,10 +183,25 @@ export class NodeWrapper extends Container {
     }
 
     setScale(factor?: number) {
+        if(!this.nodeGraphics) return;
         if (factor) {
             this.scaleFactor = factor;
         }
         this.scale.set(this.scaleFactor * NODE_CIRCLE_RADIUS * 2 / this.nodeGraphics.size);
+    }
+
+    // =============================== EVENTS ================================ //
+
+    initListener() {
+        this.eventMode = 'static';
+
+        // Update background color on hover
+        this.on('mouseenter', e => {
+            this.updateBackgroundColor();
+        });
+        this.on('mouseleave', e => {
+            this.updateBackgroundColor();
+        });
     }
 
     // ============================= TAG TYPES ============================== //
@@ -189,12 +211,10 @@ export class NodeWrapper extends Container {
      * @param app 
      */
     updateTags(app: App, settings: ExtendedGraphSettings) : string[] {
-        if (!this.tagTypes) {
-            throw new Error("[Extended graph] tagTypes is null")
-        }
+        if (!this.tagTypes || !this.file) return [];
         const metadata = app.metadataCache.getFileCache(this.file);
         let tags = metadata ? getAllTags(metadata)?.map(t => t.replace('#', '')) : [];
-        tags = tags?.filter(t => settings.selectedInteractives["tag"].includes(t));
+        tags = tags?.filter(t => !settings.unselectedInteractives["tag"].includes(t) && !INVALID_KEYS["tag"].includes(t));
         if (tags?.length == 0) {
             tags.push(NONE_TYPE);
         }
@@ -209,9 +229,7 @@ export class NodeWrapper extends Container {
      * @returns true if it matches
      */
     matchesTagsTypes(types: string[]) : boolean {
-        if (!this.tagTypes) {
-            throw new Error("[Extended graph] tagTypes is null")
-        }
+        if (!this.tagTypes) return false;
         return types.sort().join(',') === this.tagTypes.join(',');
     }
 
@@ -226,11 +244,8 @@ export class NodeWrapper extends Container {
      * @param type tag type
      * @returns the associated arc
      */
-    getArc(type: string) : Arc {
-        if (!this.nodeGraphics.tagArcs) {
-            throw new Error("[Extended graph] nodeGraphics.tagArcs is null")
-        }
-        let arc = this.nodeGraphics.tagArcs.get(type);
+    private getArc(type: string) : Arc {
+        let arc = this.nodeGraphics?.tagArcs?.get(type);
         if (!arc) {
             throw new Error(`No arc of type ${type} for node ${this.name}.`);
         }
@@ -242,7 +257,7 @@ export class NodeWrapper extends Container {
      * @param manager tatgs manager
      */
     addArcs(manager: InteractiveManager) {
-        if (!(this.tagTypes && this.nodeGraphics.tagArcs && this.nodeGraphics.maxArcSize)) {
+        if (!(this.tagTypes && this.nodeGraphics?.tagArcs && this.nodeGraphics.maxArcSize)) {
             return;
         }
         const allTypes = manager.getTypes();
@@ -273,12 +288,8 @@ export class NodeWrapper extends Container {
      * @param tagsManager tags manager
      */
     updateArc(type: string, color: Uint8Array, manager: InteractiveManager) : void {
-        if (!this.nodeGraphics.tagArcs) {
-            throw new Error("[Extended graph] nodeGraphics.tagArcs is null")
-        }
-        if (!this.nodeGraphics.maxArcSize) {
-            throw new Error("[Extended graph] nodeGraphics.maxArcSize is null")
-        }
+        if (!this.nodeGraphics?.tagArcs) return
+        if (!this.nodeGraphics.maxArcSize) return
         this.removeArc(type);
         const allTypes = manager.getTypes();
         allTypes.remove(NONE_TYPE);
@@ -296,9 +307,7 @@ export class NodeWrapper extends Container {
      * @param manager tags manager
      */
     updateArcState(type: string, manager: InteractiveManager) : void {
-        if (!this.nodeGraphics.tagArcs) {
-            throw new Error("[Extended graph] nodeGraphics.tagArcs is null")
-        }
+        if (!this.nodeGraphics?.tagArcs) return;
         if (type !== NONE_TYPE) {
             // Update the transparency of the arc
             this.getArc(type).alpha = manager.isActive(type) ? 1 : 0.1;
@@ -344,9 +353,7 @@ export class NodeWrapper extends Container {
      * @param type tag type
      */
     removeArc(type: string) {
-        if (!this.nodeGraphics.tagArcs) {
-            throw new Error("[Extended graph] nodeGraphics.tagArcs is null")
-        }
+        if (!this.nodeGraphics?.tagArcs) return;
         this.removeChild(this.getArc(type));
         this.nodeGraphics.tagArcs.delete(type);
     }
@@ -355,9 +362,7 @@ export class NodeWrapper extends Container {
      * Remove all arcs
      */
     removeArcs(types?: string[]) {
-        if (!this.nodeGraphics.tagArcs) {
-            throw new Error("[Extended graph] nodeGraphics.tagArcs is null")
-        }
+        if (!this.nodeGraphics?.tagArcs) return;
         this.nodeGraphics.tagArcs.forEach((arc, type) => (!types || types.includes(type)) && this.removeChild(arc));
         this.nodeGraphics.tagArcs.clear();
     }
@@ -371,6 +376,9 @@ export class NodeWrapper extends Container {
      * @returns a disconnected Arc object
      */
     private createArc(type: string, color: Uint8Array, arcSize: number, index: number) : Arc {
+        if (!this.nodeGraphics) {
+            throw new Error("[Extended graph] nodeGraphics is null")
+        }
         const arc = new Arc();
 
         arc.lineStyle(arc.thickness * this.nodeGraphics.size, color)
@@ -393,7 +401,7 @@ export class NodeWrapper extends Container {
     // ========================= ALPHA / BACKGROUND ========================= //
     
     updateOpacityLayerColor(backgroundColor: any) : void {
-        if (!this.nodeGraphics.opacityLayer) return;
+        if (!this.nodeGraphics?.opacityLayer) return;
         this.nodeGraphics.opacityLayer.clear();
         this.nodeGraphics.opacityLayer.beginFill(backgroundColor)
             .drawCircle(0, 0, this.nodeGraphics.circleRadius)
@@ -403,25 +411,12 @@ export class NodeWrapper extends Container {
     }
 
     updateBackgroundColor(color?: number) : void {
+        if (!this.nodeGraphics) return;
         this.nodeGraphics.background.clear();
         this.nodeGraphics.background.beginFill(color ? color : this.node.getFillColor().rgb)
             .drawCircle(0, 0, this.nodeGraphics.circleRadius)
             .endFill();
         this.nodeGraphics.background.width = this.nodeGraphics.size;
         this.nodeGraphics.background.height = this.nodeGraphics.size;
-    }
-
-    // =============================== EVENTS ================================ //
-
-    initListener() {
-        this.eventMode = 'static';
-
-        // Update background color on hover
-        this.on('mouseenter', e => {
-            this.updateBackgroundColor();
-        });
-        this.on('mouseleave', e => {
-            this.updateBackgroundColor();
-        });
     }
 }

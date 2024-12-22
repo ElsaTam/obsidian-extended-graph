@@ -10,6 +10,7 @@ import { GraphControlsUI } from "./ui/graphControl";
 export type WorkspaceLeafExt = WorkspaceLeaf & {
     on(name: "extended-graph:disable-plugin",   callback: (leaf: WorkspaceLeafExt) => any) : EventRef;
     on(name: "extended-graph:enable-plugin",    callback: (leaf: WorkspaceLeafExt) => any) : EventRef;
+    on(name: "extended-graph:reset-plugin",     callback: (leaf: WorkspaceLeafExt) => any) : EventRef;
     on(name: "extended-graph:add-tag-types",    callback: (colorsMap: Map<string, Uint8Array>) => any) : EventRef;
     on(name: "extended-graph:remove-tag-types", callback: (types: Set<string>) => any)                 : EventRef;
     on(name: "extended-graph:clear-tag-types",  callback: (types: string[]) => any)                    : EventRef;

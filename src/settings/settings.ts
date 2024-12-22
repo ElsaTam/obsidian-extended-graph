@@ -4,7 +4,7 @@ import { DEFAULT_VIEW_ID } from "../globalVariables";
 export interface ExtendedGraphSettings {
     colormaps: { [interactive: string] : string };
     interactiveColors: {[interactive: string]: {type: string, color: string}[]};
-    selectedInteractives: {[interactive: string]: string[]};
+    unselectedInteractives: {[interactive: string]: string[]};
     imageProperty: string;
     maxNodes: number;
     globalFilter: string;
@@ -33,7 +33,7 @@ export const DEFAULT_SETTINGS: ExtendedGraphSettings = {
         "tag": [],
         "link": []
     },
-    selectedInteractives: {
+    unselectedInteractives: {
         "tag": [],
         "link": []
     },

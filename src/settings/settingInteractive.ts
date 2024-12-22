@@ -3,6 +3,8 @@ import { cmOptions } from "src/colors/colormaps";
 import { ExtendedGraphSettingTab } from "./settingTab";
 import { capitalizeFirstLetter } from "src/helperFunctions";
 import { plot_colormap } from "src/colors/colors";
+import { getAPI as getDataviewAPI } from "obsidian-dataview";
+import { INVALID_KEYS } from "src/globalVariables";
 
 export abstract class SettingInteractives {
     settingTab: ExtendedGraphSettingTab;
@@ -82,7 +84,7 @@ export abstract class SettingInteractives {
 
         let allTypes = this.getAllTypes();
         for (const tag of allTypes) {
-            const isActive = this.settingTab.plugin.settings.selectedInteractives[this.name].includes(tag);
+            const isActive = !this.settingTab.plugin.settings.unselectedInteractives[this.name].includes(tag);
             let label = this.selectionContainer.createEl("label");
             let text = label.createSpan({text: tag});
             let toggle = label.createEl("input", {type: "checkbox"});
@@ -155,8 +157,8 @@ export abstract class SettingInteractives {
     protected selectInteractive(label: HTMLLabelElement, toggle: HTMLInputElement) {
         label.addClass("is-active");
         toggle.checked = true;
-        if (!this.settingTab.plugin.settings.selectedInteractives[this.name].includes(label.innerText)) {
-            this.settingTab.plugin.settings.selectedInteractives[this.name].push(label.innerText);
+        if (this.settingTab.plugin.settings.unselectedInteractives[this.name].includes(label.innerText)) {
+            this.settingTab.plugin.settings.unselectedInteractives[this.name].remove(label.innerText);
             this.settingTab.plugin.saveSettings();
         }
     }
@@ -164,8 +166,8 @@ export abstract class SettingInteractives {
     protected deselectInteractive(label: HTMLLabelElement, toggle: HTMLInputElement) {
         label.removeClass("is-active");
         toggle.checked = false;
-        if (this.settingTab.plugin.settings.selectedInteractives[this.name].includes(label.innerText)) {
-            this.settingTab.plugin.settings.selectedInteractives[this.name].remove(label.innerText);
+        if (!this.settingTab.plugin.settings.unselectedInteractives[this.name].includes(label.innerText)) {
+            this.settingTab.plugin.settings.unselectedInteractives[this.name].push(label.innerText);
             this.settingTab.plugin.saveSettings();
         }
     }
@@ -311,11 +313,33 @@ export class SettingLinks extends SettingInteractives {
 
     protected getAllTypes(): string[] {
         let allTypes = new Set<string>();
-        for (const file of this.settingTab.app.vault.getFiles()) {
-            let frontmatterLinks = this.settingTab.app.metadataCache.getCache(file.path)?.frontmatterLinks;
-            if (!frontmatterLinks) continue;
-            let types = frontmatterLinks.map(l => l.key.split('.')[0]);
-            allTypes = new Set<string>([...allTypes, ...types]);
+
+        const dv = getDataviewAPI();
+        if (dv) {
+            for (const page of dv.pages()) {
+                for (const [key, value] of Object.entries(page)) {
+                    if (key === "file" || key === this.settingTab.plugin.settings.imageProperty || INVALID_KEYS["link"].includes(key)) continue;
+                    if (value === null || value === undefined || value === '') continue;
+
+                    if ((typeof value === "object") && ("path" in value)) {
+                        allTypes.add(key);
+                    }
+
+                    if (Array.isArray(value)) {
+                        for (const link of value) {
+                            allTypes.add(key);
+                        }
+                    }
+                }
+            }
+        }
+        else {
+            for (const file of this.settingTab.app.vault.getFiles()) {
+                let frontmatterLinks = this.settingTab.app.metadataCache.getCache(file.path)?.frontmatterLinks;
+                if (!frontmatterLinks) continue;
+                let types = frontmatterLinks.map(l => l.key.split('.')[0]).filter(k => k !== this.settingTab.plugin.settings.imageProperty && !INVALID_KEYS["link"].includes(k));
+                allTypes = new Set<string>([...allTypes, ...types]);
+            }
         }
         return [...allTypes].sort();
     }

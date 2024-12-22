@@ -147,6 +147,7 @@ body {
     display: none;
 }
 
+.graph-controls.is-close .graph-controls-button.mod-extended-graph-reset,
 .graph-controls.is-close .graph-controls-button.mod-views,
 .graph-controls.is-close .graph-controls-button.mod-legend {
     display: flex;

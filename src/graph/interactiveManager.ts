@@ -1,7 +1,7 @@
 
 import { Component, WorkspaceLeaf } from "obsidian";
 import { getColor, hex2rgb } from "../colors/colors";
-import { FUNC_NAMES, NONE_COLOR, NONE_TYPE } from "src/globalVariables";
+import { FUNC_NAMES, INVALID_KEYS, NONE_COLOR, NONE_TYPE } from "src/globalVariables";
 import { GraphViewData } from "src/views/viewData";
 import { ExtendedGraphSettings } from "src/settings/settings";
 
@@ -110,7 +110,7 @@ export class InteractiveManager extends Component {
         let allTypesWithoutNone = new Set<string>(allTypes);
         allTypesWithoutNone.delete(NONE_TYPE);
         types.forEach(type => {
-            if (type !== NONE_TYPE && !this.settings.selectedInteractives[this.name].includes(type)) {
+            if (INVALID_KEYS[this.name]?.includes(type) && this.settings.unselectedInteractives[this.name].includes(type)) {
                 return;
             }
             if (this.interactives.has(type)) return;
@@ -181,7 +181,7 @@ export class InteractiveManager extends Component {
             const nColors = allTypesWithoutNone.length;
             const i = allTypesWithoutNone.indexOf(type);
             if (i < 0) {
-                throw new Error();
+                return new Uint8Array([0, 0, 0]);
             }
             color = this.computeColorFromIndex(i, nColors);
         }
