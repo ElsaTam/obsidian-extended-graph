@@ -58,7 +58,6 @@ export class NodeWrapper extends Container {
     scaleFactor: number = 1;
 
     constructor(node: Node, app: App, settings: ExtendedGraphSettings) {
-        FUNC_NAMES && console.log("[NodeWrapper] new");
         super();
         this.node = node;
         this.name = node.id;
@@ -88,14 +87,10 @@ export class NodeWrapper extends Container {
     // =========================== INITIALIZATION =========================== //
 
     async init(app: App, keyProperty: string, renderer: Renderer) : Promise<void> {
-        FUNC_NAMES && console.log("[NodeWrapper] init");
-
         const ready: boolean = await this.waitReady(renderer);
         if (!ready) {
             return Promise.reject<void>();
         }
-
-        FUNC_NAMES && console.log("[NodeWrapper] init");
 
         if (this.nodeGraphics.sprite) {
             
@@ -163,7 +158,6 @@ export class NodeWrapper extends Container {
     }
 
     async waitReady(renderer: Renderer) : Promise<boolean> {
-        FUNC_NAMES && console.log("[NodeWrapper] waitReady");
         let i = 0;
         return new Promise((resolve) => {
             const intervalId = setInterval(() => {
@@ -198,7 +192,6 @@ export class NodeWrapper extends Container {
         if (!this.tagTypes) {
             throw new Error("[Extended graph] tagTypes is null")
         }
-        FUNC_NAMES && console.log("[NodeWrapper] updateTags");
         const metadata = app.metadataCache.getFileCache(this.file);
         let tags = metadata ? getAllTags(metadata)?.map(t => t.replace('#', '')) : [];
         tags = tags?.filter(t => settings.selectedInteractives["tag"].includes(t));
@@ -252,7 +245,6 @@ export class NodeWrapper extends Container {
         if (!(this.tagTypes && this.nodeGraphics.tagArcs && this.nodeGraphics.maxArcSize)) {
             return;
         }
-        FUNC_NAMES && console.log("[NodeWrapper] addArcs");
         const allTypes = manager.getTypes();
         allTypes.remove(NONE_TYPE);
         const nTags = allTypes.length;
@@ -287,7 +279,6 @@ export class NodeWrapper extends Container {
         if (!this.nodeGraphics.maxArcSize) {
             throw new Error("[Extended graph] nodeGraphics.maxArcSize is null")
         }
-        FUNC_NAMES && console.log("[NodeWrapper] updateArc");
         this.removeArc(type);
         const allTypes = manager.getTypes();
         allTypes.remove(NONE_TYPE);
@@ -308,7 +299,6 @@ export class NodeWrapper extends Container {
         if (!this.nodeGraphics.tagArcs) {
             throw new Error("[Extended graph] nodeGraphics.tagArcs is null")
         }
-        FUNC_NAMES && console.log("[NodeWrapper] updateArcState");
         if (type !== NONE_TYPE) {
             // Update the transparency of the arc
             this.getArc(type).alpha = manager.isActive(type) ? 1 : 0.1;
@@ -357,7 +347,6 @@ export class NodeWrapper extends Container {
         if (!this.nodeGraphics.tagArcs) {
             throw new Error("[Extended graph] nodeGraphics.tagArcs is null")
         }
-        FUNC_NAMES && console.log("[NodeWrapper] removeArc");
         this.removeChild(this.getArc(type));
         this.nodeGraphics.tagArcs.delete(type);
     }
@@ -369,7 +358,6 @@ export class NodeWrapper extends Container {
         if (!this.nodeGraphics.tagArcs) {
             throw new Error("[Extended graph] nodeGraphics.tagArcs is null")
         }
-        FUNC_NAMES && console.log("[NodeWrapper] removeArcs");
         this.nodeGraphics.tagArcs.forEach((arc, type) => (!types || types.includes(type)) && this.removeChild(arc));
         this.nodeGraphics.tagArcs.clear();
     }
@@ -383,7 +371,6 @@ export class NodeWrapper extends Container {
      * @returns a disconnected Arc object
      */
     private createArc(type: string, color: Uint8Array, arcSize: number, index: number) : Arc {
-        FUNC_NAMES && console.log("[NodeWrapper] createArc");
         const arc = new Arc();
 
         arc.lineStyle(arc.thickness * this.nodeGraphics.size, color)
@@ -407,7 +394,6 @@ export class NodeWrapper extends Container {
     
     updateOpacityLayerColor(backgroundColor: any) : void {
         if (!this.nodeGraphics.opacityLayer) return;
-        FUNC_NAMES && console.log("[NodeWrapper] updateBackgroundColor");
         this.nodeGraphics.opacityLayer.clear();
         this.nodeGraphics.opacityLayer.beginFill(backgroundColor)
             .drawCircle(0, 0, this.nodeGraphics.circleRadius)
@@ -417,7 +403,6 @@ export class NodeWrapper extends Container {
     }
 
     updateBackgroundColor(color?: number) : void {
-        FUNC_NAMES && console.log("[NodeWrapper] updateBackgroundColor");
         this.nodeGraphics.background.clear();
         this.nodeGraphics.background.beginFill(color ? color : this.node.getFillColor().rgb)
             .drawCircle(0, 0, this.nodeGraphics.circleRadius)
@@ -438,16 +423,5 @@ export class NodeWrapper extends Container {
         this.on('mouseleave', e => {
             this.updateBackgroundColor();
         });
-
-        // Node click
-        this.node.circle.off("pointerdown", (function(t: any) {
-            return this.circle.onPointerDown(this, t)
-        }).bind(this.node));
-        this.node.circle.on('pointerdown', e => {
-            console.log("toto");
-            e.stopPropagation();
-            e.stopImmediatePropagation();
-            e.preventDefault();
-        })
     }
 }

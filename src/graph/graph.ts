@@ -24,7 +24,6 @@ export class Graph extends Component {
     settings: ExtendedGraphSettings;
 
     constructor(dispatcher: GraphEventsDispatcher) {
-        FUNC_NAMES && console.log("[Graph] new");
         super();
         this.dispatcher = dispatcher;
         this.renderer = dispatcher.leaf.view.renderer;
@@ -61,7 +60,6 @@ export class Graph extends Component {
         
         this.engine.filterOptions.search.getValue = (function() {
             let prepend = this.dispatcher.graphsManager.plugin.settings.globalFilter + " ";
-            console.log(prepend);
             let append = "";
             if (this.nodesSet.disconnectedNodes) {
                 this.nodesSet.disconnectedNodes.forEach((id: string) => {
@@ -75,7 +73,6 @@ export class Graph extends Component {
     }
 
     onload() : void {
-        FUNC_NAMES && console.log("[Graph] onload");
         this.initSets().then(() => {
             // Obsidian handles search filter after loading the graph. Which
             // means that it will first load and trigger changes with all nodes,
@@ -158,7 +155,6 @@ export class Graph extends Component {
     }
 
     async initSets() : Promise<void> {
-        FUNC_NAMES && console.log("[Graph] initSets");
         // Sleep for a short duration to let time to the engine to apply user filters
         await new Promise(r => setTimeout(r, 200));
 
@@ -221,7 +217,6 @@ export class Graph extends Component {
 
     getAllLinkTypes() : Set<string> | null {
         if (!this.linksSet) return null;
-        FUNC_NAMES && console.log("[Graph] getAllLinkTypes");
         return new Set<string>(this.linkTypesMap?.keys());
     }
 
@@ -238,7 +233,6 @@ export class Graph extends Component {
 
     disableLinkTypes(types: string[]) {
         if (!this.linksSet) return;
-        FUNC_NAMES && console.log("[LinksSet] disableLinkTypes");
         const links = this.getLinks(types);
         (links) && this.linksSet?.disableLinks(links).then((hasChanged) => {
             if (hasChanged) {
@@ -249,7 +243,6 @@ export class Graph extends Component {
 
     enableLinkTypes(types: string[]) {
         if (!this.linksSet) return;
-        FUNC_NAMES && console.log("[LinksSet] enableLinkTypes");
         const links = this.getLinks(types);
         (links) && this.linksSet?.enableLinks(links).then((hasChanged) => {
             if (hasChanged) {
@@ -260,7 +253,6 @@ export class Graph extends Component {
         
     updateWorker() : void {
         if (!this.linksSet && !this.nodesSet) return;
-        FUNC_NAMES && console.log("[LinksSet] updateWorker");
 
         let nodes: any = {};
         if (this.nodesSet) {
@@ -304,7 +296,6 @@ export class Graph extends Component {
     }
 
     newView(name: string) : string {
-        FUNC_NAMES && console.log("[Graph] newView");
         let view = new GraphView(name);
         view.setID();
         view.saveGraph(this);
@@ -313,7 +304,6 @@ export class Graph extends Component {
     }
 
     saveView(id: string) : void {
-        FUNC_NAMES && console.log("[Graph] saveView");
         if (id === DEFAULT_VIEW_ID) return;
         let viewData = this.settings.views.find(v => v.id == id);
         if (!viewData) return;

@@ -42,7 +42,6 @@ export class GraphEventsDispatcher extends Component {
     controlsUI: GraphControlsUI;
 
     constructor(leaf: WorkspaceLeafExt, graphsManager: GraphsManager) {
-        FUNC_NAMES && console.log("[GraphEventsDispatcher] new");
         super();
         this.leaf = leaf;
         this.graphsManager = graphsManager;
@@ -62,7 +61,6 @@ export class GraphEventsDispatcher extends Component {
     }
 
     onload(): void {
-        FUNC_NAMES && console.log("[GraphEventsDispatcher] onload");
 
         if (this.graphsManager.plugin.settings.enableTags) {
             this.registerEvent(this.leaf.on('extended-graph:add-tag-types', this.onTagTypesAdded.bind(this)));
@@ -94,7 +92,6 @@ export class GraphEventsDispatcher extends Component {
     }
 
     onGraphReady() : void {
-        FUNC_NAMES && console.log("[GraphEventsDispatcher] onGraphReady");
         this.leaf.view.renderer.px.stage.children[1].on('childAdded', (e: any) => {
             this.updateFromEngine();
         });
@@ -113,7 +110,6 @@ export class GraphEventsDispatcher extends Component {
     // UPDATES
 
     private updateFromEngine() {
-        FUNC_NAMES && console.log("[GraphEventsDispatcher] updateFromEngine");
         if (this.leaf.view.renderer.nodes.length > this.graphsManager.plugin.settings.maxNodes) {
             this.leaf.trigger("extended-graph:disable-plugin", this.leaf);
             return;
@@ -128,19 +124,16 @@ export class GraphEventsDispatcher extends Component {
     }
 
     onGlobalFilterChanged(filter: string) : void {
-        console.log(filter);
         this.graph.engine.updateSearch();
         let textarea = this.controlsUI.settingGlobalFilter.controlEl.querySelector("textarea");
         (textarea) && (textarea.value = filter);
     }
 
     onEngineNeedsUpdate() {
-        FUNC_NAMES && console.log("[GraphEventsDispatcher] onEngineNeedsUpdate");
         this.graph.updateWorker();
     }
 
     onGraphNeedsUpdate() {
-        FUNC_NAMES && console.log("[GraphEventsDispatcher] onGraphNeedsUpdate");
         if (this.graphsManager.plugin.settings.enableTags && this.graph.nodesSet) {
             this.graph.initSets().then(() => {
                 this.graph.nodesSet?.resetArcs();
@@ -173,7 +166,6 @@ export class GraphEventsDispatcher extends Component {
     // TAGS
 
     onTagTypesAdded(colorMaps: Map<string, Uint8Array>) {
-        FUNC_NAMES && console.log("[GraphEventsDispatcher] onTagTypesAdded");
         this.graph.nodesSet?.resetArcs();
         colorMaps.forEach((color, type) => {
             this.legendUI?.addLegend("tag", type, color);
@@ -182,26 +174,22 @@ export class GraphEventsDispatcher extends Component {
     }
 
     onTagTypesRemoved(types: Set<string>) {
-        FUNC_NAMES && console.log("[GraphEventsDispatcher] onTagTypesRemoved");
         this.legendUI?.removeLegend("tag", [...types]);
     }
 
     onTagsCleared(types: string[]) {
-        FUNC_NAMES && console.log("[GraphEventsDispatcher] onTagsCleared");
         this.graph.nodesSet?.removeArcs(types);
         this.legendUI?.removeLegend("tag", types);
         this.leaf.view.renderer.changed();
     }
 
     onTagColorChanged(type: string, color: Uint8Array) {
-        FUNC_NAMES && console.log("[GraphEventsDispatcher] onTagColorChanged");
         this.graph.nodesSet?.updateArcsColor(type, color);
         this.legendUI?.updateLegend("tag", type, color);
         this.leaf.view.renderer.changed();
     }
 
     onTagsDisabled(types: string[]) {
-        FUNC_NAMES && console.log("[GraphEventsDispatcher] onTagsDisabled");
         types.forEach(type => {
             this.graph.nodesSet?.disableTag(type);
         });
@@ -209,7 +197,6 @@ export class GraphEventsDispatcher extends Component {
     }
 
     onTagsEnabled(types: string[]) {
-        FUNC_NAMES && console.log("[GraphEventsDispatcher] onTagsEnabled");
         types.forEach(type => {
             this.graph.nodesSet?.enableTag(type);
         });
@@ -220,7 +207,6 @@ export class GraphEventsDispatcher extends Component {
 
 
     onLinkTypesAdded(colorMaps: Map<string, Uint8Array>) {
-        FUNC_NAMES && console.log("[GraphEventsDispatcher] onLinkTypesAdded");
         colorMaps.forEach((color, type) => {
             this.graph.linksSet?.updateLinksColor(type, color);
             this.legendUI?.addLegend("link", type, color);
@@ -229,32 +215,27 @@ export class GraphEventsDispatcher extends Component {
     }
 
     onLinkTypesRemoved(types: Set<string>) {
-        FUNC_NAMES && console.log("[GraphEventsDispatcher] onLinkTypesRemoved");
         this.legendUI?.removeLegend("link", [...types]);
     }
 
     onLinksCleared(types: string[]) {
-        FUNC_NAMES && console.log("[GraphEventsDispatcher] onLinksCleared");
         //this.graph.resetArcs();
         this.legendUI?.removeLegend("link", types);
         this.leaf.view.renderer.changed();
     }
 
     onLinkColorChanged(type: string, color: Uint8Array) {
-        FUNC_NAMES && console.log("[GraphEventsDispatcher] onLinkColorChanged");
         this.graph.linksSet?.updateLinksColor(type, color);
         this.legendUI?.updateLegend("link", type, color);
         this.leaf.view.renderer.changed();
     }
 
     onLinksDisabled(types: string[]) {
-        FUNC_NAMES && console.log("[GraphEventsDispatcher] onLinksDisabled");
         this.graph.disableLinkTypes(types);
         this.leaf.view.renderer.changed();
     }
 
     onLinksEnabled(types: string[]) {
-        FUNC_NAMES && console.log("[GraphEventsDispatcher] onLinksEnabled");
         this.graph.enableLinkTypes(types);
         this.leaf.view.renderer.changed();
     }
@@ -262,7 +243,6 @@ export class GraphEventsDispatcher extends Component {
     // VIEWS
 
     onViewChanged(id: string) {
-        FUNC_NAMES && console.log("[GraphEventsDispatcher] onViewChanged");
         const viewData = this.graphsManager.plugin.settings.views.find(v => v.id === id);
         if (!viewData) return;
 

@@ -32,7 +32,6 @@ export class LinkWrapper extends Graphics {
     updateGraphics(): void;
 
     constructor(link: Link, source: string, target: string, settings: ExtendedGraphSettings) {
-        FUNC_NAMES && console.log("[LinkWrapper] new");
         super();
         this.link = link;
         this.sourceID = source;
@@ -52,8 +51,6 @@ export class LinkWrapper extends Graphics {
     }
 
     async init(renderer: Renderer) : Promise<void> {
-        FUNC_NAMES && console.log("[LinkWrapper] init");
-
         const ready: boolean = await this.waitReady(renderer);
         if (!ready) {
             return Promise.reject<void>();
@@ -63,7 +60,6 @@ export class LinkWrapper extends Graphics {
     }
 
     async waitReady(renderer: Renderer): Promise<boolean> {
-        FUNC_NAMES && console.log("[LinkWrapper] waitReady");
         let i = 0;
         return new Promise((resolve) => {
             const intervalId = setInterval(() => {
@@ -111,27 +107,23 @@ export class LinkWrapper extends Graphics {
     }
 
     setTypes(types: Set<string>) {
-        FUNC_NAMES && console.log("[LinkWrapper] setTypes");
         this.types = types;
     }
 
     setColor(color: Uint8Array) : void {
-        FUNC_NAMES && console.log("[LinkWrapper] setColor");
         this.color = color;
         this.updateGraphics();
     }
 
     setLine() : void {
-        FUNC_NAMES && console.log("[LinkWrapper] setLine");
         this.clear();
         this.lineStyle({width: 16, color: this.color})
             .moveTo(0, 8)
             .lineTo(16, 8);
-        this.alpha = 1;
+        this.alpha = 0.6;
     }
 
     setCurve() : void {
-        FUNC_NAMES && console.log("[LinkWrapper] setCurve");
         if(!this.link.px) return;
         this.clear();
         const renderer = this.link.source.renderer as Renderer;
@@ -179,7 +171,6 @@ export class LinkWrapper extends Graphics {
     }
 
     setRenderable(r: boolean) : void {
-        FUNC_NAMES && console.log("[LinkWrapper] setRenderable");
         this.isActive = r;
         (this.link.px) && (this.link.px.renderable = r);
     }

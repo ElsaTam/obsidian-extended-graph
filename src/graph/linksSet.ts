@@ -17,13 +17,11 @@ export class LinksSet {
     linksManager: InteractiveManager;
 
     constructor(graph: Graph, linksManager: InteractiveManager) {
-        FUNC_NAMES && console.log("[LinksSet] new");
         this.graph = graph;
         this.linksManager = linksManager;
     }
 
     load() : Promise<void>[] {
-        FUNC_NAMES && console.log("[LinksSet] load");
         let requestList: Promise<void>[] = [];
         
         this.graph.renderer.links.forEach((link: Link) => {
@@ -50,7 +48,6 @@ export class LinksSet {
      * @param linkWrapper 
      */
     private async initLink(linkWrapper: LinkWrapper) : Promise<void> {
-        FUNC_NAMES && console.log("[LinksSet] initLink");
         await linkWrapper.init(this.graph.renderer).then(() => {
             linkWrapper.connect();
             this.linksMap.set(linkWrapper.id, linkWrapper);
@@ -89,7 +86,6 @@ export class LinksSet {
      * @returns true if a link was disabled
      */
     async disableLinks(ids: Set<string>) : Promise<boolean> {
-        FUNC_NAMES && console.log("[LinksSet] disableLinks");
         let promises: Promise<void>[] = [];
         ids.forEach(id => {
             const linkWrapper = this.get(id);
@@ -116,7 +112,6 @@ export class LinksSet {
      * @returns true if a link was enabled
      */
     async enableLinks(ids: Set<string>) : Promise<boolean> {
-        FUNC_NAMES && console.log("[LinksSet] enableLinks");
         let promises: Promise<void>[] = [];
         ids.forEach(id => {
             const linkWrapper = this.get(id);
@@ -142,7 +137,6 @@ export class LinksSet {
      * Called when a child is added or removed to the stage
      */
     updateLinksFromEngine() {
-        FUNC_NAMES && console.log("[LinksSet] updateLinksFromEngine");
         
         // Current links set by the Obsidian engine
         const newLinksIDs = this.graph.renderer.links.map(l => getLinkID(l));
@@ -192,7 +186,6 @@ export class LinksSet {
      * @param color 
      */
     updateLinksColor(type: string, color: Uint8Array) : void {
-        FUNC_NAMES && console.log("[LinksSet] updateLinksColor");
         this.linksMap.forEach((linkWrapper, id) => {
             if (this.getActiveType(id) == type) {
                 linkWrapper.setColor(color);

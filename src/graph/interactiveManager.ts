@@ -11,14 +11,12 @@ export class Interactive {
     isActive: boolean;
 
     constructor(type: string, color: Uint8Array) {
-        FUNC_NAMES && console.log("[Interactive] new");
         this.type = type;
         this.color = color;
         this.isActive = true;
     }
 
     setColor(color: Uint8Array) {
-        FUNC_NAMES && console.log("[Interactive] setColor");
         this.color = color;
     }
 }
@@ -30,7 +28,6 @@ export class InteractiveManager extends Component {
     name: string;
     
     constructor(leaf: WorkspaceLeaf, settings: ExtendedGraphSettings, name: string) {
-        FUNC_NAMES && console.log("[InteractiveManager] new");
         super();
         this.interactives = new Map<string, Interactive>();
         this.leaf = leaf;
@@ -39,14 +36,12 @@ export class InteractiveManager extends Component {
     }
 
     clear() : void {
-        FUNC_NAMES && console.log("[InteractiveManager] clear");
         const types = this.getTypes();
         this.interactives.clear();
         this.leaf.trigger(`extended-graph:clear-${this.name}-types`, types);
     }
 
     disable(types: string[]) : void {
-        FUNC_NAMES && console.log("[InteractiveManager] disable");
         let disabledTypes: string[] = [];
         types.forEach(type => {
             let interactive = this.interactives.get(type);
@@ -56,7 +51,6 @@ export class InteractiveManager extends Component {
     }
 
     enable(types: string[]) : void {
-        FUNC_NAMES && console.log("[InteractiveManager] enable");
         let enabledTypes: string[] = [];
         types.forEach(type => {
             let interactive = this.interactives.get(type);
@@ -66,7 +60,6 @@ export class InteractiveManager extends Component {
     }
 
     loadView(viewData: GraphViewData) : void {
-        FUNC_NAMES && console.log("[InteractiveManager] loadView");
 
         const viewTypesToDisable: string[] = this.name === "tag" ? viewData.disabledTags : viewData.disabledLinks;
         // Enable/Disable tags
@@ -97,7 +90,6 @@ export class InteractiveManager extends Component {
     }
 
     setColor(type: string, color: Uint8Array) : void {
-        FUNC_NAMES && console.log("[InteractiveManager] setColor");
         let interactive = this.interactives.get(type);
         if (!interactive) return;
 
@@ -113,7 +105,6 @@ export class InteractiveManager extends Component {
     }
 
     addTypes(types: Set<string>) : void {
-        FUNC_NAMES && console.log("[InteractiveManager] addTypes");
         let colorsMaps = new Map<string, Uint8Array>();
         let allTypes = new Set<string>([...this.interactives.keys(), ...types]);
         let allTypesWithoutNone = new Set<string>(allTypes);
@@ -137,6 +128,7 @@ export class InteractiveManager extends Component {
             colorsMaps.set(type, color);
             this.interactives.set(type, new Interactive(type, color));
         });
+        this.interactives = new Map([...this.interactives.entries()].sort());
         this.leaf.trigger(`extended-graph:add-${this.name}-types`, colorsMaps);
     }
 
@@ -157,14 +149,11 @@ export class InteractiveManager extends Component {
     }
     
     update(types: Set<string>) : void {
-        FUNC_NAMES && console.log("[InteractiveManager] update");
-        types.add(NONE_TYPE);
         this.clear();
         this.addTypes(types);
     }
 
     recomputeColors() : void {
-        FUNC_NAMES && console.log("[InteractiveManager] recomputeColors");
         let i = 0;
         this.interactives.forEach((interactive, type) => {
             this.setColor(type, this.tryComputeColorFromType(type));
@@ -172,7 +161,6 @@ export class InteractiveManager extends Component {
     }
 
     recomputeColor(type: string) : void {
-        FUNC_NAMES && console.log("[InteractiveManager] recomputeColor");
         if (!this.interactives.has(type)) return;
 
         this.setColor(type, this.tryComputeColorFromType(type));

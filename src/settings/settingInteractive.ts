@@ -35,7 +35,7 @@ export abstract class SettingInteractives {
 
         // COLOR PALETTE
         let settingPalette = new Setting(containerEl)
-            .setName(`Color palette (${this.name}s)`)
+            .setName(`Color palette`)
             .setDesc(`Choose the color palette for the ${this.name}s visualizations`)
             .addDropdown(cb => cb.addOptions(cmOptions).setValue(this.settingTab.plugin.settings.colormaps[this.name])
             .onChange(async (value) => {
@@ -157,7 +157,6 @@ export abstract class SettingInteractives {
         toggle.checked = true;
         if (!this.settingTab.plugin.settings.selectedInteractives[this.name].includes(label.innerText)) {
             this.settingTab.plugin.settings.selectedInteractives[this.name].push(label.innerText);
-            console.log(this.settingTab.plugin.settings.selectedInteractives[this.name]);
             this.settingTab.plugin.saveSettings();
         }
     }
@@ -167,7 +166,6 @@ export abstract class SettingInteractives {
         toggle.checked = false;
         if (this.settingTab.plugin.settings.selectedInteractives[this.name].includes(label.innerText)) {
             this.settingTab.plugin.settings.selectedInteractives[this.name].remove(label.innerText);
-            console.log(this.settingTab.plugin.settings.selectedInteractives[this.name]);
             this.settingTab.plugin.saveSettings();
         }
     }

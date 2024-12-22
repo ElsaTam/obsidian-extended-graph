@@ -18,7 +18,6 @@ export class NodesSet {
     tagsManager: InteractiveManager | null;
 
     constructor(graph: Graph, tagsManager: InteractiveManager | null) {
-        FUNC_NAMES && console.log("[NodesSet] new");
         this.graph = graph;
         this.tagsManager = tagsManager;
 
@@ -31,7 +30,6 @@ export class NodesSet {
     }
 
     load() : Promise<void>[] {
-        FUNC_NAMES && console.log("[NodesSet] load");
         let requestList: Promise<void>[] = [];
         this.graph.renderer.nodes.forEach((node: Node) => {
             let nodeWrapper = new NodeWrapper(node, this.graph.dispatcher.graphsManager.plugin.app, this.graph.settings);
@@ -52,7 +50,6 @@ export class NodesSet {
     }
 
     private async initNode(nodeWrapper: NodeWrapper) : Promise<void> {
-        FUNC_NAMES && console.log("[NodesSet] initNode");
         await nodeWrapper.init(this.graph.dispatcher.graphsManager.plugin.app, this.graph.settings.imageProperty, this.graph.renderer).then(() => {
             nodeWrapper.node.circle.addChild(nodeWrapper);
             this.nodesMap.set(nodeWrapper.node.id, nodeWrapper);
@@ -79,7 +76,6 @@ export class NodesSet {
      * Update the background color. Called when the theme changes.
      */
     updateOpacityLayerColor() : void {
-        FUNC_NAMES && console.log("[NodesSet] updateBackground");
         this.nodesMap.forEach(container => {
             container.updateOpacityLayerColor(getBackgroundColor(this.graph.renderer));
         });
@@ -90,7 +86,6 @@ export class NodesSet {
      * @returns true if the renderer is ready
      */
     checkRendererReady() : boolean {
-        FUNC_NAMES && console.log("[NodesSet] checkRendererReady");
         if (!(this.graph.renderer.px
                 && this.graph.renderer.px.stage
                 && this.graph.renderer.px.stage.children
@@ -117,8 +112,6 @@ export class NodesSet {
      * Called when a child is added or removed to the stage
      */
     updateNodesFromEngine() {
-        FUNC_NAMES && console.log("[NodesSet] updateNodesFromEngine");
-
         new Promise<void>((resolve) => {
             let timesRun = 0;
             const intervalId = setInterval(() => {
@@ -195,6 +188,7 @@ export class NodesSet {
             let nodeTypes = container.updateTags(app, this.graph.settings);
             types = new Set<string>([...types, ...nodeTypes]);
         });
+        types = new Set([...types].sort());
         
         return types;
     }
@@ -205,7 +199,6 @@ export class NodesSet {
      */
     disableTag(type: string) : void {
         if (!this.graph.settings.enableTags) return;
-        FUNC_NAMES && console.log("[NodesSet] disableTag");
         this.disabledTags?.add(type);
         let nodesToDisable: string[] = [];
         this.nodesMap.forEach((wrapper: NodeWrapper, id: string) => {
@@ -227,7 +220,6 @@ export class NodesSet {
      */
     enableTag(type: string) : void {
         if (!this.graph.settings.enableTags) return;
-        FUNC_NAMES && console.log("[NodesSet] enableTag");
         this.disabledTags?.delete(type);
         let nodesToEnable: string[] = [];
         this.nodesMap.forEach((wrapper: NodeWrapper, id: string) => {
@@ -247,7 +239,6 @@ export class NodesSet {
      */
     resetArcs() : void {
         if (!this.graph.settings.enableTags) return;
-        FUNC_NAMES && console.log("[NodesSet] resetArcs");
         this.nodesMap.forEach((wrapper: NodeWrapper) => {
             wrapper.removeArcs();
             (this.tagsManager) && wrapper.addArcs(this.tagsManager);
@@ -260,7 +251,6 @@ export class NodesSet {
      */
     removeArcs(types?: string[]) : void {
         if (!this.graph.settings.enableTags) return;
-        FUNC_NAMES && console.log("[NodesSet] removeArcs");
         this.nodesMap.forEach(w => w.removeArcs(types));
     }
 
@@ -271,13 +261,11 @@ export class NodesSet {
      */
     updateArcsColor(type: string, color: Uint8Array) : void {
         if (!this.graph.settings.enableTags) return;
-        FUNC_NAMES && console.log("[NodesSet] updateArcsColor");
         this.nodesMap.forEach(w => w.hasTagType(type) && (type !== NONE_TYPE) && (this.tagsManager) && w.updateArc(type, color, this.tagsManager));
     }
 
     disableNodes(ids: string[]) : void {
         if (!this.graph.settings.enableTags) return;
-        FUNC_NAMES && console.log("[NodesSet] disableNodes");
         ids.forEach(id => {
             this.disconnectedNodes?.add(id);
             this.connectedNodes.delete(id);
@@ -286,7 +274,6 @@ export class NodesSet {
     }
 
     enableNodes(ids: string[]) : void {
-        FUNC_NAMES && console.log("[NodesSet] enableNodes");
         ids.forEach(id => {
             this.connectedNodes.add(id);
             this.disconnectedNodes?.delete(id);
