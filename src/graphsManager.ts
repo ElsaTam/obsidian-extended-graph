@@ -103,11 +103,8 @@ export class GraphsManager extends Component {
     }
 
     onNewLeafOpen(leaf: WorkspaceLeafExt) : void {
-        console.log("onNewLeafOpen", leaf);
-
         // Add menu UI
         let menu = this.setMenu(leaf);
-        console.log(menu);
         
         if (this.isInit.get(leaf.id)) return;
 
@@ -120,6 +117,12 @@ export class GraphsManager extends Component {
         }
 
         this.isInit.set(leaf.id, true);
+    }
+
+    onGlobalFilterChanged(filter: string) : void {
+        for (const [id, dispatcher] of this.dispatchers) {
+            dispatcher.onGlobalFilterChanged(filter);
+        }
     }
 
     // MENU
@@ -205,7 +208,6 @@ export class GraphsManager extends Component {
     }
 
     syncWithLeaves(leaves: WorkspaceLeaf[]) : void {
-        console.log("syncWithLeaves", leaves);
         const currentActiveLeavesID = leaves.map(l => l.id);
         const currentUsedLeavesID = Array.from(this.isInit.keys());
 

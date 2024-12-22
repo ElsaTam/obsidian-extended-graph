@@ -105,7 +105,6 @@ export class GraphEventsDispatcher extends Component {
         if (this.graph.settings.linkCurves) {
             this.leaf.view.renderer.worker.addEventListener("message", this.startUpdateFrame.bind(this));
             this.leaf.view.renderer.px.stage.addEventListener("wheel", this.startUpdateFrame.bind(this));
-            //this.leaf.view.renderer.px.stage.addEventListener("re")
         }
 
         this.graph.test();
@@ -126,6 +125,13 @@ export class GraphEventsDispatcher extends Component {
             this.graph.linksSet.updateLinksFromEngine();
 
         this.startUpdateFrame();
+    }
+
+    onGlobalFilterChanged(filter: string) : void {
+        console.log(filter);
+        this.graph.engine.updateSearch();
+        let textarea = this.controlsUI.settingGlobalFilter.controlEl.querySelector("textarea");
+        (textarea) && (textarea.value = filter);
     }
 
     onEngineNeedsUpdate() {

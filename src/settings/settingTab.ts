@@ -50,6 +50,7 @@ export class ExtendedGraphSettingTab extends PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.globalFilter = value;
                     await this.plugin.saveSettings();
+                    this.plugin.graphsManager.onGlobalFilterChanged(value);
             }));
 
         // FEATURES

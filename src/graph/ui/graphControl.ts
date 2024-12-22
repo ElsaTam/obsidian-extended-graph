@@ -18,6 +18,8 @@ export class GraphControlsUI extends Component {
     treeItemChildren: HTMLDivElement;
     collapseIcon: HTMLDivElement;
 
+    settingGlobalFilter: Setting;
+
     optionListeners: (t: any) => any;
     
 
@@ -40,8 +42,8 @@ export class GraphControlsUI extends Component {
         this.treeItemChildren = this.root.createDiv("tree-item-children");
         this.createSaveSettingsAsDefault();
         new Setting(this.treeItemChildren).setName("Filter").setHeading();
-        this.createGlobalFilter();
-        this.createFullFilter();
+        this.settingGlobalFilter = this.createGlobalFilter();
+        this.createCopyFilter();
 
         collapsible.onClickEvent(() => {
             if (this.isCollapsed) {
@@ -55,47 +57,51 @@ export class GraphControlsUI extends Component {
         this.collapseGraphControlSection();
     }
 
-    createSaveSettingsAsDefault() {
-        new Setting(this.treeItemChildren)
+    createSaveSettingsAsDefault() : Setting {
+        return new Setting(this.treeItemChildren)
             .setName("Save settings as default")
             .addButton(cb => {
                 setIcon(cb.buttonEl, "save");
+                cb.buttonEl.addClass("save-button");
                 cb.onClick(event => {
                     this.saveSettingsAsDefault();
                 });
             });
     }
 
-    createGlobalFilter() {
-        new Setting(this.treeItemChildren)
+    createGlobalFilter() : Setting {
+        return new Setting(this.treeItemChildren)
             .setClass("mod-search-setting")
             .addTextArea(cb => {
                 cb.setPlaceholder("Global filter")
                   .setValue(this.plugin.settings.globalFilter);
                 cb.inputEl.addClass("search-input-container");
-                cb.inputEl.onblur = (e => {
+                cb.inputEl.onblur = (async e => {
                     if (this.plugin.settings.globalFilter !== cb.getValue()) {
                         this.plugin.settings.globalFilter = cb.getValue();
-                        this.plugin.saveSettings();
-                        this.dispatcher.graph.engine.updateSearch();
+                        await this.plugin.saveSettings();
+                        this.plugin.graphsManager.onGlobalFilterChanged(cb.getValue());
                     }
                 });
-                cb.inputEl.onkeydown = (e => {
+                cb.inputEl.onkeydown = (async e => {
                     if ("Enter" === e.key) {
                         e.preventDefault();
-                        this.plugin.settings.globalFilter = cb.getValue();
-                        this.plugin.saveSettings();
-                        this.dispatcher.graph.engine.updateSearch();
+                        if (this.plugin.settings.globalFilter !== cb.getValue()) {
+                            this.plugin.settings.globalFilter = cb.getValue();
+                            await this.plugin.saveSettings();
+                            this.plugin.graphsManager.onGlobalFilterChanged(cb.getValue());
+                        }
                     }
                 });
             });
     }
 
-    createFullFilter() {
-        new Setting(this.treeItemChildren)
+    createCopyFilter() : Setting {
+        return new Setting(this.treeItemChildren)
             .setName("Copy full filter")
             .addButton(cb => {
                 setIcon(cb.buttonEl, "copy");
+                cb.buttonEl.addClass("copy-button");
                 cb.onClick(e => {
                     navigator.clipboard.writeText(this.dispatcher.graph.engine.filterOptions.search.getValue());
                     new Notice(`Extended Graph: full filter copied to clipboard.`);

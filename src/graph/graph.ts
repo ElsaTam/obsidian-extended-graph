@@ -60,7 +60,8 @@ export class Graph extends Component {
         }
         
         this.engine.filterOptions.search.getValue = (function() {
-            let prepend = this.settings.globalFilter ? this.settings.globalFilter + " " : "";
+            let prepend = this.dispatcher.graphsManager.plugin.settings.globalFilter + " ";
+            console.log(prepend);
             let append = "";
             if (this.nodesSet.disconnectedNodes) {
                 this.nodesSet.disconnectedNodes.forEach((id: string) => {

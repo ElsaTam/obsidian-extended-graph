@@ -50,14 +50,11 @@ export default class GraphExtendedPlugin extends Plugin {
     }
     
     async onLayoutChange() {
-        console.log("onLayoutChange");
-
         // Restart the research
         this.waitingTime = 0;
 
         // Check if a renderer (a graph) is active
         this.waitForRenderer().then(found => {
-            console.log("foundRenderer", found);
             if (found) {
                 const leaves = this.getAllGraphLeaves();
                 this.graphsManager.syncWithLeaves(leaves);
