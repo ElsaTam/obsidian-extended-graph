@@ -152,10 +152,6 @@ export class GraphsManager extends Component {
     // ENABLE/DISABLE PLUGIN
 
     addGraph(leaf: WorkspaceLeafExt) : GraphEventsDispatcher {
-        if (leaf.view.renderer.nodes.length > this.plugin.settings.maxNodes) {
-            throw new Error("Too many nodes, plugin is disables in this graph");
-        }
-
         let dispatcher = this.dispatchers.get(leaf.id);
         if (dispatcher) return dispatcher;
 
@@ -174,13 +170,13 @@ export class GraphsManager extends Component {
 
         if (dispatcher) return;
 
-        try {
+        if (leaf.view.renderer.nodes.length > this.plugin.settings.maxNodes) {
+            new Notice(`Try to handle ${leaf.view.renderer.nodes.length}, but the limit is ${this.plugin.settings.maxNodes}. Extended Graph disabled.`);
+            return;
+        }
+        else {
             dispatcher = this.addGraph(leaf);
             menuUI.enable();
-        }
-        catch (error) {
-            console.error(error);
-            this.disablePlugin(leaf);
         }
     }
 

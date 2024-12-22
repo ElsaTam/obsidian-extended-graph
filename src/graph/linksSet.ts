@@ -1,11 +1,5 @@
-import { WorkspaceLeaf } from "obsidian";
 import { InteractiveManager } from "./interactiveManager";
 import { getLinkID, Link, LinkWrapper } from "./link";
-import { Renderer } from "./renderer";
-import { GraphViewData } from "src/views/viewData";
-import { FUNC_NAMES, NONE_TYPE } from "src/globalVariables";
-import { Graphics } from "pixi.js";
-import { WorkspaceLeafExt } from "./graphEventsDispatcher";
 import { Graph } from "./graph";
 
 export class LinksSet {
@@ -77,7 +71,7 @@ export class LinksSet {
      */
     getActiveType(id: string) : string {
         let firstActiveType = [...this.get(id).types].find(type => this.linksManager.isActive(type));
-        return firstActiveType ? firstActiveType : NONE_TYPE;
+        return firstActiveType ? firstActiveType : this.graph.settings.noneType["link"];
     }
 
     /**

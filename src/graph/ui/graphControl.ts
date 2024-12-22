@@ -1,9 +1,7 @@
-import { Component, Modal, setIcon, Setting, WorkspaceLeaf } from "obsidian";
-import { Graph } from "../graph";
-import { EngineOptions, GraphViewData } from "src/views/viewData";
-import { DEFAULT_VIEW_ID, NONE_TYPE } from "src/globalVariables";
+import { Component, setIcon, Setting } from "obsidian";
+import { EngineOptions } from "src/views/viewData";
+import { DEFAULT_VIEW_ID } from "src/globalVariables";
 import { GraphEventsDispatcher } from "../graphEventsDispatcher";
-import { ExtendedGraphSettings } from "src/settings/settings";
 import GraphExtendedPlugin from "src/main";
 
 export class GraphControlsUI extends Component {

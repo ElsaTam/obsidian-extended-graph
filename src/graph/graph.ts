@@ -1,11 +1,11 @@
 
-import { App, Component, WorkspaceLeaf } from 'obsidian';
+import { Component } from 'obsidian';
 import { Renderer } from './renderer';
 import { InteractiveManager } from './interactiveManager';
 import { GraphView } from 'src/views/view';
 import { NodesSet } from './nodesSet';
 import { LinksSet } from './linksSet';
-import { DEFAULT_VIEW_ID, INVALID_KEYS, NONE_TYPE } from 'src/globalVariables';
+import { DEFAULT_VIEW_ID, INVALID_KEYS } from 'src/globalVariables';
 import { EngineOptions } from 'src/views/viewData';
 import { GraphEventsDispatcher } from './graphEventsDispatcher';
 import { ExtendedGraphSettings } from 'src/settings/settings';
@@ -233,7 +233,7 @@ export class Graph extends Component {
                 }
 
                 if (types.size === 0) {
-                    setType(NONE_TYPE, linkID, types);
+                    setType(this.settings.noneType["link"], linkID, types);
                 }
     
                 linkWrapper.setTypes(types);

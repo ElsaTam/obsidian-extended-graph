@@ -1,6 +1,5 @@
-import { Graphics, Container, ObservablePoint, Point } from "pixi.js";
+import { Graphics, Container } from "pixi.js";
 import { Node } from './node';
-import { ARC_INSET, ARC_THICKNESS, FUNC_NAMES } from "src/globalVariables";
 import { Renderer } from "./renderer";
 import { ExtendedGraphSettings } from "src/settings/settings";
 import { bezier, lengthQuadratic, quadratic } from "src/helperFunctions";

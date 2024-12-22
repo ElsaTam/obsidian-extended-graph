@@ -1,7 +1,5 @@
 import { Component, setIcon, WorkspaceLeaf } from "obsidian";
-import { Graph } from "../graph";
 import { InteractiveManager } from "../interactiveManager";
-import { NONE_TYPE } from "src/globalVariables";
 import { GraphEventsDispatcher } from "../graphEventsDispatcher";
 import GraphExtendedPlugin from "src/main";
 
@@ -26,7 +24,7 @@ class LegendRow {
     }
 
     private getClassName(type: string) : string {
-        return "graph-legend-" + type;
+        return "graph-legend-" + type.replace(" ", "-");
     }
 
     addLegend(type: string, color: Uint8Array) : void {
@@ -34,11 +32,11 @@ class LegendRow {
             let button = this.container.createEl("button");
             button.addClasses([this.getClassName(type), "graph-legend"]);
             button.setText(type);
-            button.addEventListener('click', event => {
+            button.addEventListener('click', e => {
                 this.toggle(type);
             })
             button.style.setProperty(this.cssColorVariable, `${color[0]}, ${color[1]}, ${color[2]}`);
-            if (type == NONE_TYPE) {
+            if (type === this.manager.settings.noneType[this.name]) {
                 button.addClass("graph-legend-none");
             }
         }

@@ -1,7 +1,7 @@
 
 import { Component, WorkspaceLeaf } from "obsidian";
 import { getColor, hex2rgb } from "../colors/colors";
-import { FUNC_NAMES, INVALID_KEYS, NONE_COLOR, NONE_TYPE } from "src/globalVariables";
+import { INVALID_KEYS, NONE_COLOR } from "src/globalVariables";
 import { GraphViewData } from "src/views/viewData";
 import { ExtendedGraphSettings } from "src/settings/settings";
 
@@ -108,18 +108,15 @@ export class InteractiveManager extends Component {
         let colorsMaps = new Map<string, Uint8Array>();
         let allTypes = new Set<string>([...this.interactives.keys(), ...types]);
         let allTypesWithoutNone = new Set<string>(allTypes);
-        allTypesWithoutNone.delete(NONE_TYPE);
+        allTypesWithoutNone.delete(this.settings.noneType[this.name]);
         types.forEach(type => {
             if (INVALID_KEYS[this.name]?.includes(type) && this.settings.unselectedInteractives[this.name].includes(type)) {
                 return;
             }
             if (this.interactives.has(type)) return;
 
-            let color: Uint8Array;
-            try {
-                color = this.tryComputeColorFromType(type);
-            }
-            catch {
+            let color = this.tryComputeColorFromType(type);
+            if (!color) {
                 const nColors = allTypesWithoutNone.size;
                 const i = [...allTypesWithoutNone].indexOf(type);
                 color = this.computeColorFromIndex(i, nColors);
@@ -156,32 +153,34 @@ export class InteractiveManager extends Component {
     recomputeColors() : void {
         let i = 0;
         this.interactives.forEach((interactive, type) => {
-            this.setColor(type, this.tryComputeColorFromType(type));
+            let color = this.tryComputeColorFromType(type);
+            (color) && this.setColor(type, color);
         });
     }
 
     recomputeColor(type: string) : void {
         if (!this.interactives.has(type)) return;
 
-        this.setColor(type, this.tryComputeColorFromType(type));
+        let color = this.tryComputeColorFromType(type);
+        (color) && this.setColor(type, color);
     }
 
-    private tryComputeColorFromType(type: string) : Uint8Array {
+    private tryComputeColorFromType(type: string) : Uint8Array | null{
         let color: Uint8Array;
         let colorSettings = this.settings.interactiveColors[this.name].find(p => p.type === type)?.color;
         if (colorSettings) {
             color = hex2rgb(colorSettings);
         }
-        else if (type === NONE_TYPE) {
+        else if (type === this.settings.noneType[this.name]) {
             color = NONE_COLOR;
         }
         else {
             let allTypesWithoutNone = [...this.interactives.keys()];
-            allTypesWithoutNone.remove(NONE_TYPE);
+            allTypesWithoutNone.remove(this.settings.noneType[this.name]);
             const nColors = allTypesWithoutNone.length;
             const i = allTypesWithoutNone.indexOf(type);
             if (i < 0) {
-                return new Uint8Array([0, 0, 0]);
+                return null;
             }
             color = this.computeColorFromIndex(i, nColors);
         }

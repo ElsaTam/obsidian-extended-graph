@@ -1,11 +1,7 @@
-import { App, TFile, WorkspaceLeaf } from "obsidian";
+import { App, TFile } from "obsidian";
 import { Node, NodeWrapper } from "./node";
-import { Renderer } from "./renderer";
 import { InteractiveManager } from "./interactiveManager";
-import { GraphViewData } from "src/views/viewData";
 import { getBackgroundColor } from "src/helperFunctions";
-import { FUNC_NAMES, NONE_TYPE } from "src/globalVariables";
-import { ExtendedGraphSettings } from "src/settings/settings";
 import { Graph } from "./graph";
 
 export class NodesSet {
@@ -260,7 +256,10 @@ export class NodesSet {
      */
     updateArcsColor(type: string, color: Uint8Array) : void {
         if (!this.graph.settings.enableTags) return;
-        this.nodesMap.forEach(w => w.hasTagType(type) && (type !== NONE_TYPE) && (this.tagsManager) && w.updateArc(type, color, this.tagsManager));
+        this.nodesMap.forEach(w => {
+            if (w.hasTagType(type) && (type !== this.graph.settings.noneType["tag"]) && (this.tagsManager))
+                w.updateArc(type, color, this.tagsManager)
+        });
     }
 
     disableNodes(ids: string[]) : void {

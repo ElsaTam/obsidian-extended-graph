@@ -5,6 +5,7 @@ export interface ExtendedGraphSettings {
     colormaps: { [interactive: string] : string };
     interactiveColors: {[interactive: string]: {type: string, color: string}[]};
     unselectedInteractives: {[interactive: string]: string[]};
+    noneType: { [interactive: string] : string };
     imageProperty: string;
     maxNodes: number;
     globalFilter: string;
@@ -24,7 +25,7 @@ export interface ExtendedGraphSettings {
     collapseLegend: boolean;
 }
 
-export const DEFAULT_SETTINGS: ExtendedGraphSettings = {
+export const DEFAULT_SETTINGS: Partial<ExtendedGraphSettings> = {
     colormaps: {
         "tag": "hsv",
         "link": "rainbow"
@@ -36,6 +37,10 @@ export const DEFAULT_SETTINGS: ExtendedGraphSettings = {
     unselectedInteractives: {
         "tag": [],
         "link": []
+    },
+    noneType: {
+        "tag": "none",
+        "link": "none"
     },
     imageProperty: "image",
     maxNodes: 20,

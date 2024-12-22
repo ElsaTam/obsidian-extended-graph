@@ -1,7 +1,7 @@
 import { App, getAllTags, TFile } from 'obsidian';
 import { Assets, Container, Graphics, Sprite, Texture } from 'pixi.js';
 import { InteractiveManager } from './interactiveManager';
-import { ARC_INSET, ARC_THICKNESS, FUNC_NAMES, INVALID_KEYS, NODE_CIRCLE_RADIUS, NODE_CIRCLE_X, NODE_CIRCLE_Y, NONE_TYPE } from 'src/globalVariables';
+import { INVALID_KEYS } from 'src/globalVariables';
 import { Renderer } from './renderer';
 import { ExtendedGraphSettings } from 'src/settings/settings';
 
@@ -29,8 +29,8 @@ export interface Node {
 }
 
 class Arc extends Graphics {
-    thickness: number = ARC_THICKNESS;
-    inset: number = ARC_INSET;
+    thickness: number = 0.09;
+    inset: number = 0.03;
     gap: number = 0.2;
     isActive: boolean = true;
     name: string;
@@ -47,6 +47,10 @@ export interface NodeGraphics {
     circleRadius: number; // increase the resolution of the circle
 }
 
+const NODE_CIRCLE_RADIUS: number = 100;
+const NODE_CIRCLE_X: number = 100;
+const NODE_CIRCLE_Y: number = 100;
+
 export class NodeWrapper extends Container {
     node: Node;
     nodeGraphics: NodeGraphics | null;
@@ -56,11 +60,13 @@ export class NodeWrapper extends Container {
     tagTypes: string[] | null;
     isActive: boolean = true;
     scaleFactor: number = 1;
+    settings: ExtendedGraphSettings;
 
     constructor(node: Node, app: App, settings: ExtendedGraphSettings) {
         super();
         this.node = node;
         this.name = node.id;
+        this.settings = settings;
 
         // Get TFile
         this.file = app.vault.getFileByPath(node.id);
@@ -102,35 +108,43 @@ export class NodeWrapper extends Container {
                 // Get image URI
                 const metadata = app.metadataCache.getFileCache(this.file);
                 const frontmatter = metadata?.frontmatter;
-                const imageLink = frontmatter ? frontmatter[keyProperty]?.replace("[[", "").replace("]]", "") : null;
-                const imageFile = imageLink ? app.metadataCache.getFirstLinkpathDest(imageLink, ".") : null;
-                this.imageUri = imageFile ? app.vault.getResourcePath(imageFile) : null;
+                if (frontmatter) {
+                    let imageLink = null;
+                    if (typeof frontmatter[keyProperty] === "string") {
+                        imageLink = frontmatter[keyProperty]?.replace("[[", "").replace("]]", "");
+                    }
+                    else if (Array.isArray(frontmatter[keyProperty])) {
+                        imageLink = frontmatter[keyProperty][0]?.replace("[[", "").replace("]]", "");
+                    }
+                    const imageFile = imageLink ? app.metadataCache.getFirstLinkpathDest(imageLink, ".") : null;
+                    this.imageUri = imageFile ? app.vault.getResourcePath(imageFile) : null;
 
-                // Load texture
-                if (this.imageUri) {
-                    await Assets.load(this.imageUri).then((texture: Texture) => {
-                        if (!this.nodeGraphics) return;
-                        this.nodeGraphics.size = Math.min(texture.width, texture.height);
+                    // Load texture
+                    if (this.imageUri) {
+                        await Assets.load(this.imageUri).then((texture: Texture) => {
+                            if (!this.nodeGraphics) return;
+                            this.nodeGraphics.size = Math.min(texture.width, texture.height);
 
-                        // Sprite
-                        this.nodeGraphics.sprite = Sprite.from(texture);
-                        this.nodeGraphics.sprite.width = this.nodeGraphics.size;
-                        this.nodeGraphics.sprite.height = this.nodeGraphics.size;
-                        this.nodeGraphics.sprite.name = "image";
-                        this.nodeGraphics.sprite.anchor.set(0.5);
-                        this.addChild(this.nodeGraphics.sprite);
-                        this.nodeGraphics.sprite.scale.set((1 - (this.nodeGraphics.borderFactor ? this.nodeGraphics.borderFactor : 0)));
-                
-                        // Mask
-                        let mask = new Graphics()
-                            .beginFill(0xFFFFFF)
-                            .drawCircle(0, 0, this.nodeGraphics.circleRadius)
-                            .endFill();
-                        mask.width = this.nodeGraphics.size;
-                        mask.height = this.nodeGraphics.size;
-                        this.nodeGraphics.sprite.mask = mask;
-                        this.nodeGraphics.sprite.addChild(mask);
-                    });
+                            // Sprite
+                            this.nodeGraphics.sprite = Sprite.from(texture);
+                            this.nodeGraphics.sprite.width = this.nodeGraphics.size;
+                            this.nodeGraphics.sprite.height = this.nodeGraphics.size;
+                            this.nodeGraphics.sprite.name = "image";
+                            this.nodeGraphics.sprite.anchor.set(0.5);
+                            this.addChild(this.nodeGraphics.sprite);
+                            this.nodeGraphics.sprite.scale.set((1 - (this.nodeGraphics.borderFactor ? this.nodeGraphics.borderFactor : 0)));
+                    
+                            // Mask
+                            let mask = new Graphics()
+                                .beginFill(0xFFFFFF)
+                                .drawCircle(0, 0, this.nodeGraphics.circleRadius)
+                                .endFill();
+                            mask.width = this.nodeGraphics.size;
+                            mask.height = this.nodeGraphics.size;
+                            this.nodeGraphics.sprite.mask = mask;
+                            this.nodeGraphics.sprite.addChild(mask);
+                        });
+                    }
                 }
                 else {
                     this.nodeGraphics.size = 1;
@@ -216,7 +230,7 @@ export class NodeWrapper extends Container {
         let tags = metadata ? getAllTags(metadata)?.map(t => t.replace('#', '')) : [];
         tags = tags?.filter(t => !settings.unselectedInteractives["tag"].includes(t) && !INVALID_KEYS["tag"].includes(t));
         if (tags?.length == 0) {
-            tags.push(NONE_TYPE);
+            tags.push(this.settings.noneType["tag"]);
         }
         this.tagTypes = tags ? tags : [];
         return this.tagTypes;
@@ -261,12 +275,12 @@ export class NodeWrapper extends Container {
             return;
         }
         const allTypes = manager.getTypes();
-        allTypes.remove(NONE_TYPE);
+        allTypes.remove(this.settings.noneType["tag"]);
         const nTags = allTypes.length;
         const arcSize = Math.min(2 * Math.PI / nTags, this.nodeGraphics.maxArcSize);
     
         for (const type of this.tagTypes) {
-            if (type === NONE_TYPE) continue;
+            if (type === this.settings.noneType["tag"]) continue;
             const oldArc = this.getChildByName(this.getArcName(type));
             if (oldArc) continue;
 
@@ -292,7 +306,7 @@ export class NodeWrapper extends Container {
         if (!this.nodeGraphics.maxArcSize) return
         this.removeArc(type);
         const allTypes = manager.getTypes();
-        allTypes.remove(NONE_TYPE);
+        allTypes.remove(this.settings.noneType["tag"]);
         const nTags = allTypes.length;
         const arcSize = Math.min(2 * Math.PI / nTags, this.nodeGraphics.maxArcSize);
         const tagIndex = allTypes.findIndex(t => t === type);
@@ -308,7 +322,7 @@ export class NodeWrapper extends Container {
      */
     updateArcState(type: string, manager: InteractiveManager) : void {
         if (!this.nodeGraphics?.tagArcs) return;
-        if (type !== NONE_TYPE) {
+        if (type !== this.settings.noneType["tag"]) {
             // Update the transparency of the arc
             this.getArc(type).alpha = manager.isActive(type) ? 1 : 0.1;
         }
@@ -319,7 +333,7 @@ export class NodeWrapper extends Container {
             isNodeActive = Array.from(this.nodeGraphics.tagArcs.keys()).some((type: string) => manager.isActive(type));
         }
         else {
-            isNodeActive = manager.isActive(NONE_TYPE);
+            isNodeActive = manager.isActive(this.settings.noneType["tag"]);
         }
         this.isActive = isNodeActive;
 

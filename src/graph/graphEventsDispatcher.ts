@@ -1,9 +1,9 @@
-import { App, Component, EventRef, WorkspaceLeaf } from "obsidian";
+import { Component, EventRef, WorkspaceLeaf } from "obsidian";
 import { Graph } from "./graph";
 import { LegendUI } from "./ui/legendUI";
 import { GraphViewsUI } from "./ui/viewsUI";
 import { Renderer } from "./renderer";
-import { DEFAULT_VIEW_ID, FUNC_NAMES } from "src/globalVariables";
+import { DEFAULT_VIEW_ID } from "src/globalVariables";
 import { GraphsManager } from "src/graphsManager";
 import { GraphControlsUI } from "./ui/graphControl";
 
@@ -112,7 +112,8 @@ export class GraphEventsDispatcher extends Component {
 
     private updateFromEngine() {
         if (this.leaf.view.renderer.nodes.length > this.graphsManager.plugin.settings.maxNodes) {
-            this.leaf.trigger("extended-graph:disable-plugin", this.leaf);
+            new Notice(`Try to handle ${this.leaf.view.renderer.nodes.length}, but the limit is ${this.graphsManager.plugin.settings.maxNodes}. Extended Graph disabled.`);
+            this.graphsManager.disablePlugin(this.leaf);
             return;
         }
 
