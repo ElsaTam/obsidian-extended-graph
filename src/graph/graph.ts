@@ -203,7 +203,7 @@ export class Graph extends Component {
                         if (key === "file" || key === this.settings.imageProperty) continue;
                         if (value === null || value === undefined || value === '') continue;
 
-                        if ((typeof value === "object") && ("path" in value) && (value.path === linkWrapper.targetID)) {
+                        if ((typeof value === "object") && ("path" in value) && ((value as any).path === linkWrapper.targetID)) {
                             setType(key, linkID, types);
                         }
 
