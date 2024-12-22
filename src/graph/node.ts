@@ -1,9 +1,8 @@
 import { App, getAllTags, TFile } from 'obsidian';
-import { Assets, Circle, Container, Graphics, Sprite, Texture } from 'pixi.js';
+import { Assets, Container, Graphics, Sprite, Texture } from 'pixi.js';
 import { InteractiveManager } from './interactiveManager';
 import { ARC_INSET, ARC_THICKNESS, FUNC_NAMES, NODE_CIRCLE_RADIUS, NODE_CIRCLE_X, NODE_CIRCLE_Y, NONE_TYPE } from 'src/globalVariables';
 import { Renderer } from './renderer';
-import { int2hex, int2rgb, rgb2hex } from 'src/colors/colors';
 import { ExtendedGraphSettings } from 'src/settings/settings';
 
 export interface Node {
@@ -431,11 +430,24 @@ export class NodeWrapper extends Container {
 
     initListener() {
         this.eventMode = 'static';
+
+        // Update background color on hover
         this.on('mouseenter', e => {
             this.updateBackgroundColor();
         });
         this.on('mouseleave', e => {
             this.updateBackgroundColor();
         });
+
+        // Node click
+        this.node.circle.off("pointerdown", (function(t: any) {
+            return this.circle.onPointerDown(this, t)
+        }).bind(this.node));
+        this.node.circle.on('pointerdown', e => {
+            console.log("toto");
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            e.preventDefault();
+        })
     }
 }

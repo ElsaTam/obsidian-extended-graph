@@ -50,12 +50,14 @@ export default class GraphExtendedPlugin extends Plugin {
     }
     
     async onLayoutChange() {
+        console.log("onLayoutChange");
 
         // Restart the research
         this.waitingTime = 0;
 
         // Check if a renderer (a graph) is active
         this.waitForRenderer().then(found => {
+            console.log("foundRenderer", found);
             if (found) {
                 const leaves = this.getAllGraphLeaves();
                 this.graphsManager.syncWithLeaves(leaves);
@@ -81,18 +83,18 @@ export default class GraphExtendedPlugin extends Plugin {
     waitForRenderer(): Promise<boolean> {
         return new Promise((resolve) => {
             const intervalId = setInterval(() => {
-                this.waitingTime += 500;
+                this.waitingTime += 200;
                 if (this.isGraphOpen()) {
                     this.waitingTime = 0;
                     clearInterval(intervalId);
                     resolve(true);
                 }
-                else if (this.waitingTime > 5000) {
+                else if (this.waitingTime > 500) {
                     this.waitingTime = 0;
                     clearInterval(intervalId);
                     resolve(false)
                 }
-            }, 500);
+            }, 100);
         });
     }
 

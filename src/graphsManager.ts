@@ -9,7 +9,6 @@ import { DEFAULT_VIEW_ID } from "./globalVariables";
 export class GraphsManager extends Component {
     menus = new Map<string, MenuUI>();
     isInit = new Map<string, boolean>();
-    themeObserver: MutationObserver;
     activeFile: TFile | null = null;
     
     plugin: GraphExtendedPlugin;
@@ -31,9 +30,7 @@ export class GraphsManager extends Component {
     }
 
     onunload(): void {
-        if (this.themeObserver) {
-            this.themeObserver.disconnect();
-        }
+        
     }
 
     // EVENTS
@@ -106,10 +103,13 @@ export class GraphsManager extends Component {
     }
 
     onNewLeafOpen(leaf: WorkspaceLeafExt) : void {
-        if (this.isInit.get(leaf.id)) return;
+        console.log("onNewLeafOpen", leaf);
 
         // Add menu UI
-        this.setMenu(leaf);
+        let menu = this.setMenu(leaf);
+        console.log(menu);
+        
+        if (this.isInit.get(leaf.id)) return;
 
         // If global graph, set the engine options to default
         if (leaf.view.getViewType() === "graph") {
@@ -205,6 +205,7 @@ export class GraphsManager extends Component {
     }
 
     syncWithLeaves(leaves: WorkspaceLeaf[]) : void {
+        console.log("syncWithLeaves", leaves);
         const currentActiveLeavesID = leaves.map(l => l.id);
         const currentUsedLeavesID = Array.from(this.isInit.keys());
 
@@ -213,6 +214,7 @@ export class GraphsManager extends Component {
             if (! currentActiveLeavesID.includes(id)) {
                 this.disablePluginFromLeafID(id);
                 this.isInit.delete(id);
+                this.menus.delete(id);
             }
         }
     }
