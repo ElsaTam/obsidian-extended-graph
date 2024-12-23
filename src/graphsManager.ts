@@ -2,7 +2,7 @@ import { App, CachedMetadata, Component, TFile, WorkspaceLeaf } from "obsidian";
 import { GraphEventsDispatcher, WorkspaceLeafExt } from "./graph/graphEventsDispatcher";
 import GraphExtendedPlugin from "./main";
 import { GraphViewData } from "./views/viewData";
-import { MenuUI } from "./graph/ui/menu";
+import { MenuUI } from "./ui/menu";
 import { DEFAULT_VIEW_ID } from "./globalVariables";
 
 

@@ -55,7 +55,7 @@ class LegendRow {
     removeLegend(types: string[]) {
         types.forEach(type => {
             let button = this.container.getElementsByClassName(this.getClassName(type))[0];
-            button.parentNode?.removeChild(button);
+            button?.parentNode?.removeChild(button);
         })
     }
 
