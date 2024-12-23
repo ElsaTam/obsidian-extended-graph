@@ -1,7 +1,7 @@
 import { App, CachedMetadata, Component, TFile, WorkspaceLeaf } from "obsidian";
 import { GraphEventsDispatcher, WorkspaceLeafExt } from "./graph/graphEventsDispatcher";
 import GraphExtendedPlugin from "./main";
-import { GraphViewData } from "./views/viewData";
+import { EngineOptions, GraphViewData } from "./views/viewData";
 import { MenuUI } from "./ui/menu";
 import { DEFAULT_VIEW_ID } from "./globalVariables";
 
@@ -98,14 +98,21 @@ export class GraphsManager extends Component {
         // Add menu UI
         let menu = this.setMenu(leaf);
         
-        if (this.isInit.get(leaf.id)) return;
+        if (this.isInit.get(leaf.id)) return; // leaf was already opened
+        if (this.dispatchers.get(leaf.id)) return; // plugin already enabled
 
         // If global graph, set the engine options to default
         if (leaf.view.getViewType() === "graph") {
             // @ts-ignore
             let engine = leaf.view.dataEngine;
             let defaultView = this.plugin.settings.views.find(v => v.id === DEFAULT_VIEW_ID);
-            if (defaultView) engine.setOptions(defaultView.engineOptions);
+            if (!defaultView) {
+                defaultView = new GraphViewData();
+                defaultView.id = DEFAULT_VIEW_ID;
+                defaultView.name = "Vault (default)";
+            }
+            // @ts-ignore
+            defaultView.engineOptions = new EngineOptions(leaf.view.dataEngine.getOptions());
         }
 
         this.isInit.set(leaf.id, true);

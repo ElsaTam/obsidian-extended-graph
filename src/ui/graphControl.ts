@@ -1,8 +1,8 @@
 import { Component, setIcon, Setting } from "obsidian";
 import { EngineOptions } from "src/views/viewData";
 import { DEFAULT_VIEW_ID } from "src/globalVariables";
-import { GraphEventsDispatcher } from "../graphEventsDispatcher";
 import GraphExtendedPlugin from "src/main";
+import { GraphEventsDispatcher } from "src/graph/graphEventsDispatcher";
 
 export class GraphControlsUI extends Component {
     dispatcher: GraphEventsDispatcher;

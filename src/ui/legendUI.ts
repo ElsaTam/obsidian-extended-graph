@@ -1,6 +1,6 @@
 import { Component, setIcon, WorkspaceLeaf } from "obsidian";
-import { InteractiveManager } from "../interactiveManager";
-import { GraphEventsDispatcher } from "../graphEventsDispatcher";
+import { GraphEventsDispatcher } from "src/graph/graphEventsDispatcher";
+import { InteractiveManager } from "src/graph/interactiveManager";
 import GraphExtendedPlugin from "src/main";
 
 class LegendRow {

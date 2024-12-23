@@ -2,7 +2,7 @@ import { Component, Modal, setIcon } from "obsidian";
 import { GraphViewData } from "src/views/viewData";
 import { DEFAULT_VIEW_ID } from "src/globalVariables";
 import GraphExtendedPlugin from "src/main";
-import { GraphEventsDispatcher } from "../graphEventsDispatcher";
+import { GraphEventsDispatcher } from "src/graph/graphEventsDispatcher";
 
 export class GraphViewsUI extends Component {
     dispatcher: GraphEventsDispatcher;
