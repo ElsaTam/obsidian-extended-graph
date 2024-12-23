@@ -1,4 +1,4 @@
-import { App, CachedMetadata, Component, TFile, WorkspaceLeaf } from "obsidian";
+import { App, CachedMetadata, Component, FileView, TFile, WorkspaceLeaf } from "obsidian";
 import { GraphEventsDispatcher, WorkspaceLeafExt } from "./graph/graphEventsDispatcher";
 import GraphExtendedPlugin from "./main";
 import { EngineOptions, GraphViewData } from "./views/viewData";
@@ -10,6 +10,8 @@ export class GraphsManager extends Component {
     menus = new Map<string, MenuUI>();
     isInit = new Map<string, boolean>();
     activeFile: TFile | null = null;
+
+    localGraphID: string | null = null;
     
     plugin: GraphExtendedPlugin;
     dispatchers = new Map<string, GraphEventsDispatcher>();
@@ -98,8 +100,11 @@ export class GraphsManager extends Component {
         // Add menu UI
         let menu = this.setMenu(leaf);
         
-        if (this.isInit.get(leaf.id)) return; // leaf was already opened
-        if (this.dispatchers.get(leaf.id)) return; // plugin already enabled
+        // plugin already enabled
+        if (this.dispatchers.get(leaf.id)) return;
+
+        // leaf already opened and is global graph
+        if (this.isInit.get(leaf.id) && leaf.view.getViewType() === "graph") return;
 
         // If global graph, set the engine options to default
         if (leaf.view.getViewType() === "graph") {
@@ -168,6 +173,10 @@ export class GraphsManager extends Component {
         dispatcher.load();
         leaf.view.addChild(dispatcher);
 
+        if (leaf.view.getViewType() === "localgraph") {
+            this.localGraphID = leaf.id;
+        }
+
         return dispatcher;
     }
 
@@ -201,6 +210,7 @@ export class GraphsManager extends Component {
         dispatcher.graph.nodesSet?.unload();
         dispatcher.graph.linksSet?.unload();
         this.dispatchers.delete(leafID);
+        if (this.localGraphID === leafID) this.localGraphID = null;
     }
 
     resetPlugin(leaf: WorkspaceLeafExt) : void {
@@ -211,6 +221,13 @@ export class GraphsManager extends Component {
     syncWithLeaves(leaves: WorkspaceLeaf[]) : void {
         const currentActiveLeavesID = leaves.map(l => l.id);
         const currentUsedLeavesID = Array.from(this.isInit.keys());
+        const localLeaf = leaves.find(l => l.view.getViewType() === "localgraph");
+        if (localLeaf) {
+            this.localGraphID = localLeaf.id;
+        }
+        else {
+            this.localGraphID = null;
+        }
 
         // Remove dispatchers from closed leaves
         for (const id of currentUsedLeavesID) {
@@ -222,22 +239,35 @@ export class GraphsManager extends Component {
         }
     }
 
-    // HIGHLIGHT CURRENT FILE
+    // CHANGE CURRENT MARKDOWN FILE
+
+    onActiveLeafChange(leaf: WorkspaceLeaf | null) {
+        if (leaf && leaf.view.getViewType() === "markdown" && leaf.view instanceof FileView) {
+            if (this.activeFile !== leaf.view.file) {
+                this.highlightFile(leaf.view.file);
+                if (this.localGraphID) {
+                    let localDispatcher = this.dispatchers.get(this.localGraphID);
+                    localDispatcher && this.resetPlugin(localDispatcher.leaf);
+                }
+                this.activeFile = leaf.view.file;
+            }
+        }
+        else {
+            this.highlightFile(null);
+        }
+    }
 
     highlightFile(file: TFile | null) : void {
         if (this.plugin.settings.enableFocusActiveNote) {
-            if (this.activeFile !== file) {
-                this.dispatchers.forEach(dispatcher => {
-                    if (dispatcher.leaf.view.getViewType() !== "graph") return;
-                    if (this.activeFile) {
-                        dispatcher.graph.nodesSet?.highlightNode(this.activeFile, false);
-                    }
-                    if (file) {
-                        dispatcher.graph.nodesSet?.highlightNode(file, true);
-                    }
-                })
-                this.activeFile = file;
-            }
+            this.dispatchers.forEach(dispatcher => {
+                if (dispatcher.leaf.view.getViewType() !== "graph") return;
+                if (this.activeFile) {
+                    dispatcher.graph.nodesSet?.highlightNode(this.activeFile, false);
+                }
+                if (file) {
+                    dispatcher.graph.nodesSet?.highlightNode(file, true);
+                }
+            })
         }
     }
 }

@@ -23,7 +23,7 @@ export default class GraphExtendedPlugin extends Plugin {
             this.onLayoutChange();
         }));
         this.registerEvent(this.app.workspace.on('active-leaf-change', (leaf) => {
-            this.onActiveLeafChange(leaf);
+            this.graphsManager.onActiveLeafChange(leaf);
         }));
 
 
@@ -66,15 +66,6 @@ export default class GraphExtendedPlugin extends Plugin {
                 this.graphsManager.syncWithLeaves([]);
             }
         });
-    }
-
-    onActiveLeafChange(leaf: WorkspaceLeaf | null) {
-        if (leaf && leaf.view.getViewType() === "markdown" && leaf.view instanceof FileView) {
-            this.graphsManager.highlightFile(leaf.view.file);
-        }
-        else {
-            this.graphsManager.highlightFile(null);
-        }
     }
     
     waitForRenderer(): Promise<boolean> {

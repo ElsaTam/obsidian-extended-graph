@@ -90,6 +90,8 @@ export class GraphEventsDispatcher extends Component {
         this.stopAnimation = true;
         this.leaf.view.renderer.px.stage.children[1].removeAllListeners();
         this.leaf.view.renderer.worker.removeEventListener("message", this.startUpdateFrame.bind(this));
+
+        //this._children.forEach(c => c.unload());
     }
 
     onGraphReady() : void {
