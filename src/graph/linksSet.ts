@@ -30,7 +30,7 @@ export class LinksSet {
     unload() {
         this.linksMap.forEach(wrapper => {
             wrapper.disconnect();
-            wrapper.destroy();
+            wrapper.destroy({children:true});
         });
         this.linksMap.clear();
         this.connectedLinks.clear();
@@ -47,7 +47,7 @@ export class LinksSet {
             this.linksMap.set(linkWrapper.id, linkWrapper);
             this.connectedLinks.add(linkWrapper.id);
         }, () => {
-            linkWrapper.destroy();
+            linkWrapper.destroy({children:true});
         });
     }
     

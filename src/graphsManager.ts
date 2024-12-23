@@ -109,7 +109,6 @@ export class GraphsManager extends Component {
         // If global graph, set the engine options to default
         if (leaf.view.getViewType() === "graph") {
             // @ts-ignore
-            let engine = leaf.view.dataEngine;
             let defaultView = this.plugin.settings.views.find(v => v.id === DEFAULT_VIEW_ID);
             if (!defaultView) {
                 defaultView = new GraphViewData();
@@ -163,11 +162,14 @@ export class GraphsManager extends Component {
     
     // ENABLE/DISABLE PLUGIN
 
-    addGraph(leaf: WorkspaceLeafExt) : GraphEventsDispatcher {
+    addGraph(leaf: WorkspaceLeafExt, viewID?: string) : GraphEventsDispatcher {
+        console.log("addGraph with view", viewID);
         let dispatcher = this.dispatchers.get(leaf.id);
         if (dispatcher) return dispatcher;
 
         dispatcher = new GraphEventsDispatcher(leaf, this);
+        (viewID) && (dispatcher.viewsUI.currentViewID = viewID);
+        (viewID) && (dispatcher.viewsUI.select.value = viewID);
 
         this.dispatchers.set(leaf.id, dispatcher);
         dispatcher.load();
@@ -180,7 +182,7 @@ export class GraphsManager extends Component {
         return dispatcher;
     }
 
-    enablePlugin(leaf: WorkspaceLeafExt) : void {
+    enablePlugin(leaf: WorkspaceLeafExt, viewID?: string) : void {
         let dispatcher = this.dispatchers.get(leaf.id);
         let menuUI = this.setMenu(leaf);
 
@@ -191,7 +193,7 @@ export class GraphsManager extends Component {
             return;
         }
         else {
-            dispatcher = this.addGraph(leaf);
+            dispatcher = this.addGraph(leaf, viewID);
             menuUI.enable();
         }
     }
@@ -214,8 +216,11 @@ export class GraphsManager extends Component {
     }
 
     resetPlugin(leaf: WorkspaceLeafExt) : void {
+        let dispatcher = this.dispatchers.get(leaf.id);
         this.disablePlugin(leaf);
-        this.enablePlugin(leaf);
+        console.log("resetPlugin", dispatcher);
+        let viewID = dispatcher?.viewsUI.currentViewID;
+        this.enablePlugin(leaf, viewID);
     }
 
     syncWithLeaves(leaves: WorkspaceLeaf[]) : void {

@@ -95,6 +95,26 @@ export class NodeWrapper extends Container {
 
     // =========================== INITIALIZATION =========================== //
 
+    getImageUri(app: App, keyProperty: string) : string | null {
+        if (this.file) {
+            const metadata = app.metadataCache.getFileCache(this.file);
+            const frontmatter = metadata?.frontmatter;
+            let imageLink = null;
+            if (frontmatter) {
+                if (typeof frontmatter[keyProperty] === "string") {
+                    imageLink = frontmatter[keyProperty]?.replace("[[", "").replace("]]", "");
+                }
+                else if (Array.isArray(frontmatter[keyProperty])) {
+                    imageLink = frontmatter[keyProperty][0]?.replace("[[", "").replace("]]", "");
+                }
+                const imageFile = imageLink ? app.metadataCache.getFirstLinkpathDest(imageLink, ".") : null;
+                this.imageUri = imageFile ? app.vault.getResourcePath(imageFile) : null;
+                if (this.imageUri) return this.imageUri;
+            }
+        }
+        return null;
+    }
+
     async init(app: App, keyProperty: string, renderer: Renderer) : Promise<void> {
         const ready: boolean = await this.waitReady(renderer);
         if (!ready) {
@@ -105,46 +125,33 @@ export class NodeWrapper extends Container {
 
             if (this.nodeGraphics.sprite) {
                 
-                // Get image URI
-                const metadata = app.metadataCache.getFileCache(this.file);
-                const frontmatter = metadata?.frontmatter;
-                if (frontmatter) {
-                    let imageLink = null;
-                    if (typeof frontmatter[keyProperty] === "string") {
-                        imageLink = frontmatter[keyProperty]?.replace("[[", "").replace("]]", "");
-                    }
-                    else if (Array.isArray(frontmatter[keyProperty])) {
-                        imageLink = frontmatter[keyProperty][0]?.replace("[[", "").replace("]]", "");
-                    }
-                    const imageFile = imageLink ? app.metadataCache.getFirstLinkpathDest(imageLink, ".") : null;
-                    this.imageUri = imageFile ? app.vault.getResourcePath(imageFile) : null;
+                this.getImageUri(app, keyProperty);
 
-                    // Load texture
-                    if (this.imageUri) {
-                        await Assets.load(this.imageUri).then((texture: Texture) => {
-                            if (!this.nodeGraphics) return;
-                            this.nodeGraphics.size = Math.min(texture.width, texture.height);
+                // Load texture
+                if (this.imageUri) {
+                    await Assets.load(this.imageUri).then((texture: Texture) => {
+                        if (!this.nodeGraphics) return;
+                        this.nodeGraphics.size = Math.min(texture.width, texture.height);
 
-                            // Sprite
-                            this.nodeGraphics.sprite = Sprite.from(texture);
-                            this.nodeGraphics.sprite.width = this.nodeGraphics.size;
-                            this.nodeGraphics.sprite.height = this.nodeGraphics.size;
-                            this.nodeGraphics.sprite.name = "image";
-                            this.nodeGraphics.sprite.anchor.set(0.5);
-                            this.addChild(this.nodeGraphics.sprite);
-                            this.nodeGraphics.sprite.scale.set((1 - (this.nodeGraphics.borderFactor ? this.nodeGraphics.borderFactor : 0)));
-                    
-                            // Mask
-                            let mask = new Graphics()
-                                .beginFill(0xFFFFFF)
-                                .drawCircle(0, 0, this.nodeGraphics.circleRadius)
-                                .endFill();
-                            mask.width = this.nodeGraphics.size;
-                            mask.height = this.nodeGraphics.size;
-                            this.nodeGraphics.sprite.mask = mask;
-                            this.nodeGraphics.sprite.addChild(mask);
-                        });
-                    }
+                        // Sprite
+                        this.nodeGraphics.sprite = Sprite.from(texture);
+                        this.nodeGraphics.sprite.width = this.nodeGraphics.size;
+                        this.nodeGraphics.sprite.height = this.nodeGraphics.size;
+                        this.nodeGraphics.sprite.name = "image";
+                        this.nodeGraphics.sprite.anchor.set(0.5);
+                        this.addChild(this.nodeGraphics.sprite);
+                        this.nodeGraphics.sprite.scale.set((1 - (this.nodeGraphics.borderFactor ? this.nodeGraphics.borderFactor : 0)));
+                
+                        // Mask
+                        let mask = new Graphics()
+                            .beginFill(0xFFFFFF)
+                            .drawCircle(0, 0, this.nodeGraphics.circleRadius)
+                            .endFill();
+                        mask.width = this.nodeGraphics.size;
+                        mask.height = this.nodeGraphics.size;
+                        this.nodeGraphics.sprite.mask = mask;
+                        this.nodeGraphics.sprite.addChild(mask);
+                    });
                 }
                 else {
                     this.nodeGraphics.size = 1;

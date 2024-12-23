@@ -1,10 +1,9 @@
 import { Component, EventRef, WorkspaceLeaf } from "obsidian";
 import { Graph } from "./graph";
 import { LegendUI } from "../ui/legendUI";
-import { GraphViewsUI } from "../ui/viewsUI";
+import { ViewsUI } from "../ui/viewsUI";
 import { GraphControlsUI } from "../ui/graphControl";
 import { Renderer } from "./renderer";
-import { DEFAULT_VIEW_ID } from "src/globalVariables";
 import { GraphsManager } from "src/graphsManager";
 
 export type WorkspaceLeafExt = WorkspaceLeaf & {
@@ -39,7 +38,7 @@ export class GraphEventsDispatcher extends Component {
     
     graph: Graph;
     legendUI: LegendUI | null = null;
-    viewsUI: GraphViewsUI;
+    viewsUI: ViewsUI;
     controlsUI: GraphControlsUI;
 
     constructor(leaf: WorkspaceLeafExt, graphsManager: GraphsManager) {
@@ -52,7 +51,7 @@ export class GraphEventsDispatcher extends Component {
 
         this.controlsUI = new GraphControlsUI(this);
         this.addChild(this.controlsUI);
-        this.viewsUI = new GraphViewsUI(this);
+        this.viewsUI = new ViewsUI(this);
         this.addChild(this.viewsUI);
         if (this.graphsManager.plugin.settings.enableLinks || this.graphsManager.plugin.settings.enableTags) {
             this.legendUI = new LegendUI(this);
@@ -81,7 +80,8 @@ export class GraphEventsDispatcher extends Component {
             this.registerEvent(this.leaf.on('extended-graph:enable-links', this.onLinksEnabled.bind(this)));
         }
 
-        this.onViewChanged(DEFAULT_VIEW_ID);
+        let view = this.graphsManager.plugin.settings.views.find(v => v.id === this.viewsUI.currentViewID);
+        (view) && this.graph.setEngineOptions(view.engineOptions);
 
         this.startUpdateFrame();
     }
@@ -107,6 +107,7 @@ export class GraphEventsDispatcher extends Component {
             this.leaf.view.renderer.px.stage.addEventListener("wheel", this.startUpdateFrame.bind(this));
         }
 
+        this.onViewChanged(this.viewsUI.currentViewID);
         this.graph.test();
     }
 
@@ -247,6 +248,7 @@ export class GraphEventsDispatcher extends Component {
     // VIEWS
 
     onViewChanged(id: string) {
+        console.log("onViewChanged", id);
         const viewData = this.graphsManager.plugin.settings.views.find(v => v.id === id);
         if (!viewData) return;
 

@@ -4,7 +4,7 @@ import { DEFAULT_VIEW_ID } from "src/globalVariables";
 import GraphExtendedPlugin from "src/main";
 import { GraphEventsDispatcher } from "src/graph/graphEventsDispatcher";
 
-export class GraphViewsUI extends Component {
+export class ViewsUI extends Component {
     dispatcher: GraphEventsDispatcher;
     plugin: GraphExtendedPlugin;
 

@@ -16,6 +16,7 @@ export class Graph extends Component {
     linksSet: LinksSet | null;
     linkTypesMap: Map<string, Set<string>> | null; // key: type / value: link ids
     interactiveManagers = new Map<string, InteractiveManager>();
+    hasChangedFilterSearch: boolean = false;
 
     dispatcher: GraphEventsDispatcher;
     engine: any;
@@ -57,16 +58,19 @@ export class Graph extends Component {
             throw new Error("[Extended Graph plugin] Leaf is not a graph.")
         }
         
-        this.engine.filterOptions.search.getValue = (function() {
-            let prepend = this.dispatcher.graphsManager.plugin.settings.globalFilter + " ";
-            let append = "";
-            if (this.nodesSet.disconnectedNodes) {
-                this.nodesSet.disconnectedNodes.forEach((id: string) => {
-                    append += ` -path:"${id}"`;
-                });
-            }
-            return prepend + this.engine.filterOptions.search.inputEl.value + append;
-        }).bind(this);
+        if (this.nodesSet?.disconnectedNodes) {
+            this.engine.filterOptions.search.getValue = (function() {
+                let prepend = this.dispatcher.graphsManager.plugin.settings.globalFilter + " ";
+                let append = "";
+                if (this.nodesSet.disconnectedNodes) {
+                    this.nodesSet.disconnectedNodes.forEach((id: string) => {
+                        append += ` -path:"${id}"`;
+                    });
+                }
+                return prepend + this.engine.filterOptions.search.inputEl.value + append;
+            }).bind(this);
+            this.hasChangedFilterSearch = true;
+        }
         this.setFilter("");
         this.engine.updateSearch();
     }
@@ -83,9 +87,11 @@ export class Graph extends Component {
     }
 
     onunload() : void {
-        this.engine.filterOptions.search.getValue = (function() {
-            return this.filterOptions.search.inputEl.value;
-        }).bind(this.engine);
+        if (this.hasChangedFilterSearch) {
+            this.engine.filterOptions.search.getValue = (function() {
+                return this.filterOptions.search.inputEl.value;
+            }).bind(this.engine);
+        }
 
         let graphCorePlugin = this.dispatcher.graphsManager.plugin.app.internalPlugins.getPluginById("graph");
         let defaultViewData = this.settings.views.find(v => v.id === DEFAULT_VIEW_ID);
@@ -108,7 +114,7 @@ export class Graph extends Component {
                 for (const nodeID of invalidNodes) {
                     let wrapper = this.nodesSet.nodesMap.get(nodeID);
                     wrapper?.parent?.removeChild(wrapper);
-                    wrapper?.destroy();
+                    wrapper?.destroy({children:true});
                     this.nodesSet.nodesMap.delete(nodeID);
                     this.nodesSet.connectedNodes.delete(nodeID);
                     this.nodesSet.disconnectedNodes?.delete(nodeID);
@@ -141,7 +147,7 @@ export class Graph extends Component {
                             }
                         }
                     });
-                    this.linksSet.get(linkID).destroy();
+                    this.linksSet.get(linkID).destroy({children:true});
                     this.linksSet.linksMap.delete(linkID);
                     this.linksSet.connectedLinks.delete(linkID);
                     this.linksSet.disconnectedLinks.delete(linkID);

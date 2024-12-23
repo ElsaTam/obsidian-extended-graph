@@ -3,6 +3,7 @@ import { Node, NodeWrapper } from "./node";
 import { InteractiveManager } from "./interactiveManager";
 import { getBackgroundColor } from "src/helperFunctions";
 import { Graph } from "./graph";
+import { Assets } from "pixi.js";
 
 export class NodesSet {
     nodesMap = new Map<string, NodeWrapper>();
@@ -25,19 +26,27 @@ export class NodesSet {
         }
     }
 
-    load() : Promise<void>[] {
-        let requestList: Promise<void>[] = [];
+    load() : Promise<any>[] {
+        let requestList: Promise<any>[] = [];
+        let wrappers: NodeWrapper[] = [];
+        let imageURIs: string[] = [];
         this.graph.renderer.nodes.forEach((node: Node) => {
             let nodeWrapper = new NodeWrapper(node, this.graph.dispatcher.graphsManager.plugin.app, this.graph.settings);
-            requestList.push(this.initNode(nodeWrapper));
+            wrappers.push(nodeWrapper);
+            let imageUri = nodeWrapper.getImageUri(this.graph.dispatcher.graphsManager.plugin.app, this.graph.settings.imageProperty);
+            (imageUri) && imageURIs.push(imageUri);
         });
+        requestList.push(Assets.load(imageURIs));
+        for (let nodeWrapper of wrappers) {
+            requestList.push(this.initNode(nodeWrapper));
+        }
         return requestList;
     }
 
     unload() {
         this.nodesMap.forEach(wrapper => {
             wrapper.node.circle?.removeChild(wrapper);
-            wrapper.destroy();
+            wrapper.destroy({children:true});
         });
         this.nodesMap.clear();
         this.connectedNodes.clear();
@@ -51,7 +60,7 @@ export class NodesSet {
             this.nodesMap.set(nodeWrapper.node.id, nodeWrapper);
             this.connectedNodes.add(nodeWrapper.node.id);
         }, () => {
-            nodeWrapper.destroy();
+            nodeWrapper.destroy({children:true});
         });
     }
 
@@ -139,9 +148,14 @@ export class NodesSet {
                 let nodeWrapper = this.get(id);
                 nodeWrapper.waitReady(this.graph.renderer).then((ready: boolean) => {
                     if (!node) return;
-                    nodeWrapper.node = node;
-                    if (node.circle && !node.circle.getChildByName(nodeWrapper.name)) {
-                        node.circle.addChild(nodeWrapper);
+                    try {
+                        nodeWrapper.node = node;
+                        if (node.circle && !node.circle.getChildByName(nodeWrapper.name)) {
+                            node.circle.addChild(nodeWrapper);
+                        }
+                    }
+                    catch {
+                        return
                     }
                 });
             };
