@@ -1,9 +1,14 @@
 import { InteractiveManager } from "./interactiveManager";
-import { getLinkID, Link, LinkWrapper } from "./link";
 import { Graph } from "./graph";
+import { getLinkID } from "src/helperFunctions";
+import { Link } from "./link";
+import { ColorSource } from "pixi.js";
+import { INVALID_KEYS } from "src/globalVariables";
+import { rgb2int } from "src/colors/colors";
 
 export class LinksSet {
-    linksMap = new Map<string, LinkWrapper>();
+    linkTypesMap = new Map<string, Set<string>>(); // key: type / value: link ids
+    linksMap = new Map<string, {link: Link, color: ColorSource}>();
     connectedLinks = new Set<string>();
     disconnectedLinks = new Set<string>();
 
@@ -20,18 +25,13 @@ export class LinksSet {
         
         this.graph.renderer.links.forEach((link: Link) => {
             if (this.linksMap.get(getLinkID(link))) return;
-            let linkWrapper = new LinkWrapper(link, link.source.id, link.target.id, this.graph.settings);
-            requestList.push(this.initLink(linkWrapper));
+            requestList.push(this.initLink(link));
         })
 
         return requestList;
     }
 
     unload() {
-        this.linksMap.forEach(wrapper => {
-            wrapper.disconnect();
-            wrapper.destroy({children:true});
-        });
         this.linksMap.clear();
         this.connectedLinks.clear();
         this.disconnectedLinks.clear();
@@ -41,13 +41,27 @@ export class LinksSet {
      * Initialize the link wrapper and add it to the maps
      * @param linkWrapper 
      */
-    private async initLink(linkWrapper: LinkWrapper) : Promise<void> {
-        await linkWrapper.init(this.graph.renderer).then(() => {
-            linkWrapper.connect();
-            this.linksMap.set(linkWrapper.id, linkWrapper);
-            this.connectedLinks.add(linkWrapper.id);
-        }, () => {
-            linkWrapper.destroy({children:true});
+    private async initLink(link: Link) : Promise<void> {
+        await this.waitReady(link).then(() => {
+            this.linksMap.set(getLinkID(link), {link: link, color: "white"});
+            this.connectedLinks.add(getLinkID(link));
+        }, () => {});
+    }
+
+    async waitReady(link: Link): Promise<boolean> {
+        let i = 0;
+        return new Promise((resolve) => {
+            const intervalId = setInterval(() => {
+                if (link.line) {
+                    clearInterval(intervalId);
+                    resolve(true);
+                }
+                if (i > 10 || !this.graph.renderer.links.includes(link)) {
+                    clearInterval(intervalId);
+                    resolve(false);
+                }
+                i += 1;
+            }, 100);
         });
     }
     
@@ -56,22 +70,12 @@ export class LinksSet {
      * @param id 
      * @returns 
      */
-    get(id: string) : LinkWrapper {
-        let link = this.linksMap.get(id);
-        if (!link) {
+    get(id: string) : Link {
+        let wrapper = this.linksMap.get(id);
+        if (!wrapper) {
             throw new Error(`No link for id ${id}.`);
         }
-        return link;
-    }
-
-    /**
-     * Get the currently active type of the link
-     * @param id id of the link
-     * @returns active type
-     */
-    getActiveType(id: string) : string {
-        let firstActiveType = [...this.get(id).types].find(type => this.linksManager.isActive(type));
-        return firstActiveType ? firstActiveType : this.graph.settings.noneType["link"];
+        return wrapper.link;
     }
 
     /**
@@ -82,10 +86,10 @@ export class LinksSet {
     async disableLinks(ids: Set<string>) : Promise<boolean> {
         let promises: Promise<void>[] = [];
         ids.forEach(id => {
-            const linkWrapper = this.get(id);
-            promises.push(linkWrapper.waitReady(this.graph.renderer).then((ready) => {
+            const link = this.get(id);
+            promises.push(this.waitReady(link).then((ready) => {
                 if (ready) {
-                    linkWrapper.setRenderable(false);
+                    try {link.px.renderable = false;} catch {}
                 }
                 this.connectedLinks.delete(id);
                 this.disconnectedLinks.add(id);
@@ -108,11 +112,10 @@ export class LinksSet {
     async enableLinks(ids: Set<string>) : Promise<boolean> {
         let promises: Promise<void>[] = [];
         ids.forEach(id => {
-            const linkWrapper = this.get(id);
-            promises.push(linkWrapper.waitReady(this.graph.renderer).then((ready) => {
+            const link = this.get(id);
+            promises.push(this.waitReady(link).then((ready) => {
                 if (ready) {
-                    linkWrapper.connect();
-                    linkWrapper.setRenderable(true);
+                    try {link.px.renderable = true;} catch {}
                 }
                 this.disconnectedLinks.delete(id);
                 this.connectedLinks.add(id);
@@ -147,24 +150,12 @@ export class LinksSet {
         for (const id of linksToAdd) {
             let link = this.graph.renderer.links.find(l => getLinkID(l) === id);
             if (!link) continue;
-
-            try {
-                const linkWrapper = this.get(id);
-                linkWrapper.link = link;
-                linkWrapper.connect();
-                linkWrapper.setRenderable(true);
-            }
-            catch (error) {
-
-            }
+            try {link.px.renderable = true;} catch {}
         }
         for (const id of linksToRemove) {
             let link = this.graph.renderer.links.find(l => getLinkID(l) === id);
             if (!link) continue;
-            const linkWrapper = this.get(id);
-
-            linkWrapper.link = link;
-            linkWrapper.setRenderable(false);
+            try {link.px.renderable = false;} catch {}
         }
         if (linksToRemove.length > 0) {
             this.graph.dispatcher.onEngineNeedsUpdate();
@@ -180,10 +171,47 @@ export class LinksSet {
      * @param color 
      */
     updateLinksColor(type: string, color: Uint8Array) : void {
-        this.linksMap.forEach((linkWrapper, id) => {
+        this.linksMap.forEach((wrapper, id) => {
             if (this.getActiveType(id) == type) {
-                linkWrapper.setColor(color);
+                wrapper.color = rgb2int(color);
             }
         });
+    }
+
+    setType(type: string, linkID: string) : boolean {
+        if (this.graph.settings.unselectedInteractives["link"].includes(type)) return false;
+        if (INVALID_KEYS["link"].includes(type)) return false;
+
+        (!this.linkTypesMap.get(type)) && this.linkTypesMap.set(type, new Set<string>());
+        this.linkTypesMap.get(type)?.add(linkID);
+        return true;
+    }
+
+    getActiveType(id: string) : string {
+        if (!this.linkTypesMap) return this.graph.settings.noneType["link"];
+        for (const [type, ids] of this.linkTypesMap) {
+            if (ids.has(id)) return type;
+        }
+        return this.graph.settings.noneType["link"];
+    }
+
+    getAllLinkTypes() : Set<string> {
+        return new Set<string>(this.linkTypesMap.keys());
+    }
+
+    getLinks(types: string[]) : Set<string> | null {
+        const links = new Set<string>();
+        for (const type of types) {
+            this.linkTypesMap.get(type)?.forEach(linkID => {
+                links.add(linkID);
+            })
+        }
+        return links;
+    }
+
+    draw() {
+        for (const [id, wrapper] of this.linksMap) {
+            if (wrapper.link.line) wrapper.link.line.tint = wrapper.color;
+        }
     }
 }

@@ -32,6 +32,7 @@ export class GraphEventsDispatcher extends Component {
     type: string;
     animationFrameId: number | null = null;
     stopAnimation: boolean = true;
+    isDragging: boolean = false;
 
     graphsManager: GraphsManager;
     leaf: WorkspaceLeafExt;
@@ -102,10 +103,9 @@ export class GraphEventsDispatcher extends Component {
             this.updateFromEngine();
         });
 
-        if (this.graph.settings.linkCurves) {
-            this.leaf.view.renderer.worker.addEventListener("message", this.startUpdateFrame.bind(this));
-            this.leaf.view.renderer.px.stage.addEventListener("wheel", this.startUpdateFrame.bind(this));
-        }
+        this.leaf.view.renderer.worker.addEventListener("message", this.startUpdateFrame.bind(this));
+        this.leaf.view.renderer.px.stage.addEventListener("wheel", this.startUpdateFrame.bind(this));
+        this.leaf.view.renderer.px.stage.addEventListener("mousemove", this.draw.bind(this));
 
         this.onViewChanged(this.viewsUI.currentViewID);
         this.graph.test();
@@ -155,17 +155,21 @@ export class GraphEventsDispatcher extends Component {
     updateFrame() {
         this.stopAnimation = (this.stopAnimation)
             || (this.graph.renderer.idleFrames > 60)
-            || (!this.graph.linksSet);
+            || (!this.graph.linksSet)
+            && (!this.isDragging);
 
         if (this.stopAnimation) {
             return;
         }
-        if (this.graph.linksSet) {
-            for(const [id, linkWrapper] of this.graph.linksSet?.linksMap) {
-                linkWrapper.updateGraphics();
-            }
-        }
+
+        this.draw();
+
+        console.log(this.animationFrameId);
         this.animationFrameId = requestAnimationFrame(this.updateFrame.bind(this));
+    }
+
+    private draw() {
+        this.graph.linksSet?.draw();
     }
 
     // TAGS

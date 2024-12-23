@@ -14,7 +14,6 @@ import { getAPI as getDataviewAPI } from "obsidian-dataview";
 export class Graph extends Component {
     nodesSet: NodesSet | null;
     linksSet: LinksSet | null;
-    linkTypesMap: Map<string, Set<string>> | null; // key: type / value: link ids
     interactiveManagers = new Map<string, InteractiveManager>();
     hasChangedFilterSearch: boolean = false;
 
@@ -39,7 +38,6 @@ export class Graph extends Component {
             }
         }
         if (this.settings.enableLinks) {
-            this.linkTypesMap = new Map<string, Set<string>>();
             this.linksSet = new LinksSet(this, new InteractiveManager(dispatcher.leaf, this.settings, "link"));
             this.interactiveManagers.set("link", this.linksSet.linksManager);
             this.addChild(this.linksSet.linksManager);
@@ -123,12 +121,12 @@ export class Graph extends Component {
         }
 
         // Remove invalid links
-        if (this.linksSet && this.nodesSet && this.linkTypesMap) {
+        if (this.linksSet && this.nodesSet) {
             let invalidLinks = new Set<string>();
-            for (const [linkID, linkWrapper] of this.linksSet.linksMap.entries()) {
+            for (const [linkID, wrapper] of this.linksSet.linksMap.entries()) {
                 try {
-                    this.nodesSet.get(linkWrapper.sourceID);
-                    this.nodesSet.get(linkWrapper.targetID);
+                    this.nodesSet.get(wrapper.link.source.id);
+                    this.nodesSet.get(wrapper.link.target.id);
                 }
                 catch (error) {
                     invalidLinks.add(linkID);
@@ -139,15 +137,14 @@ export class Graph extends Component {
             if (invalidLinks.size > 0) {
                 let invalidLinkTypes = new Set<string>();
                 for (const linkID of invalidLinks) {
-                    this.linkTypesMap.forEach((linkForType, type) => {
-                        if (linkForType.has(linkID)) {
-                            linkForType.delete(linkID);
-                            if (linkForType.size === 0) {
+                    this.linksSet.linkTypesMap.forEach((linkIDs, type) => {
+                        if (linkIDs.has(linkID)) {
+                            linkIDs.delete(linkID);
+                            if (linkIDs.size === 0) {
                                 invalidLinkTypes.add(type);
                             }
                         }
                     });
-                    this.linksSet.get(linkID).destroy({children:true});
                     this.linksSet.linksMap.delete(linkID);
                     this.linksSet.connectedLinks.delete(linkID);
                     this.linksSet.disconnectedLinks.delete(linkID);
@@ -181,42 +178,31 @@ export class Graph extends Component {
     }
 
     initLinkTypes() : void {
-        let setType = (function(type: string, id: string, types: Set<string>) {
-            if (this.settings.unselectedInteractives["link"].includes(type)) return;
-            if (INVALID_KEYS["link"].includes(type)) return;
-
-            if (this.linksSet && this.nodesSet && this.linkTypesMap) {
-                (!this.linkTypesMap.get(type)) && this.linkTypesMap.set(type, new Set<string>());
-                this.linkTypesMap.get(type)?.add(id);
-                types.add(type);
-            }
-        }).bind(this);
-
         // Create link types
-        if (this.linksSet && this.nodesSet && this.linkTypesMap) {
+        if (this.linksSet && this.nodesSet) {
             const dv = getDataviewAPI();
-            for (const [linkID, linkWrapper] of this.linksSet.linksMap) {
-                let sourceNode = this.nodesSet.get(linkWrapper.sourceID);
+            for (const [linkID, wrapper] of this.linksSet.linksMap) {
+                let sourceNode = this.nodesSet.get(wrapper.link.source.id);
                 const sourceFile = sourceNode.file;
                 if (!sourceFile) continue;
     
-                let types = new Set<string>();
+                let hasType = false;
 
                 // Links with dataview inline properties
                 if (dv) {
-                    let sourcePage = dv.page(linkWrapper.sourceID);
+                    let sourcePage = dv.page(wrapper.link.source.id);
                     for (const [key, value] of Object.entries(sourcePage)) {
                         if (key === "file" || key === this.settings.imageProperty) continue;
                         if (value === null || value === undefined || value === '') continue;
 
-                        if ((typeof value === "object") && ("path" in value) && ((value as any).path === linkWrapper.targetID)) {
-                            setType(key, linkID, types);
+                        if ((typeof value === "object") && ("path" in value) && ((value as any).path === wrapper.link.target.id)) {
+                            hasType = hasType || this.linksSet.setType(key, linkID);
                         }
 
                         if (Array.isArray(value)) {
                             for (const link of value) {
-                                if (link.path === linkWrapper.targetID) {
-                                    setType(key, linkID, types);
+                                if (link.path === wrapper.link.target.id) {
+                                    hasType = hasType || this.linksSet.setType(key, linkID);
                                 }
                             }
                         }
@@ -231,18 +217,16 @@ export class Graph extends Component {
                         for (const linkCache of frontmatterLinks) {
                             const linkType = linkCache.key.split('.')[0];
                             const targetID = this.dispatcher.graphsManager.plugin.app.metadataCache.getFirstLinkpathDest(linkCache.link, ".")?.path;
-                            if (targetID === linkWrapper.targetID) {
-                                setType(linkType, linkID, types);
+                            if (targetID === wrapper.link.target.id) {
+                                hasType = hasType || this.linksSet.setType(linkType, linkID);
                             }
                         }
                     }
                 }
 
-                if (types.size === 0) {
-                    setType(this.settings.noneType["link"], linkID, types);
+                if (!hasType) {
+                    this.linksSet.setType(this.settings.noneType["link"], linkID);
                 }
-    
-                linkWrapper.setTypes(types);
             }
         }
     }
@@ -254,31 +238,15 @@ export class Graph extends Component {
             types && this.nodesSet.tagsManager?.update(types);
         }
         if (this.linksSet) {
-            const types = this.getAllLinkTypes();
-            types && this.linksSet?.linksManager.update(types);
+            const types = this.linksSet.getAllLinkTypes();
+            this.linksSet.linksManager.update(types);
         }
-    }
-
-    getAllLinkTypes() : Set<string> | null {
-        if (!this.linksSet) return null;
-        return new Set<string>(this.linkTypesMap?.keys());
-    }
-
-    getLinks(types: string[]) : Set<string> | null {
-        if (!this.linksSet) return null;
-        const links = new Set<string>();
-        for (const type of types) {
-            this.linkTypesMap?.get(type)?.forEach(linkID => {
-                links.add(linkID);
-            })
-        }
-        return links;
     }
 
     disableLinkTypes(types: string[]) {
         if (!this.linksSet) return;
-        const links = this.getLinks(types);
-        (links) && this.linksSet?.disableLinks(links).then((hasChanged) => {
+        const links = this.linksSet.getLinks(types);
+        (links) && this.linksSet.disableLinks(links).then((hasChanged) => {
             if (hasChanged) {
                 this.dispatcher.onEngineNeedsUpdate();
             }
@@ -287,8 +255,8 @@ export class Graph extends Component {
 
     enableLinkTypes(types: string[]) {
         if (!this.linksSet) return;
-        const links = this.getLinks(types);
-        (links) && this.linksSet?.enableLinks(links).then((hasChanged) => {
+        const links = this.linksSet.getLinks(types);
+        (links) && this.linksSet.enableLinks(links).then((hasChanged) => {
             if (hasChanged) {
                 this.dispatcher.onEngineNeedsUpdate();
             }
@@ -313,7 +281,7 @@ export class Graph extends Component {
         let links: any = [];
         if (this.linksSet) {
             for (const id of this.linksSet.connectedLinks) {
-                links.push([this.linksSet.get(id).sourceID, this.linksSet.get(id).targetID]);
+                links.push([this.linksSet.get(id).source.id, this.linksSet.get(id).target.id]);
             }
         }
         else {

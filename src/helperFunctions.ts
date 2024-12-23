@@ -67,3 +67,7 @@ export function lengthQuadratic(t: number, p0: Point, p1: Point, p2: Point) : nu
     );
     return L;
 }
+
+export function getLinkID(link: any) {
+    return link.source.id + "--to--" + link.target.id;
+}
