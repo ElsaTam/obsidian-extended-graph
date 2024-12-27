@@ -1,9 +1,10 @@
 import { App, TFile } from "obsidian";
-import { Node, NodeWrapper } from "./node";
+import { Node, NodeWrapper } from "./elements/node";
 import { InteractiveManager } from "./interactiveManager";
-import { getBackgroundColor } from "src/helperFunctions";
+import { getBackgroundColor, getFile, getImageUri, getTags } from "src/helperFunctions";
 import { Graph } from "./graph";
 import { Assets } from "pixi.js";
+import { INVALID_KEYS } from "src/globalVariables";
 
 export class NodesSet {
     nodesMap = new Map<string, NodeWrapper>();
@@ -18,35 +19,49 @@ export class NodesSet {
         this.graph = graph;
         this.tagsManager = tagsManager;
 
-        if (this.graph.settings.enableTags) {
+        if (this.tagsManager) {
             this.disabledTags = new Set<string>();
         }
-        if (this.graph.settings.enableTags && !this.graph.settings.fadeOnDisable) {
+        if (this.tagsManager && !this.graph.settings.fadeOnDisable) {
             this.disconnectedNodes = new Set<string>();
         }
     }
 
-    load() : Promise<any>[] {
-        let requestList: Promise<any>[] = [];
-        let wrappers: NodeWrapper[] = [];
+    load() : void {
+        this.initTagTypes();
+
+        // Create node wrappers
+        for (const node of this.graph.renderer.nodes) {
+            let nodeWrapper = new NodeWrapper(
+                node,
+                this.graph.dispatcher.graphsManager.plugin.app,
+                this.graph.settings,
+                this.tagsManager
+            );
+            nodeWrapper.connect();
+            this.nodesMap.set(nodeWrapper.node.id, nodeWrapper);
+            this.connectedNodes.add(nodeWrapper.node.id);
+        }
+
+        // Load assets (images)
         let imageURIs: string[] = [];
         this.graph.renderer.nodes.forEach((node: Node) => {
-            let nodeWrapper = new NodeWrapper(node, this.graph.dispatcher.graphsManager.plugin.app, this.graph.settings);
-            wrappers.push(nodeWrapper);
-            let imageUri = nodeWrapper.getImageUri(this.graph.dispatcher.graphsManager.plugin.app, this.graph.settings.imageProperty);
+            let imageUri = getImageUri(this.graph.dispatcher.graphsManager.plugin.app, this.graph.settings.imageProperty, node.id);
             (imageUri) && imageURIs.push(imageUri);
         });
-        requestList.push(Assets.load(imageURIs));
-        for (let nodeWrapper of wrappers) {
-            requestList.push(this.initNode(nodeWrapper));
-        }
-        return requestList;
+        Assets.load(imageURIs).then(() => {
+            for (let [id, nodeWrapper] of this.nodesMap) {
+                nodeWrapper.initGraphics();
+                nodeWrapper.updateGraphics();
+            }
+        });
     }
 
     unload() {
         this.nodesMap.forEach(wrapper => {
             wrapper.node.circle?.removeChild(wrapper);
-            wrapper.destroy({children:true});
+            wrapper.clearGraphics();
+            wrapper.destroy();
         });
         this.nodesMap.clear();
         this.connectedNodes.clear();
@@ -54,35 +69,43 @@ export class NodesSet {
         this.disabledTags?.clear();
     }
 
-    private async initNode(nodeWrapper: NodeWrapper) : Promise<void> {
-        await nodeWrapper.init(this.graph.dispatcher.graphsManager.plugin.app, this.graph.settings.imageProperty, this.graph.renderer).then(() => {
-            nodeWrapper.node.circle.addChild(nodeWrapper);
-            this.nodesMap.set(nodeWrapper.node.id, nodeWrapper);
-            this.connectedNodes.add(nodeWrapper.node.id);
-        }, () => {
-            nodeWrapper.destroy({children:true});
-        });
-    }
+    private initTagTypes() {
+        if (!this.tagsManager) return;
 
-    /**
-     * Get the node wrapper
-     * @param id 
-     * @returns 
-     */
-    get(id: string) : NodeWrapper {
-        let node = this.nodesMap.get(id);
-        if (!node) {
-            throw new Error(`No node for id ${id}.`)
+        let setType = (function(type: string, id: string, types: Set<string>) : boolean {
+            if (this.graph.settings.unselectedInteractives["tag"].includes(type)) return false;
+            if (INVALID_KEYS["tag"].includes(type)) return false;
+
+            types.add(type);
+            return true;
+        }).bind(this);
+
+        // Create tag types
+        let types = new Set<string>();
+        for (const node of this.graph.renderer.nodes) {
+            const nodeID = node.id;
+            const file = getFile(this.graph.dispatcher.graphsManager.plugin.app, nodeID);
+            if (!file) continue;
+
+            let tags = getTags(this.graph.dispatcher.graphsManager.plugin.app, file);
+            let hasType = false;
+            for (const tag of tags) {
+                hasType = setType(tag, nodeID, types) || hasType;
+            }
+            if (!hasType) {
+                types.add(this.graph.settings.noneType["tag"]);
+            }
         }
-        return node;
+
+        this.tagsManager.update(types);
     }
     
     /**
      * Update the background color. Called when the theme changes.
      */
     updateOpacityLayerColor() : void {
-        this.nodesMap.forEach(container => {
-            container.updateOpacityLayerColor(getBackgroundColor(this.graph.renderer));
+        this.nodesMap.forEach(wrapper => {
+            wrapper.nodeImage?.updateOpacityLayerColor(getBackgroundColor(this.graph.renderer));
         });
     }
 
@@ -112,62 +135,6 @@ export class NodesSet {
         }
         return true;
     }
-
-    /**
-     * Called when a child is added or removed to the stage
-     */
-    updateNodesFromEngine() {
-        new Promise<void>((resolve) => {
-            let timesRun = 0;
-            const intervalId = setInterval(() => {
-                timesRun += 1;
-                if (this.checkRendererReady()) { clearInterval(intervalId); resolve(); }
-                else if (timesRun === 10)      { clearInterval(intervalId); }
-            }, 100);
-        }).then(() => {
-            // Current nodes set by the Obsidian engine
-            const newNodesIDs = this.graph.renderer.nodes.map(n => n.id);
-
-            // Get the nodes that needs to be removed
-            let nodesToRemove: string[] = [];
-            if (this.graph.settings.enableTags) {
-                nodesToRemove = newNodesIDs.filter(id => this.disconnectedNodes?.has(id));
-            }
-
-            // Get the nodes that were already existing and need to be reconnected
-            let nodesToAdd: string[] = newNodesIDs.filter(id => this.connectedNodes.has(id));
-
-            // Get the new nodes that need to be created
-            let nodesToCreate: string[] = newNodesIDs.filter(id => !nodesToRemove.includes(id) && !nodesToAdd.includes(id));
-
-
-            for (const id of nodesToAdd) {
-                let node = this.graph.renderer.nodes.find(n => n.id === id);
-                if (!node) continue;
-
-                let nodeWrapper = this.get(id);
-                nodeWrapper.waitReady(this.graph.renderer).then((ready: boolean) => {
-                    if (!node) return;
-                    try {
-                        nodeWrapper.node = node;
-                        if (node.circle && !node.circle.getChildByName(nodeWrapper.name)) {
-                            node.circle.addChild(nodeWrapper);
-                        }
-                    }
-                    catch {
-                        return
-                    }
-                });
-            };
-            if (nodesToRemove.length > 0) {
-                this.graph.dispatcher.onEngineNeedsUpdate();
-            }
-            else if (nodesToCreate.length > 0) {
-                this.graph.dispatcher.onGraphNeedsUpdate();
-            }
-
-        })
-    }
     
     /**
      * Get the node wrapper corresponding to a file
@@ -175,9 +142,9 @@ export class NodesSet {
      */
     getNodeWrapperFromFile(file: TFile) : NodeWrapper | null {
         let foundContainer = null;
-        this.nodesMap.forEach((container: NodeWrapper) => {
-            if (container.file === file) {
-                foundContainer = container;
+        this.nodesMap.forEach((wrapper: NodeWrapper) => {
+            if (wrapper.node.id === file.path) {
+                foundContainer = wrapper;
                 return;
             }
         });
@@ -189,13 +156,13 @@ export class NodesSet {
      * @param app 
      * @returns 
      */
-    getAllTagTypesFromCache(app: App) : Set<string> | null {
+    getAllTagsInGraph(app: App) : Set<string> | null {
         if (!this.graph.settings.enableTags) return null;
         let types = new Set<string>();
 
-        this.nodesMap.forEach(container => {
-            let nodeTypes = container.updateTags(app, this.graph.settings);
-            types = new Set<string>([...types, ...nodeTypes]);
+        this.nodesMap.forEach(wrapper => {
+            let tagTypes = wrapper.arcsWrapper?.types;
+            (tagTypes) && (types = new Set<string>([...types, ...tagTypes]));
         });
         types = new Set([...types].sort());
         
@@ -206,41 +173,53 @@ export class NodesSet {
      * Disable a tag
      * @param type type of the tag
      */
-    disableTag(type: string) : void {
-        if (!this.graph.settings.enableTags) return;
+    disableTag(type: string) : string[] {
         this.disabledTags?.add(type);
         let nodesToDisable: string[] = [];
-        this.nodesMap.forEach((wrapper: NodeWrapper, id: string) => {
-            if (!wrapper.hasTagType(type)) return;
+        for (const [id, wrapper] of this.nodesMap) {
+            if (!wrapper.arcsWrapper && type === this.graph.settings.noneType["tag"]) {
+                nodesToDisable.push(id);
+                continue;
+            }
+            if (!wrapper.arcsWrapper || !wrapper.arcsWrapper.hasType(type)) {
+                continue;
+            }
 
             const wasActive = wrapper.isActive;
-            (this.tagsManager) && wrapper.updateArcState(type, this.tagsManager);
+            wrapper.arcsWrapper.disableType(type);
+            wrapper.updateState();
             if(wrapper.isActive != wasActive && !wrapper.isActive) {
                 nodesToDisable.push(id);
             }
-        });
+        }
 
-        (!this.graph.settings.fadeOnDisable && nodesToDisable.length > 0) && this.disableNodes(nodesToDisable);
+        return nodesToDisable;
     }
 
     /**
      * Enable a tag
      * @param type type of the tag
      */
-    enableTag(type: string) : void {
-        if (!this.graph.settings.enableTags) return;
+    enableTag(type: string) : string[] {
         this.disabledTags?.delete(type);
         let nodesToEnable: string[] = [];
-        this.nodesMap.forEach((wrapper: NodeWrapper, id: string) => {
-            if (!wrapper.hasTagType(type)) return;
+        for (const [id, wrapper] of this.nodesMap) {
+            if (!wrapper.arcsWrapper && type === this.graph.settings.noneType["tag"]) {
+                nodesToEnable.push(id);
+                continue;
+            }
+            if (!wrapper.arcsWrapper || !wrapper.arcsWrapper.hasType(type)) {
+                continue;
+            }
             
             const wasActive = wrapper.isActive;
-            (this.tagsManager) && wrapper.updateArcState(type, this.tagsManager);
-            if(wrapper.isActive != wasActive) {
-                (wrapper.isActive) && nodesToEnable.push(id);
+            wrapper.arcsWrapper.enableType(type);
+            wrapper.updateState();
+            if(wrapper.isActive != wasActive && wrapper.isActive) {
+                nodesToEnable.push(id);
             }
-        });
-        (nodesToEnable.length > 0) && this.enableNodes(nodesToEnable);
+        }
+        return nodesToEnable;
     }
     
     /**
@@ -248,19 +227,15 @@ export class NodesSet {
      */
     resetArcs() : void {
         if (!this.graph.settings.enableTags) return;
-        this.nodesMap.forEach((wrapper: NodeWrapper) => {
-            wrapper.removeArcs();
-            (this.tagsManager) && wrapper.addArcs(this.tagsManager);
-        });
-    }
-
-    /**
-     * Remove arcs for each node
-     * @param types types of tags to remove
-     */
-    removeArcs(types?: string[]) : void {
-        if (!this.graph.settings.enableTags) return;
-        this.nodesMap.forEach(w => w.removeArcs(types));
+        for (let [id, wrapper] of this.nodesMap) {
+            let file = getFile(wrapper.app, id);
+            if (!wrapper.arcsWrapper || !file) continue;
+            wrapper.arcsWrapper.clearGraphics();
+            let types = getTags(wrapper.app, file);
+            wrapper.arcsWrapper.types = types;
+            wrapper.arcsWrapper.initGraphics();
+            wrapper.arcsWrapper.updateGraphics();
+        }
     }
 
     /**
@@ -271,26 +246,50 @@ export class NodesSet {
     updateArcsColor(type: string, color: Uint8Array) : void {
         if (!this.graph.settings.enableTags) return;
         this.nodesMap.forEach(w => {
-            if (w.hasTagType(type) && (type !== this.graph.settings.noneType["tag"]) && (this.tagsManager))
-                w.updateArc(type, color, this.tagsManager)
+            w.arcsWrapper?.updateTypeColor(type, color);
         });
     }
 
     disableNodes(ids: string[]) : void {
-        if (!this.graph.settings.enableTags) return;
-        ids.forEach(id => {
-            this.disconnectedNodes?.add(id);
+        for (const id of ids) {
+            const nodeWrapper = this.nodesMap.get(id);
             this.connectedNodes.delete(id);
-        });
-        this.graph.engine.updateSearch();
+            this.disconnectedNodes?.add(id);
+            if (nodeWrapper) {
+                nodeWrapper.updateNode();
+                nodeWrapper.node.clearGraphics();
+                this.graph.renderer.nodes.remove(nodeWrapper.node);
+            }
+        }
     }
 
     enableNodes(ids: string[]) : void {
-        ids.forEach(id => {
-            this.connectedNodes.add(id);
+        for (const id of ids) {
             this.disconnectedNodes?.delete(id);
-        });
-        this.graph.engine.updateSearch();
+            this.connectedNodes.add(id);
+            const nodeWrapper = this.nodesMap.get(id);
+            if (nodeWrapper) {
+                nodeWrapper.node.initGraphics();
+                this.graph.renderer.nodes.push(nodeWrapper.node);
+                nodeWrapper.updateNode();
+                nodeWrapper.updateGraphics();
+                nodeWrapper.connect();
+                //nodeWrapper.updateGraphics();
+            }
+        }
+    }
+
+    connectNodes() : void {
+        for (const [id, nodeWrapper] of this.nodesMap) {
+            nodeWrapper.updateNode();
+            nodeWrapper.updateGraphics();
+            nodeWrapper.connect();
+        }
+    }
+
+    enableAll() : void {
+        if (!this.disconnectedNodes) return;
+        this.enableNodes(Array.from(this.disconnectedNodes));
     }
 
     highlightNode(file: TFile, highlight: boolean) : void {
@@ -299,21 +298,10 @@ export class NodesSet {
         if (!nodeWrapper) return;
 
         if (highlight) {
-            nodeWrapper.setScale(this.graph.settings.focusScaleFactor);
-            nodeWrapper.updateBackgroundColor(this.graph.renderer.colors.fillFocused.rgb);
+            nodeWrapper.highlight(this.graph.settings.focusScaleFactor, this.graph.renderer.colors.fillFocused.rgb);
         }
         else {
-            nodeWrapper.setScale(1);
-            if (nodeWrapper.node.color)
-                nodeWrapper.updateBackgroundColor(nodeWrapper.node.color.rgb);
-            else if ("tag" === nodeWrapper.node.type)
-                nodeWrapper.updateBackgroundColor(this.graph.renderer.colors.fillTag.rgb);
-            else if ("unresolved" === nodeWrapper.node.type)
-                nodeWrapper.updateBackgroundColor(this.graph.renderer.colors.fillUnresolved.rgb);
-            else if ("attachment" === nodeWrapper.node.type)
-                nodeWrapper.updateBackgroundColor(this.graph.renderer.colors.fillAttachment.rgb);
-            else 
-                nodeWrapper.updateBackgroundColor(this.graph.renderer.colors.fill.rgb);
+            nodeWrapper.highlight(1);
         }
     }
 }

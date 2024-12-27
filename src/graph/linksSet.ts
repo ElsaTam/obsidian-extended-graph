@@ -1,67 +1,129 @@
 import { InteractiveManager } from "./interactiveManager";
-import { getLinkID, Link, LinkWrapper } from "./link";
+import { CurveLinkWrapper, getLinkID, LineLinkWrapper, Link, LinkWrapper } from "./elements/link";
 import { Graph } from "./graph";
+import { INVALID_KEYS } from "src/globalVariables";
+import { getAPI as getDataviewAPI } from "obsidian-dataview";
+import { getFile } from "src/helperFunctions";
 
 export class LinksSet {
-    linksMap = new Map<string, LinkWrapper>();
+    linksMap = new Map<string, {wrapper: LinkWrapper | null, link: Link}>();
     connectedLinks = new Set<string>();
-    disconnectedLinks = new Set<string>();
+    disconnectedLinks: Set<string> | null = null;
+    linkTypesMap: Map<string, Set<string>> | null = null; // key: type / value: link ids
 
     graph: Graph;
-    linksManager: InteractiveManager;
+    linksManager: InteractiveManager | null;
 
-    constructor(graph: Graph, linksManager: InteractiveManager) {
+    constructor(graph: Graph, linksManager: InteractiveManager | null) {
         this.graph = graph;
         this.linksManager = linksManager;
+
+        if (this.linksManager) {
+            this.disconnectedLinks = new Set<string>();
+            this.linkTypesMap = new Map<string, Set<string>>();
+        }
     }
 
-    load() : Promise<void>[] {
-        let requestList: Promise<void>[] = [];
+    load() {
+        this.initLinkTypes();
         
-        this.graph.renderer.links.forEach((link: Link) => {
-            if (this.linksMap.get(getLinkID(link))) return;
-            let linkWrapper = new LinkWrapper(link, link.source.id, link.target.id, this.graph.settings);
-            requestList.push(this.initLink(linkWrapper));
-        })
+        for (const link of this.graph.renderer.links) {
+            const linkID = getLinkID(link);
+            if (this.linksMap.get(linkID)) continue;
 
-        return requestList;
+            let linkWrapper = null;
+
+            if (this.linksManager && this.linkTypesMap) {
+                // Get the types of the link
+                let types = [...this.linkTypesMap.keys()].filter(type => this.linkTypesMap?.get(type)?.has(linkID));
+
+                // If the link has a type
+                if (! this.linkTypesMap.get(this.graph.settings.noneType["link"])?.has(linkID)) {
+                    if (this.graph.settings.linkCurves)
+                        linkWrapper = new CurveLinkWrapper(link, new Set<string>(types), this.linksManager);
+                    else
+                        linkWrapper = new LineLinkWrapper(link, new Set<string>(types), this.linksManager);
+                    linkWrapper.connect();
+                }
+            }
+            this.linksMap.set(linkID, {wrapper: linkWrapper, link: link});
+            this.connectedLinks.add(linkID);
+        }
     }
 
     unload() {
-        this.linksMap.forEach(wrapper => {
-            wrapper.disconnect();
-            wrapper.destroy({children:true});
+        this.linksMap.forEach(l => {
+            l.wrapper?.disconnect();
+            l.wrapper?.destroy({children:true});
         });
         this.linksMap.clear();
         this.connectedLinks.clear();
-        this.disconnectedLinks.clear();
+        this.disconnectedLinks?.clear();
+        this.linkTypesMap?.clear();
     }
 
-    /**
-     * Initialize the link wrapper and add it to the maps
-     * @param linkWrapper 
-     */
-    private async initLink(linkWrapper: LinkWrapper) : Promise<void> {
-        await linkWrapper.init(this.graph.renderer).then(() => {
-            linkWrapper.connect();
-            this.linksMap.set(linkWrapper.id, linkWrapper);
-            this.connectedLinks.add(linkWrapper.id);
-        }, () => {
-            linkWrapper.destroy({children:true});
-        });
-    }
-    
-    /**
-     * Get the link wrapper
-     * @param id 
-     * @returns 
-     */
-    get(id: string) : LinkWrapper {
-        let link = this.linksMap.get(id);
-        if (!link) {
-            throw new Error(`No link for id ${id}.`);
+    private initLinkTypes() : void {
+        if (!this.linksManager || !this.linkTypesMap) return;
+        let setType = (function(type: string, id: string, types: Set<string>) {
+            if (this.graph.settings.unselectedInteractives["link"].includes(type)) return;
+            if (INVALID_KEYS["link"].includes(type)) return;
+
+            (!this.linkTypesMap.get(type)) && this.linkTypesMap.set(type, new Set<string>());
+            this.linkTypesMap.get(type)?.add(id);
+            types.add(type);
+        }).bind(this);
+
+        // Create link types
+        const dv = getDataviewAPI();
+        for (const link of this.graph.renderer.links) {
+            const linkID = getLinkID(link);
+            const sourceFile = getFile(this.graph.dispatcher.graphsManager.plugin.app, link.source.id);
+            if (!sourceFile) continue;
+
+            let types = new Set<string>();
+
+            // Links with dataview inline properties
+            if (dv) {
+                let sourcePage = dv.page(link.source.id);
+                for (const [key, value] of Object.entries(sourcePage)) {
+                    if (key === "file" || key === this.graph.settings.imageProperty) continue;
+                    if (value === null || value === undefined || value === '') continue;
+
+                    if ((typeof value === "object") && ("path" in value) && ((value as any).path === link.target.id)) {
+                        setType(key, linkID, types);
+                    }
+
+                    if (Array.isArray(value)) {
+                        for (const l of value) {
+                            if ((typeof l === "object") && ("path" in l) && ((l as any).path === link.target.id)) {
+                                setType(key, linkID, types);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Links in the frontmatter
+            else {
+                const frontmatterLinks = this.graph.dispatcher.graphsManager.plugin.app.metadataCache.getFileCache(sourceFile)?.frontmatterLinks;
+                if (frontmatterLinks) {
+                    // For each link in the frontmatters, check if target matches
+                    for (const linkCache of frontmatterLinks) {
+                        const linkType = linkCache.key.split('.')[0];
+                        const targetID = this.graph.dispatcher.graphsManager.plugin.app.metadataCache.getFirstLinkpathDest(linkCache.link, ".")?.path;
+                        if (targetID === link.target.id) {
+                            setType(linkType, linkID, types);
+                        }
+                    }
+                }
+            }
+
+            if (types.size === 0) {
+                setType(this.graph.settings.noneType["link"], linkID, types);
+            }
         }
-        return link;
+
+        this.linksManager.update(new Set(this.linkTypesMap.keys()));
     }
 
     /**
@@ -70,8 +132,23 @@ export class LinksSet {
      * @returns active type
      */
     getActiveType(id: string) : string {
-        let firstActiveType = [...this.get(id).types].find(type => this.linksManager.isActive(type));
+        if (!this.linkTypesMap) return "";
+        let firstActiveType = [...this.linkTypesMap.keys()].find(type => this.linksManager?.isActive(type) && this.linkTypesMap?.get(type)?.has(id));
         return firstActiveType ? firstActiveType : this.graph.settings.noneType["link"];
+    }
+
+    getAllLinkTypes() : Set<string> | null {
+        return new Set<string>(this.linkTypesMap?.keys());
+    }
+
+    getLinks(types: string[]) : Set<string> | null {
+        const links = new Set<string>();
+        for (const type of types) {
+            this.linkTypesMap?.get(type)?.forEach(linkID => {
+                links.add(linkID);
+            })
+        }
+        return links;
     }
 
     /**
@@ -79,24 +156,27 @@ export class LinksSet {
      * @param ids ids of the links
      * @returns true if a link was disabled
      */
-    async disableLinks(ids: Set<string>) : Promise<boolean> {
-        let promises: Promise<void>[] = [];
-        ids.forEach(id => {
-            const linkWrapper = this.get(id);
-            promises.push(linkWrapper.waitReady(this.graph.renderer).then((ready) => {
-                if (ready) {
-                    linkWrapper.setRenderable(false);
-                }
+    disableLinks(ids: Set<string>, swapMaps: boolean) : void {
+        for (const id of ids) {
+            if (swapMaps) {
                 this.connectedLinks.delete(id);
-                this.disconnectedLinks.add(id);
-            }))
-        });
-        if (promises.length > 0) {
-            await Promise.all(promises);
-            return true;
-        }
-        else {
-            return false;
+                this.disconnectedLinks?.add(id);
+            }
+            const l = this.linksMap.get(id);
+            if (l) {
+                if (!this.graph.renderer.links.includes(l.link)) {
+                    if (l.wrapper) {
+                        l.wrapper.updateLink();
+                        l.link = l.wrapper.link;
+                    }
+                    else {
+                        const newLink = this.graph.renderer.links.find(l2 => l2.source.id === l.link.source.id && l2.target.id === l.link.target.id);
+                        (newLink) && (l.link = newLink);
+                    }
+                }
+                l.link.clearGraphics();
+                this.graph.renderer.links.remove(l.link);
+            }
         }
     }
 
@@ -105,72 +185,42 @@ export class LinksSet {
      * @param ids ids of the links
      * @returns true if a link was enabled
      */
-    async enableLinks(ids: Set<string>) : Promise<boolean> {
-        let promises: Promise<void>[] = [];
-        ids.forEach(id => {
-            const linkWrapper = this.get(id);
-            promises.push(linkWrapper.waitReady(this.graph.renderer).then((ready) => {
-                if (ready) {
-                    linkWrapper.connect();
-                    linkWrapper.setRenderable(true);
-                }
-                this.disconnectedLinks.delete(id);
+    enableLinks(ids: Set<string>, swapMaps: boolean) : void {
+        for (const id of ids) {
+            if (swapMaps) {
+                this.disconnectedLinks?.delete(id);
                 this.connectedLinks.add(id);
-            }))
-        });
-        if (promises.length > 0) {
-            await Promise.all(promises);
-            return true;
-        }
-        else {
-            return false;
+            }
+            const l = this.linksMap.get(id);
+            if (l) {
+                if (!this.graph.renderer.links.includes(l.link)) {
+                    l.link.initGraphics();
+                    this.graph.renderer.links.push(l.link);
+                }
+                l.wrapper?.updateLink();
+                l.wrapper?.connect();
+                l.wrapper?.updateGraphics();
+            }
         }
     }
 
-    /**
-     * Called when a child is added or removed to the stage
-     */
-    updateLinksFromEngine() {
-        
-        // Current links set by the Obsidian engine
-        const newLinksIDs = this.graph.renderer.links.map(l => getLinkID(l));
-        
-        // Get the links that needs to be removed
-        let linksToRemove: string[] = newLinksIDs.filter(id => this.disconnectedLinks.has(id));
-
-        // Get the links that were already existing and need to be reconnected
-        let linksToAdd: string[] = newLinksIDs.filter(id => this.connectedLinks.has(id));
-
-        // Get the new links that need to be created
-        let linksToCreate: string[] = newLinksIDs.filter(id => !linksToRemove.includes(id) && !linksToAdd.includes(id));
-
-        for (const id of linksToAdd) {
-            let link = this.graph.renderer.links.find(l => getLinkID(l) === id);
-            if (!link) continue;
-
-            try {
-                const linkWrapper = this.get(id);
-                linkWrapper.link = link;
-                linkWrapper.connect();
-                linkWrapper.setRenderable(true);
+    connectLinks() : void {
+        for (const [id, l] of this.linksMap) {
+            if (l.wrapper) {
+                l.wrapper.updateLink();
+                l.link = l.wrapper?.link;
+                l.wrapper.connect();
             }
-            catch (error) {
-
+            else {
+                const newLink = this.graph.renderer.links.find(l2 => l2.source.id === l.link.source.id && l2.target.id === l.link.target.id);
+                (newLink) && (l.link = newLink);
             }
         }
-        for (const id of linksToRemove) {
-            let link = this.graph.renderer.links.find(l => getLinkID(l) === id);
-            if (!link) continue;
-            const linkWrapper = this.get(id);
+    }
 
-            linkWrapper.link = link;
-            linkWrapper.setRenderable(false);
-        }
-        if (linksToRemove.length > 0) {
-            this.graph.dispatcher.onEngineNeedsUpdate();
-        }
-        else if (linksToCreate.length > 0) {
-            this.graph.dispatcher.onGraphNeedsUpdate();
+    enableAll() : void {
+        if (this.disconnectedLinks) {
+            this.enableLinks(this.disconnectedLinks, true);
         }
     }
 
@@ -180,10 +230,10 @@ export class LinksSet {
      * @param color 
      */
     updateLinksColor(type: string, color: Uint8Array) : void {
-        this.linksMap.forEach((linkWrapper, id) => {
-            if (this.getActiveType(id) == type) {
-                linkWrapper.setColor(color);
+        for (const [id, l] of this.linksMap) {
+            if (l.wrapper?.types.has(type)) {
+                l.wrapper.updateGraphics();
             }
-        });
+        }
     }
 }

@@ -1,0 +1,7 @@
+{
+    "files": [
+      "src/main.ts",
+      "src/graphsManager.ts"
+    ],
+    "ignore": "src/colors/colormaps.ts"
+}

@@ -1,33 +1,36 @@
-import { Component, setIcon, Setting } from "obsidian";
+import { Component, setIcon, Setting, WorkspaceLeaf } from "obsidian";
 import { EngineOptions } from "src/views/viewData";
 import { DEFAULT_VIEW_ID } from "src/globalVariables";
 import GraphExtendedPlugin from "src/main";
-import { GraphEventsDispatcher } from "src/graph/graphEventsDispatcher";
+import { GraphEventsDispatcher, WorkspaceLeafExt } from "src/graph/graphEventsDispatcher";
+import { GraphsManager } from "src/graphsManager";
 
 export class GraphControlsUI extends Component {
-    dispatcher: GraphEventsDispatcher;
-    plugin: GraphExtendedPlugin;
+    graphsManager: GraphsManager;
+    dispatcher: GraphEventsDispatcher | null;
+    leaf: WorkspaceLeafExt;
 
-    viewContent: HTMLElement;
+    graphControls: HTMLElement;
 
     isCollapsed: boolean;
 
     root: HTMLDivElement;
     treeItemChildren: HTMLDivElement;
     collapseIcon: HTMLDivElement;
+    onlyWhenPluginEnabled: HTMLElement[] = [];
 
     settingGlobalFilter: Setting;
 
     optionListeners: (t: any) => any;
     
-
-    constructor(dispatcher: GraphEventsDispatcher) {
+    constructor(leaf: WorkspaceLeafExt, graphsManager: GraphsManager) {
         super();
-        this.dispatcher = dispatcher;
-        this.plugin = dispatcher.graphsManager.plugin;
-        this.viewContent = this.dispatcher.leaf.containerEl.getElementsByClassName("view-content")[0] as HTMLElement;
+        this.leaf = leaf;
+        this.graphsManager = graphsManager;
+        this.graphControls = leaf.containerEl.querySelector(".graph-controls") as HTMLElement;
 
-        this.root = this.dispatcher.graph.engine.controlsEl.createDiv("tree-item graph-control-section mod-extended-graph");
+        this.root = this.graphControls.createDiv("tree-item graph-control-section mod-extended-graph");
+
         let collapsible = this.root.createDiv("tree-item-self mod-collapsible");
         this.collapseIcon = collapsible.createDiv("tree-item-icon collapse-icon is-collapsed");
         setIcon(this.collapseIcon, "right-triangle");
@@ -39,9 +42,12 @@ export class GraphControlsUI extends Component {
 
         this.treeItemChildren = this.root.createDiv("tree-item-children");
         this.createSaveSettingsAsDefault();
-        new Setting(this.treeItemChildren).setName("Filter");
+
+        let filterHeader = new Setting(this.treeItemChildren).setName("Filter");
+        this.onlyWhenPluginEnabled.push(filterHeader.settingEl);
+
         this.settingGlobalFilter = this.createGlobalFilter();
-        this.createCopyFilter();
+        this.onlyWhenPluginEnabled.push(this.settingGlobalFilter.settingEl);
 
         collapsible.onClickEvent(() => {
             if (this.isCollapsed) {
@@ -71,38 +77,39 @@ export class GraphControlsUI extends Component {
             .setClass("mod-search-setting")
             .addTextArea(cb => {
                 cb.setPlaceholder("Global filter")
-                  .setValue(this.plugin.settings.globalFilter);
+                  .setValue(this.graphsManager.plugin.settings.globalFilter);
                 cb.inputEl.addClass("search-input-container");
                 cb.inputEl.onblur = (async e => {
-                    if (this.plugin.settings.globalFilter !== cb.getValue()) {
-                        this.plugin.settings.globalFilter = cb.getValue();
-                        await this.plugin.saveSettings();
-                        this.plugin.graphsManager.onGlobalFilterChanged(cb.getValue());
+                    if (this.graphsManager.plugin.settings.globalFilter !== cb.getValue()) {
+                        this.graphsManager.plugin.settings.globalFilter = cb.getValue();
+                        await this.graphsManager.plugin.saveSettings();
+                        this.graphsManager.plugin.graphsManager.onGlobalFilterChanged(cb.getValue());
                     }
                 });
                 cb.inputEl.onkeydown = (async e => {
                     if ("Enter" === e.key) {
                         e.preventDefault();
-                        if (this.plugin.settings.globalFilter !== cb.getValue()) {
-                            this.plugin.settings.globalFilter = cb.getValue();
-                            await this.plugin.saveSettings();
-                            this.plugin.graphsManager.onGlobalFilterChanged(cb.getValue());
+                        if (this.graphsManager.plugin.settings.globalFilter !== cb.getValue()) {
+                            this.graphsManager.plugin.settings.globalFilter = cb.getValue();
+                            await this.graphsManager.plugin.saveSettings();
+                            this.graphsManager.plugin.graphsManager.onGlobalFilterChanged(cb.getValue());
                         }
                     }
                 });
             });
     }
 
-    createCopyFilter() : Setting {
-        let setting = new Setting(this.treeItemChildren)
-            .setName("Copy full filter");
-        let icon = setting.controlEl.createDiv("clickable-icon copy-button");
-        setIcon(icon, "copy");
-        icon.addEventListener('click', e => {
-            navigator.clipboard.writeText(this.dispatcher.graph.engine.filterOptions.search.getValue());
-            new Notice(`Extended Graph: full filter copied to clipboard.`);
+    onPluginEnabled(dispatcher: GraphEventsDispatcher) : void {
+        this.dispatcher = dispatcher;
+        this.onlyWhenPluginEnabled.forEach(el => {
+            this.treeItemChildren.appendChild(el);
         });
-        return setting;
+    }
+
+    onPluginDisabled() : void {
+        this.onlyWhenPluginEnabled.forEach(el => {
+            this.treeItemChildren.removeChild(el);
+        });
     }
 
     onunload(): void {
@@ -125,10 +132,18 @@ export class GraphControlsUI extends Component {
     }
 
     saveSettingsAsDefault() {
-        let viewData = this.plugin.settings.views.find(v => v.id === DEFAULT_VIEW_ID);
+        let viewData = this.graphsManager.plugin.settings.views.find(v => v.id === DEFAULT_VIEW_ID);
         if (!viewData) return;
-        viewData.engineOptions = new EngineOptions(this.dispatcher.graph.engine.getOptions());
-        viewData.engineOptions.search = this.dispatcher.graph.engine.filterOptions.search.inputEl.value;
-        this.dispatcher.graphsManager.onViewNeedsSaving(viewData);
+        let engine: any;
+        if (this.leaf.view.getViewType() === "graph") {
+            // @ts-ignore
+            engine =  this.leaf.view.dataEngine;
+        }
+        else if(this.leaf.view.getViewType() === "localgraph") {
+            // @ts-ignore
+            engine =  this.leaf.view.engine;
+        }
+        viewData.engineOptions = new EngineOptions(engine.getOptions());
+        this.graphsManager.onViewNeedsSaving(viewData);
     }
 }

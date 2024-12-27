@@ -71,9 +71,7 @@ export function rgb2hex(rgb: Uint8Array) : number {
 
 export function hex2rgb(hex: string) : Uint8Array {
     var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    if (!result) {
-        throw new Error(`Impossible to convert ${hex} to RGB.`);
-    }
+    if (!result) return new Uint8Array([0, 0, 0]);
     return new Uint8Array([
         parseInt(result[1], 16),
         parseInt(result[2], 16),

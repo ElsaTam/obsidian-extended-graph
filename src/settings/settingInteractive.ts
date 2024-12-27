@@ -1,7 +1,7 @@
 import { ColorComponent, DropdownComponent, getAllTags, setIcon, Setting, TextComponent } from "obsidian";
 import { cmOptions } from "src/colors/colormaps";
 import { ExtendedGraphSettingTab } from "./settingTab";
-import { capitalizeFirstLetter } from "src/helperFunctions";
+import { capitalizeFirstLetter, getTags } from "src/helperFunctions";
 import { plot_colormap } from "src/colors/colors";
 import { getAPI as getDataviewAPI } from "obsidian-dataview";
 import { INVALID_KEYS } from "src/globalVariables";
@@ -269,11 +269,7 @@ export class SettingTags extends SettingInteractives {
     protected getAllTypes(): string[] {
         let allTypes = new Set<string>();
         for (const file of this.settingTab.app.vault.getFiles()) {
-            let metadataCache = this.settingTab.app.metadataCache.getCache(file.path);
-            if (!metadataCache) continue;
-            let tags = getAllTags(metadataCache)?.map(t => t.replace('#', ''));
-            if (!tags) continue;
-            allTypes = new Set<string>([...allTypes, ...tags]);
+            allTypes = new Set<string>([...allTypes, ...getTags(this.settingTab.app, file)]);
         }
         return [...allTypes].sort();
     }

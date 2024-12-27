@@ -1,5 +1,6 @@
 import { Graph } from "src/graph/graph";
 import { EngineOptions, GraphViewData } from "./viewData";
+import { App } from "obsidian";
 
 export class GraphView {
     data = new GraphViewData();
@@ -13,7 +14,7 @@ export class GraphView {
     }
 
     saveGraph(graph: Graph) {
-        this.data.disabledLinks = graph.linksSet ? graph.linksSet.linksManager.getTypes().filter(type => !graph.linksSet?.linksManager.isActive(type)) : [];
+        this.data.disabledLinks = graph.linksSet.linksManager ? graph.linksSet.linksManager.getTypes().filter(type => !graph.linksSet.linksManager?.isActive(type)) : [];
         this.data.disabledTags = (graph.nodesSet && graph.nodesSet.tagsManager) ? graph.nodesSet.tagsManager.getTypes().filter(type => !graph.nodesSet?.tagsManager?.isActive(type)) : [];
         this.data.engineOptions = new EngineOptions(graph.engine.getOptions());
         this.data.engineOptions.search = graph.engine.filterOptions.search.inputEl.value;

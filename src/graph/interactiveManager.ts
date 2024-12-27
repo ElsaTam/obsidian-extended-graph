@@ -4,6 +4,7 @@ import { getColor, hex2rgb } from "../colors/colors";
 import { INVALID_KEYS, NONE_COLOR } from "src/globalVariables";
 import { GraphViewData } from "src/views/viewData";
 import { ExtendedGraphSettings } from "src/settings/settings";
+import { GraphEventsDispatcher } from "./graphEventsDispatcher";
 
 export class Interactive {
     type: string;
@@ -23,22 +24,16 @@ export class Interactive {
 
 export class InteractiveManager extends Component {
     interactives: Map<string, Interactive>;
-    leaf: WorkspaceLeaf;
     settings: ExtendedGraphSettings;
     name: string;
+    dispatcher: GraphEventsDispatcher;
     
-    constructor(leaf: WorkspaceLeaf, settings: ExtendedGraphSettings, name: string) {
+    constructor(dispatcher: GraphEventsDispatcher, settings: ExtendedGraphSettings, name: string) {
         super();
         this.interactives = new Map<string, Interactive>();
-        this.leaf = leaf;
+        this.dispatcher = dispatcher;
         this.settings = settings;
         this.name = name;
-    }
-
-    clear() : void {
-        const types = this.getTypes();
-        this.interactives.clear();
-        this.leaf.trigger(`extended-graph:clear-${this.name}-types`, types);
     }
 
     disable(types: string[]) : void {
@@ -47,7 +42,7 @@ export class InteractiveManager extends Component {
             let interactive = this.interactives.get(type);
             (interactive) && (interactive.isActive = false, disabledTypes.push(type));
         });
-        (disabledTypes.length > 0) && (this.leaf.trigger(`extended-graph:disable-${this.name}s`, disabledTypes));
+        (disabledTypes.length > 0) && (this.dispatcher.onInteractivesDisabled(this.name, disabledTypes));
     }
 
     enable(types: string[]) : void {
@@ -56,11 +51,10 @@ export class InteractiveManager extends Component {
             let interactive = this.interactives.get(type);
             (interactive) && (interactive.isActive = true, enabledTypes.push(type));
         });
-        (enabledTypes.length > 0) && (this.leaf.trigger(`extended-graph:enable-${this.name}s`, enabledTypes));
+        (enabledTypes.length > 0) && this.dispatcher.onInteractivesEnabled(this.name, enabledTypes);
     }
 
     loadView(viewData: GraphViewData) : void {
-
         const viewTypesToDisable: string[] = this.name === "tag" ? viewData.disabledTags : viewData.disabledLinks;
         // Enable/Disable tags
         let toDisable: string[] = [];
@@ -78,8 +72,8 @@ export class InteractiveManager extends Component {
             }
         });
 
-        (toDisable.length > 0) && (this.leaf.trigger(`extended-graph:disable-${this.name}s`, toDisable));
-        (toEnable.length > 0) && (this.leaf.trigger(`extended-graph:enable-${this.name}s`, toEnable));
+        (toDisable.length > 0) && this.dispatcher.onInteractivesDisabled(this.name, toDisable);
+        (toEnable.length > 0) && this.dispatcher.onInteractivesEnabled(this.name, toEnable);
     }
 
     isActive(type: string) : boolean {
@@ -94,14 +88,14 @@ export class InteractiveManager extends Component {
         if (!interactive) return;
 
         interactive.setColor(color);
-        this.leaf.trigger(`extended-graph:change-${this.name}-color`, type, color);
+        this.dispatcher.onInteractiveColorChanged(this.name, type, color);
     }
 
     removeTypes(types: Set<string>) {
         types.forEach(type => {
             this.interactives.delete(type);
         });
-        this.leaf.trigger(`extended-graph:remove-${this.name}-types`, types);
+        this.dispatcher.onInteractivesRemoved(this.name, types);
     }
 
     addTypes(types: Set<string>) : void {
@@ -126,27 +120,32 @@ export class InteractiveManager extends Component {
             this.interactives.set(type, new Interactive(type, color));
         });
         this.interactives = new Map([...this.interactives.entries()].sort());
-        this.leaf.trigger(`extended-graph:add-${this.name}-types`, colorsMaps);
+        this.dispatcher.onInteractivesAdded(this.name, colorsMaps);
     }
 
-    getInteractive(type: string) : Interactive {
+    getInteractive(type: string) : Interactive | null {
         const interactive = this.interactives.get(type);
-        if (!interactive) {
-            throw new Error(`No interactive (${this.name}) of type ${type}`);
-        }
+        if (!interactive) return null;
         return interactive;
     }
 
     getColor(type: string) : Uint8Array {
-        return this.getInteractive(type).color;
+        let interactive = this.getInteractive(type);
+        return interactive ? interactive.color : new Uint8Array([0, 0, 0]);
     }
 
     getTypes() : string[] {
         return Array.from(this.interactives.keys());
     }
+
+    getTypesWithoutNone() : string[] {
+        let types = this.getTypes();
+        types.remove(this.settings.noneType["tag"]);
+        return types;
+    }
     
     update(types: Set<string>) : void {
-        this.clear();
+        this.interactives.clear();
         this.addTypes(types);
     }
 

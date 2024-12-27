@@ -40,6 +40,15 @@ class LegendRow {
                 button.addClass("graph-legend-none");
             }
         }
+
+        const sortByName = function(a: HTMLButtonElement, b: HTMLButtonElement) {
+            return b.className.replace("graph-legend", "").toLowerCase().localeCompare(a.className.replace("graph-legend", "").toLowerCase());
+        };
+    
+        let sortedChildren = Array.from(this.container.getElementsByClassName("graph-legend")).sort(sortByName);
+        for (let i = sortedChildren.length-1; i >= 0; i--) {
+            this.container.appendChild(sortedChildren[i]);
+        }
     }
 
     updateLegend(type: string, color: Uint8Array) : void {

@@ -1,3 +1,5 @@
+import { App } from "obsidian";
+
 export class ColorGroup {
     color: {a: number, rgb: number};
     query: string;

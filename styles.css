@@ -35,9 +35,11 @@ body {
     right: var(--size-4-3);
     margin-inline: auto;
     width: fit-content;
+    max-width: calc(100% - 2 * var(--size-4-3));
     display: flex;
     flex-direction: column;
     gap: var(--size-4-3);
+    overflow: auto;
 }
 
 .graph-legend-container.is-closed {
@@ -98,8 +100,12 @@ body {
     display: none;
 }
 
+.graph-views-container > * {
+    max-width: 100%;
+}
+
 .graph-views-container select {
-    max-width: 200px;
+    max-width: minmax(200px, 100%);
     appearance: auto;
 }
 

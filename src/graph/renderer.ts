@@ -1,6 +1,6 @@
 import { Container }  from 'pixi.js';
-import { Node } from './node';
-import { Link } from './link';
+import { Node } from './elements/node';
+import { Link } from './elements/link';
 
 export interface Renderer {
     colors: {
@@ -55,6 +55,7 @@ export interface Renderer {
     panX: number;
     panY: number;
     scale: number;
+    targetScale: number;
     worker: Worker,
     interactiveEl: HTMLCanvasElement,
     idleFrames: number,

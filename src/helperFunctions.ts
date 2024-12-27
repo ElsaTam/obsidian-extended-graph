@@ -1,3 +1,4 @@
+import { App, getAllTags, TFile } from "obsidian";
 import { Renderer } from "./graph/renderer";
 
 export function getBackgroundColor(renderer: Renderer): Uint8Array {
@@ -66,4 +67,39 @@ export function lengthQuadratic(t: number, p0: Point, p1: Point, p2: Point) : nu
         + (k * Math.log(Math.abs((u + u2k) / (b + b2k))))
     );
     return L;
+}
+
+export function getFile(app: App, path: string) : TFile | null {
+    return app.vault.getFileByPath(path);
+}
+
+export function getImageUri(app: App, keyProperty: string, path: string) : string | null {
+    let file = getFile(app, path);
+    if (file) {
+        const metadata = app.metadataCache.getFileCache(file);
+        const frontmatter = metadata?.frontmatter;
+        let imageLink = null;
+        if (frontmatter) {
+            if (typeof frontmatter[keyProperty] === "string") {
+                imageLink = frontmatter[keyProperty]?.replace("[[", "").replace("]]", "");
+            }
+            else if (Array.isArray(frontmatter[keyProperty])) {
+                imageLink = frontmatter[keyProperty][0]?.replace("[[", "").replace("]]", "");
+            }
+            const imageFile = imageLink ? app.metadataCache.getFirstLinkpathDest(imageLink, ".") : null;
+            const imageUri = imageFile ? app.vault.getResourcePath(imageFile) : null;
+            if (imageUri) return imageUri;
+        }
+    }
+    return null;
+}
+
+export function getTags(app: App, file: TFile) : Set<string> {
+    let metadataCache = app.metadataCache.getCache(file.path);
+    if (!metadataCache) return new Set<string>();
+
+    let tags = getAllTags(metadataCache)?.map(t => t.replace('#', ''));
+    if (!tags) return new Set<string>();
+    
+    return new Set<string>(tags.sort());
 }
