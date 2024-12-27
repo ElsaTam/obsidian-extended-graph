@@ -128,6 +128,7 @@ export class GraphsManager extends Component {
         this.registerEvent(leaf.on('extended-graph:reset-plugin', this.resetPlugin.bind(this)));
 
         let controlsUI = new GraphControlsUI(leaf, this);
+        controlsUI.onPluginDisabled();
         leaf.view.addChild(controlsUI);
         
         globalUI = {menu: menuUI, control: controlsUI};
