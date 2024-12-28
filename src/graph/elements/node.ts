@@ -9,7 +9,7 @@ import { ElementWrapper } from './element';
 import { ArcsWrapper } from './arcs';
 import { NodeImage } from './image';
 
-export interface Node {
+export interface ONode {
     circle: Graphics,
     color: {
         a: number;
@@ -25,8 +25,8 @@ export interface Node {
     y: number;
     rendered: boolean;
     type: string;
-    forward: {[id: string] : Node};
-    reverse: {[id: string] : Node};
+    forward: {[id: string] : ONode};
+    reverse: {[id: string] : ONode};
     renderer: Renderer;
     getFillColor: () => {rgb: number, a: number};
     getSize: () => number;
@@ -39,7 +39,7 @@ const NODE_CIRCLE_X: number = 100;
 const NODE_CIRCLE_Y: number = 100;
 
 export class NodeWrapper extends Container {
-    node: Node;
+    node: ONode;
     name: string;
     
     app: App;
@@ -51,7 +51,7 @@ export class NodeWrapper extends Container {
     background: Graphics;
     scaleFactor: number = 1;
 
-    constructor(node: Node, app: App, settings: ExtendedGraphSettings, manager: InteractiveManager | null) {
+    constructor(node: ONode, app: App, settings: ExtendedGraphSettings, manager: InteractiveManager | null) {
         super();
         this.node = node;
         this.name = node.id;
@@ -85,6 +85,7 @@ export class NodeWrapper extends Container {
         if (!this.node.circle) {
             let newNode = this.node.renderer.nodes.find(n => n.id === this.node.id);
             if (newNode && this.node !== newNode) {
+                this.node.clearGraphics();
                 this.disconnect();
                 this.node = newNode;
             }

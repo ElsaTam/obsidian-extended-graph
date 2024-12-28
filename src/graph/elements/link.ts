@@ -1,5 +1,5 @@
 import { Graphics, Container } from "pixi.js";
-import { Node } from './node';
+import { ONode } from './node';
 import { Renderer } from "../renderer";
 import { bezier, lengthQuadratic, quadratic } from "src/helperFunctions";
 import { InteractiveManager } from "../interactiveManager";
@@ -10,8 +10,8 @@ export interface Link {
     arrow: Graphics;
     line: Graphics;
     px: Container;
-    source: Node;
-    target: Node;
+    source: ONode;
+    target: ONode;
     renderer: Renderer;
     clearGraphics: () => void;
     initGraphics: () => void;

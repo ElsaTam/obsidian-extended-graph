@@ -311,6 +311,32 @@ export class SettingLinks extends SettingInteractives {
             this.deselectInteractive(imageLabel, cb);
             imageLabel.parentNode?.removeChild(imageLabel);
         }
+
+        /*
+        let removeSource = new Setting(this.settingTab.containerEl)
+            .setName(`Remove sources`)
+            .setDesc(`When disabling a link type, also disable the source nodes`)
+            .addToggle(cb => {
+                cb.setValue(this.settingTab.plugin.settings.removeSource);
+                cb.onChange(value => {
+                    this.settingTab.plugin.settings.removeSource = value;
+                    this.settingTab.plugin.saveSettings();
+                })
+            });
+        this.allTopElements.push(removeSource.settingEl);
+
+        let removeTarget = new Setting(this.settingTab.containerEl)
+            .setName(`Remove targets`)
+            .setDesc(`When disabling a link type, also disable the source nodes`)
+            .addToggle(cb => {
+                cb.setValue(this.settingTab.plugin.settings.removeTarget);
+                cb.onChange(value => {
+                    this.settingTab.plugin.settings.removeTarget = value;
+                    this.settingTab.plugin.saveSettings();
+                })
+            });
+        this.allTopElements.push(removeTarget.settingEl);
+        */
     }
 
     protected saveColor(preview: HTMLDivElement, type: string, color: string) {

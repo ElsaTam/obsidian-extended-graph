@@ -22,6 +22,8 @@ export class GraphEventsDispatcher extends Component {
     animationFrameId: number | null = null;
     stopAnimation: boolean = true;
 
+    observerOrphans: MutationObserver;
+
     graphsManager: GraphsManager;
     leaf: WorkspaceLeafExt;
     
@@ -61,13 +63,9 @@ export class GraphEventsDispatcher extends Component {
         this.leaf.view.renderer.px.stage.children[1].removeEventListener('childAdded', this.childAddedByEngine.bind(this));
         this.leaf.view.renderer.px.stage.children[1].removeEventListener('childRemoved', this.childRemovedByEngine.bind(this));
 
+        this.observerOrphans.disconnect();
+
         this.onViewChanged(DEFAULT_VIEW_ID);
-
-        //this._children.forEach(c => c.unload());
-
-        //this.graph.nodesSet.enableAll();
-        //this.graph.linksSet.enableAll();
-        //this.graph.updateWorker();
     }
 
     onGraphReady() : void {
@@ -79,6 +77,33 @@ export class GraphEventsDispatcher extends Component {
         this.leaf.view.renderer.px.stage.children[1].addEventListener('childAdded', this.childAddedByEngine.bind(this));
         this.leaf.view.renderer.px.stage.children[1].addEventListener('childRemoved', this.childRemovedByEngine.bind(this));
 
+        this.toggleOrphans = this.toggleOrphans.bind(this);
+        let graphFilterControl = this.leaf.containerEl.querySelector(".tree-item.graph-control-section.mod-filter");
+        if (graphFilterControl) {
+            let listenToOrphanChanges = (function(treeItemChildren: HTMLElement) {
+                // @ts-ignore
+                const label = window.OBSIDIAN_DEFAULT_I18N.plugins.graphView.optionShowOrphansDescription;
+                const cb = treeItemChildren.querySelector(`.setting-item.mod-toggle:has([aria-label="${label}"]) .checkbox-container`);
+                cb?.addEventListener("click", this.toggleOrphans)
+            }).bind(this);
+            this.observerOrphans = new MutationObserver((mutations) => {
+                if (mutations[0].addedNodes.length > 0) {
+                    let treeItemChildren = mutations[0].addedNodes[0];
+                    listenToOrphanChanges(treeItemChildren as HTMLElement);
+                }
+                else {
+                    // @ts-ignore
+                    const label = window.OBSIDIAN_DEFAULT_I18N.plugins.graphView.optionShowOrphansDescription;
+                    let treeItemChildren = mutations[0].removedNodes[0];
+                    const cb = (treeItemChildren as HTMLElement).querySelector(`.setting-item.mod-toggle:has([aria-label="${label}"]) .checkbox-container`);
+                    cb?.removeEventListener("click", this.toggleOrphans)
+                }
+            })
+            this.observerOrphans.observe(graphFilterControl, {childList: true});
+            let treeItemChildren = graphFilterControl.querySelector(".tree-item-children");
+            (treeItemChildren) && listenToOrphanChanges(treeItemChildren as HTMLElement);
+        }
+
         this.onViewChanged(this.viewsUI.currentViewID);
         this.graph.test();
     }
@@ -86,7 +111,7 @@ export class GraphEventsDispatcher extends Component {
     // UPDATES
 
     private childRemovedByEngine() : void {
-
+        
     }
 
     private childAddedByEngine() : void {
@@ -101,16 +126,18 @@ export class GraphEventsDispatcher extends Component {
 
         if (this.graph.linksSet.disconnectedLinks) {
             let linksToDisable = new Set<string>();
-            for (const id of this.graph.linksSet.disconnectedLinks) {
-                let l = this.graph.linksSet.linksMap.get(id);
-                if (!l) continue;
-                if (this.graph.renderer.links.find(link => l.link.source.id === link.source.id && l.link.target.id === link.target.id)) {
-                    linksToDisable.add(id);
+            for (const [cause, set] of Object.entries(this.graph.linksSet.disconnectedLinks)) {
+                for (const id of set) {
+                    let l = this.graph.linksSet.linksMap.get(id);
+                    if (!l) continue;
+                    if (this.graph.renderer.links.find(link => l.link.source.id === link.source.id && l.link.target.id === link.target.id)) {
+                        linksToDisable.add(id);
+                    }
                 }
-            }
-            if (linksToDisable.size > 0) {
-                this.graph.linksSet.disableLinks(linksToDisable, false);
-                this.graph.updateWorker();
+                if (linksToDisable.size > 0) {
+                    this.graph.linksSet.disableLinks(linksToDisable, cause);
+                    this.graph.updateWorker();
+                }
             }
         }
     }
@@ -145,6 +172,24 @@ export class GraphEventsDispatcher extends Component {
             }
         }
         this.animationFrameId = requestAnimationFrame(this.updateFrame.bind(this));
+    }
+
+    // NODES
+
+    toggleOrphans(ev: Event) {
+        /*
+        console.log(this.graph.engine.options.showOrphans);
+        if (this.graph.engine.options.showOrphans) {
+            if (this.graph.enableOrphans()) {
+                this.graph.updateWorker();
+            }
+        }
+        else {
+            if (this.graph.disableOrphans()) {
+                this.graph.updateWorker();
+            }
+        }
+        */
     }
 
     // INTERACTIVES
@@ -289,24 +334,28 @@ export class GraphEventsDispatcher extends Component {
     onViewChanged(id: string) {
         const viewData = this.graphsManager.plugin.settings.views.find(v => v.id === id);
         if (!viewData) return;
-
-        if (this.graph.nodesSet.tagsManager) {
-            this.graph.nodesSet.tagsManager.loadView(viewData);
-            this.legendUI?.enableAll("tag");
-            viewData.disabledTags.forEach(type => {
-                this.legendUI?.disable("tag", type);
-            });
-        }
-
-        if (this.graph.linksSet.linksManager) {
-            this.graph.linksSet.linksManager.loadView(viewData);
-            this.legendUI?.enableAll("link");
-            viewData.disabledLinks.forEach(type => {
-                this.legendUI?.disable("link", type);
-            });
-        }
-
         this.graph.setEngineOptions(viewData.engineOptions);
-        this.graph.updateWorker();
+        this.graph.engine.updateSearch();
+
+        setTimeout(() => {
+            if (this.graph.nodesSet.tagsManager) {
+                this.graph.nodesSet.tagsManager.loadView(viewData);
+                this.legendUI?.enableAll("tag");
+                viewData.disabledTags.forEach(type => {
+                    this.legendUI?.disable("tag", type);
+                });
+            }
+
+            if (this.graph.linksSet.linksManager) {
+                this.graph.linksSet.linksManager.loadView(viewData);
+                this.legendUI?.enableAll("link");
+                viewData.disabledLinks.forEach(type => {
+                    this.legendUI?.disable("link", type);
+                });
+            }
+
+            this.graph.updateWorker();
+            this.graph.engine.updateSearch();
+        }, 200);
     }
 }

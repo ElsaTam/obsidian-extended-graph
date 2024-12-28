@@ -5,11 +5,12 @@ import { InteractiveManager } from './interactiveManager';
 import { GraphView } from 'src/views/view';
 import { NodesSet } from './nodesSet';
 import { LinksSet } from './linksSet';
-import { DEFAULT_VIEW_ID } from 'src/globalVariables';
+import { DEFAULT_VIEW_ID, DisconnectionCause } from 'src/globalVariables';
 import { EngineOptions } from 'src/views/viewData';
 import { GraphEventsDispatcher } from './graphEventsDispatcher';
 import { ExtendedGraphSettings } from 'src/settings/settings';
 import { getLinkID } from './elements/link';
+import { ONode } from './elements/node';
 
 export class Graph extends Component {
     nodesSet: NodesSet;
@@ -60,13 +61,7 @@ export class Graph extends Component {
         if (this.nodesSet?.disconnectedNodes) {
             this.engine.filterOptions.search.getValue = (function() {
                 let prepend = this.dispatcher.graphsManager.plugin.settings.globalFilter + " ";
-                let append = "";
-                if (this.nodesSet.disconnectedNodes) {
-                    this.nodesSet.disconnectedNodes.forEach((id: string) => {
-                        append += ` -path:"${id}"`;
-                    });
-                }
-                return prepend + this.engine.filterOptions.search.inputEl.value + append;
+                return prepend + this.engine.filterOptions.search.inputEl.value;
             }).bind(this);
             this.hasChangedFilterSearch = true;
         }
@@ -109,7 +104,9 @@ export class Graph extends Component {
                 wrapper?.destroy({children:true});
                 this.nodesSet.nodesMap.delete(nodeID);
                 this.nodesSet.connectedNodes.delete(nodeID);
-                this.nodesSet.disconnectedNodes?.delete(nodeID);
+                for (const set of Object.values(this.nodesSet.disconnectedNodes)) {
+                    set.delete(nodeID);
+                }
             }
         }
 
@@ -137,7 +134,9 @@ export class Graph extends Component {
                     this.linksSet.linksMap.get(linkID)?.wrapper?.destroy({children:true});
                     this.linksSet.linksMap.delete(linkID);
                     this.linksSet.connectedLinks.delete(linkID);
-                    this.linksSet.disconnectedLinks?.delete(linkID);
+                    for (const set of Object.values(this.linksSet.disconnectedLinks)) {
+                        set.delete(linkID);
+                    }
                 }
                 if (invalidLinkTypes.size > 0) {
                     this.linksSet.linksManager?.removeTypes(invalidLinkTypes);
@@ -164,7 +163,7 @@ export class Graph extends Component {
     disableLinkTypes(types: string[]) : boolean {
         const links = this.linksSet.getLinks(types);
         if (links) {
-            this.linksSet.disableLinks(links, true);
+            this.disableLinks(links);
             return true;
         }
         return false;
@@ -173,15 +172,105 @@ export class Graph extends Component {
     enableLinkTypes(types: string[]) : boolean {
         const links = this.linksSet.getLinks(types);
         if (links) {
-            this.linksSet.enableLinks(links, true);
+            this.enableLinks(links);
             return true;
         }
         return false;
     }
 
-    disableNodes(ids: string[]) {
+    /*
+    disableOrphans() : boolean {
+        if (this.engine.options.showOrphans) return false;
+
+        let newOrphans = [...this.nodesSet.connectedNodes].filter(id => {
+            return this.nodesSet.nodesMap.get(id)?.node.renderer && this.nodeIsOrphan(id);
+        });
+        if (newOrphans.length === 0) return false;
+
+        console.log(this.engine.options.showOrphans, newOrphans);
+        this.nodesSet.disableNodes(newOrphans, DisconnectionCause.ORPHAN);
+        return true;
+    }
+    enableOrphans() : boolean {
+        if (this.engine.options.showOrphans) {
+            let oldOrphans = this.nodesSet.disconnectedNodes[DisconnectionCause.ORPHAN];
+            if (oldOrphans.size === 0) return false;
+
+            this.nodesSet.enableNodes([...oldOrphans], DisconnectionCause.ORPHAN);
+            return true;
+        }
+        else {
+            let oldOrphans = this.nodesSet.disconnectedNodes[DisconnectionCause.ORPHAN];
+            let nonOrphans = [...oldOrphans].filter(id => !this.nodeIsOrphan(id));
+            if (nonOrphans.length === 0) return false;
+            
+            this.nodesSet.enableNodes(nonOrphans, DisconnectionCause.ORPHAN);
+            return true;
+        }
+    }
+    nodeIsOrphan(id: string) : boolean {
+        for (const linkID of this.linksSet.connectedLinks) {
+            const link = this.linksSet.linksMap.get(linkID)?.link;
+            if (!link) continue;
+            if (link.source.id === id || link.target.id === id) return false;
+        }
+        return true;
+    }
+    */
+
+    disableLinks(ids: Set<string>) {
+        this.linksSet.disableLinks(ids, DisconnectionCause.USER);
+
+        if (this.settings.removeSource || this.settings.removeTarget) {
+            let nodesToDisable = new Set<string>();
+            for (const id of ids) {
+                let link = this.linksSet.linksMap.get(id)?.link;
+                if (!link) continue;
+
+                if (this.settings.removeSource && this.nodesSet.connectedNodes.has(link.source.id)) {
+                    nodesToDisable.add(link.source.id);
+                }
+                if (this.settings.removeTarget && this.nodesSet.connectedNodes.has(link.target.id)) {
+                    nodesToDisable.add(link.target.id);
+                }
+            }
+            this.nodesSet.disableNodes([...nodesToDisable], DisconnectionCause.LINK_CASCADE);
+
+            let additionalLinksToDisable = this.findLinksToDisable(nodesToDisable);
+            this.linksSet.disableLinks(additionalLinksToDisable, DisconnectionCause.LINK_CASCADE);
+        }
+
+        //this.disableOrphans();
+    }
+
+    enableLinks(ids: Set<string>) {
+        this.linksSet.enableLinks(ids, DisconnectionCause.USER);
+
+        if (this.settings.removeSource || this.settings.removeTarget) {
+            let nodesToEnable = new Set<string>();
+            for (const id of ids) {
+                let link = this.linksSet.linksMap.get(id)?.link;
+                if (!link) continue;
+
+                if (this.settings.removeSource && this.nodesSet.disconnectedNodes[DisconnectionCause.LINK_CASCADE].has(link.source.id)) {
+                    nodesToEnable.add(link.source.id);
+                }
+                if (this.settings.removeTarget && this.nodesSet.disconnectedNodes[DisconnectionCause.LINK_CASCADE].has(link.target.id)) {
+                    nodesToEnable.add(link.target.id);
+                }
+            }
+            this.nodesSet.enableNodes([...nodesToEnable], DisconnectionCause.LINK_CASCADE);
+
+            let additionalLinksToEnable = this.findLinksToEnable(nodesToEnable, DisconnectionCause.LINK_CASCADE);
+            this.linksSet.enableLinks(additionalLinksToEnable, DisconnectionCause.LINK_CASCADE);
+        }
+
+        //this.enableOrphans();
+    }
+
+    findLinksToDisable(nodeIds: Set<string>) : Set<string> {
         let linksToDisable = new Set<string>();
-        for (const id of ids) {
+        for (const id of nodeIds) {
             let node = this.nodesSet.nodesMap.get(id)?.node;
             if (!node) continue;
             for (const forward in node.forward) {
@@ -193,26 +282,38 @@ export class Graph extends Component {
                 this.linksSet.connectedLinks.has(linkID) && linksToDisable.add(linkID);
             }
         }
-        this.nodesSet.disableNodes(ids);
-        this.linksSet.disableLinks(linksToDisable, false);
+        return linksToDisable;
+    }
+
+    findLinksToEnable(nodeIds: Set<string>, cause: string) : Set<string> {
+        let linksToEnable = new Set<string>();
+        for (const id of nodeIds) {
+            let node = this.nodesSet.nodesMap.get(id)?.node;
+            if (!node) continue;
+            for (const forward in node.forward) {
+                const linkID = getLinkID({source: {id: id}, target: {id: forward}});
+                this.linksSet.disconnectedLinks[cause].has(linkID) && linksToEnable.add(linkID);
+            }
+            for (const reverse in node.reverse) {
+                const linkID = getLinkID({source: {id: reverse}, target: {id: id}});
+                this.linksSet.disconnectedLinks[cause].has(linkID) && linksToEnable.add(linkID);
+            }
+        }
+        return linksToEnable;
+    }
+
+    disableNodes(ids: string[]) {
+        this.nodesSet.disableNodes(ids, DisconnectionCause.USER);
+
+        let linksToDisable = this.findLinksToDisable(new Set<string>(ids));
+        this.linksSet.disableLinks(linksToDisable, DisconnectionCause.NODE_CASCADE);
     }
 
     enableNodes(ids: string[]) {
-        let linksToEnable = new Set<string>();
-        for (const id of ids) {
-            let node = this.nodesSet.nodesMap.get(id)?.node;
-            if (!node) continue;
-            for (const forward in node.forward) {
-                const linkID = getLinkID({source: {id: id}, target: {id: forward}});
-                this.linksSet.connectedLinks.has(linkID) && linksToEnable.add(linkID);
-            }
-            for (const reverse in node.reverse) {
-                const linkID = getLinkID({source: {id: reverse}, target: {id: id}});
-                this.linksSet.connectedLinks.has(linkID) && linksToEnable.add(linkID);
-            }
-        }
-        this.nodesSet.enableNodes(ids);
-        this.linksSet.enableLinks(linksToEnable, false);
+        this.nodesSet.enableNodes(ids, DisconnectionCause.USER);
+
+        let linksToEnable = this.findLinksToEnable(new Set<string>(ids), DisconnectionCause.NODE_CASCADE);
+        this.linksSet.enableLinks(linksToEnable, DisconnectionCause.NODE_CASCADE);
     }
         
     updateWorker() : void {
@@ -221,12 +322,22 @@ export class Graph extends Component {
             let wrapper = this.nodesSet.nodesMap.get(id);
             (wrapper) && (nodes[id] = [wrapper.node.x, wrapper.node.y]);
         }
+        let nodesToRemove = this.renderer.nodes.filter(n => !nodes.hasOwnProperty(n.id)).concat(this.findDuplicates(this.renderer.nodes).nodes);
+        console.log("Nodes to send to the worker:", Object.keys(nodes));
+        console.log("Nodes in the renderer:", this.renderer.nodes);
+        console.log("Nodes to remove:", nodesToRemove);
+        for (const node of nodesToRemove) {
+            node.clearGraphics();
+            this.renderer.nodes.remove(node);
+        }
 
-        let links: any = [];
+        let links: any[] = [];
         for (const id of this.linksSet.connectedLinks) {
             const l = this.linksSet.linksMap.get(id);
             (l) && links.push([l.link.source.id, l.link.target.id]);
         }
+
+        console.log("Update Worker with", Object.keys(nodes).length, "nodes and", links.length, "links");
 
         this.renderer.worker.postMessage({
             nodes: nodes,
@@ -234,6 +345,25 @@ export class Graph extends Component {
             alpha: .3,
             run: !0
         });
+
+        console.log("Graph after message", this);
+    }
+
+    findDuplicates(nodes: ONode[]) {
+        let sortedNodes = nodes.slice().sort((a, b) => {
+            return a.id.localeCompare(b.id);
+        });
+        let duplicateNodes = [];
+        for (let i = 0; i < sortedNodes.length - 1; i++) {
+            if (sortedNodes[i + 1].id == sortedNodes[i].id) {
+                duplicateNodes.push(sortedNodes[i]);
+            }
+        }
+        console.log("Duplicate nodes:", duplicateNodes);
+        return {
+            nodes: duplicateNodes,
+            links: []
+        };
     }
 
     setEngineOptions(options: EngineOptions) {

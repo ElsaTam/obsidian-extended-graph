@@ -1,14 +1,14 @@
 import { InteractiveManager } from "./interactiveManager";
 import { CurveLinkWrapper, getLinkID, LineLinkWrapper, Link, LinkWrapper } from "./elements/link";
 import { Graph } from "./graph";
-import { INVALID_KEYS } from "src/globalVariables";
+import { DisconnectionCause, INVALID_KEYS } from "src/globalVariables";
 import { getAPI as getDataviewAPI } from "obsidian-dataview";
 import { getFile } from "src/helperFunctions";
 
 export class LinksSet {
     linksMap = new Map<string, {wrapper: LinkWrapper | null, link: Link}>();
     connectedLinks = new Set<string>();
-    disconnectedLinks: Set<string> | null = null;
+    disconnectedLinks: {[cause: string] : Set<string>} = {};
     linkTypesMap: Map<string, Set<string>> | null = null; // key: type / value: link ids
 
     graph: Graph;
@@ -19,8 +19,10 @@ export class LinksSet {
         this.linksManager = linksManager;
 
         if (this.linksManager) {
-            this.disconnectedLinks = new Set<string>();
             this.linkTypesMap = new Map<string, Set<string>>();
+        }
+        for (const value of Object.values(DisconnectionCause)) {
+            this.disconnectedLinks[value] = new Set<string>();
         }
     }
 
@@ -58,7 +60,9 @@ export class LinksSet {
         });
         this.linksMap.clear();
         this.connectedLinks.clear();
-        this.disconnectedLinks?.clear();
+        for (const value of Object.values(DisconnectionCause)) {
+            this.disconnectedLinks[value].clear();
+        }
         this.linkTypesMap?.clear();
     }
 
@@ -156,11 +160,11 @@ export class LinksSet {
      * @param ids ids of the links
      * @returns true if a link was disabled
      */
-    disableLinks(ids: Set<string>, swapMaps: boolean) : void {
+    disableLinks(ids: Set<string>, cause: string) : void {
         for (const id of ids) {
-            if (swapMaps) {
+            if (this.connectedLinks.has(id)) {
                 this.connectedLinks.delete(id);
-                this.disconnectedLinks?.add(id);
+                this.disconnectedLinks[cause].add(id);
             }
             const l = this.linksMap.get(id);
             if (l) {
@@ -185,11 +189,11 @@ export class LinksSet {
      * @param ids ids of the links
      * @returns true if a link was enabled
      */
-    enableLinks(ids: Set<string>, swapMaps: boolean) : void {
+    enableLinks(ids: Set<string>, cause: string) : void {
         for (const id of ids) {
-            if (swapMaps) {
-                this.disconnectedLinks?.delete(id);
+            if (this.disconnectedLinks[cause].has(id)) {
                 this.connectedLinks.add(id);
+                this.disconnectedLinks[cause].delete(id);
             }
             const l = this.linksMap.get(id);
             if (l) {
@@ -215,12 +219,6 @@ export class LinksSet {
                 const newLink = this.graph.renderer.links.find(l2 => l2.source.id === l.link.source.id && l2.target.id === l.link.target.id);
                 (newLink) && (l.link = newLink);
             }
-        }
-    }
-
-    enableAll() : void {
-        if (this.disconnectedLinks) {
-            this.enableLinks(this.disconnectedLinks, true);
         }
     }
 

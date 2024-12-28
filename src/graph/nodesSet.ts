@@ -1,15 +1,15 @@
 import { App, TFile } from "obsidian";
-import { Node, NodeWrapper } from "./elements/node";
+import { ONode, NodeWrapper } from "./elements/node";
 import { InteractiveManager } from "./interactiveManager";
 import { getBackgroundColor, getFile, getImageUri, getTags } from "src/helperFunctions";
 import { Graph } from "./graph";
 import { Assets } from "pixi.js";
-import { INVALID_KEYS } from "src/globalVariables";
+import { DisconnectionCause, INVALID_KEYS } from "src/globalVariables";
 
 export class NodesSet {
     nodesMap = new Map<string, NodeWrapper>();
     connectedNodes = new Set<string>();
-    disconnectedNodes: Set<string> | null;
+    disconnectedNodes: {[cause: string] : Set<string>} = {};
     disabledTags: Set<string> | null;
     
     graph: Graph;
@@ -22,8 +22,8 @@ export class NodesSet {
         if (this.tagsManager) {
             this.disabledTags = new Set<string>();
         }
-        if (this.tagsManager && !this.graph.settings.fadeOnDisable) {
-            this.disconnectedNodes = new Set<string>();
+        for (const value of Object.values(DisconnectionCause)) {
+            this.disconnectedNodes[value] = new Set<string>();
         }
     }
 
@@ -45,7 +45,7 @@ export class NodesSet {
 
         // Load assets (images)
         let imageURIs: string[] = [];
-        this.graph.renderer.nodes.forEach((node: Node) => {
+        this.graph.renderer.nodes.forEach((node: ONode) => {
             let imageUri = getImageUri(this.graph.dispatcher.graphsManager.plugin.app, this.graph.settings.imageProperty, node.id);
             (imageUri) && imageURIs.push(imageUri);
         });
@@ -65,7 +65,9 @@ export class NodesSet {
         });
         this.nodesMap.clear();
         this.connectedNodes.clear();
-        this.disconnectedNodes?.clear();
+        for (const value of Object.values(DisconnectionCause)) {
+            this.disconnectedNodes[value].clear();
+        }
         this.disabledTags?.clear();
     }
 
@@ -250,11 +252,14 @@ export class NodesSet {
         });
     }
 
-    disableNodes(ids: string[]) : void {
+    disableNodes(ids: string[], cause: string) : void {
+        console.log("Disable nodes (", cause, ")", ids);
         for (const id of ids) {
+            if (this.connectedNodes.has(id)) {
+                this.connectedNodes.delete(id);
+                this.disconnectedNodes[cause].add(id);
+            }
             const nodeWrapper = this.nodesMap.get(id);
-            this.connectedNodes.delete(id);
-            this.disconnectedNodes?.add(id);
             if (nodeWrapper) {
                 nodeWrapper.updateNode();
                 nodeWrapper.node.clearGraphics();
@@ -263,10 +268,13 @@ export class NodesSet {
         }
     }
 
-    enableNodes(ids: string[]) : void {
+    enableNodes(ids: string[], cause: string) : void {
+        console.log("Enable nodes (", cause, ")", ids);
         for (const id of ids) {
-            this.disconnectedNodes?.delete(id);
-            this.connectedNodes.add(id);
+            if (this.disconnectedNodes[cause].has(id)) {
+                this.connectedNodes.add(id);
+                this.disconnectedNodes[cause].delete(id);
+            }
             const nodeWrapper = this.nodesMap.get(id);
             if (nodeWrapper) {
                 nodeWrapper.node.initGraphics();
@@ -285,11 +293,6 @@ export class NodesSet {
             nodeWrapper.updateGraphics();
             nodeWrapper.connect();
         }
-    }
-
-    enableAll() : void {
-        if (!this.disconnectedNodes) return;
-        this.enableNodes(Array.from(this.disconnectedNodes));
     }
 
     highlightNode(file: TFile, highlight: boolean) : void {

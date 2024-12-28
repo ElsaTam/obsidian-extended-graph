@@ -19,6 +19,8 @@ export interface ExtendedGraphSettings {
     fadeOnDisable: boolean;
     focusScaleFactor: number;
     linkCurves: boolean;
+    removeSource: boolean;
+    removeTarget: boolean;
 
     // NOT SET BY THE USER
     collapseView: boolean;
@@ -64,6 +66,8 @@ export const DEFAULT_SETTINGS: Partial<ExtendedGraphSettings> = {
     fadeOnDisable: false,
     focusScaleFactor: 1.8,
     linkCurves: false,
+    removeSource: false,
+    removeTarget: false,
 
     collapseView: true,
     collapseLegend: true,

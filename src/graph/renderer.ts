@@ -1,5 +1,5 @@
 import { Container }  from 'pixi.js';
-import { Node } from './elements/node';
+import { ONode } from './elements/node';
 import { Link } from './elements/link';
 
 export interface Renderer {
@@ -49,7 +49,7 @@ export interface Renderer {
         stage: Container;
     };
     links: Link[];
-    nodes: Node[];
+    nodes: ONode[];
     nodeScale: number;
     fNodeSizeMult: number;
     panX: number;
