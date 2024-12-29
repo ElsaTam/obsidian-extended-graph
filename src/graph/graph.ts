@@ -6,11 +6,10 @@ import { GraphView } from 'src/views/view';
 import { NodesSet } from './nodesSet';
 import { LinksSet } from './linksSet';
 import { DEFAULT_VIEW_ID, DisconnectionCause } from 'src/globalVariables';
-import { EngineOptions } from 'src/views/viewData';
 import { GraphEventsDispatcher } from './graphEventsDispatcher';
 import { ExtendedGraphSettings } from 'src/settings/settings';
 import { getLinkID } from './elements/link';
-import { ONode } from './elements/node';
+import { getEngine } from 'src/helperFunctions';
 
 export class Graph extends Component {
     nodesSet: NodesSet;
@@ -30,12 +29,16 @@ export class Graph extends Component {
         this.settings = structuredClone(dispatcher.graphsManager.plugin.settings);
 
         // Initialize nodes and links sets
-        let tagsManager = this.settings.enableTags ? new InteractiveManager(dispatcher, dispatcher.graphsManager.plugin.settings, "tag") : null;
-        this.nodesSet = new NodesSet(this, tagsManager);
-        if (tagsManager) {
-            this.interactiveManagers.set("tag", tagsManager);
-            this.addChild(tagsManager);
+        let keys = Object.keys(this.settings.additionalProperties).filter(k => this.settings.additionalProperties[k]);
+        if (this.settings.enableTags) keys = keys.concat(["tag"]);
+        let managers: InteractiveManager[] = [];
+        for (const key of keys) {
+            let manager = new InteractiveManager(dispatcher, dispatcher.graphsManager.plugin.settings, key);
+            this.interactiveManagers.set(key, manager);
+            this.addChild(manager);
+            managers.push(manager);
         }
+        this.nodesSet = new NodesSet(this, managers);
 
         let linksManager = this.settings.enableLinks ? new InteractiveManager(dispatcher, dispatcher.graphsManager.plugin.settings, "link") : null;
         this.linksSet = new LinksSet(this, linksManager);
@@ -44,19 +47,7 @@ export class Graph extends Component {
             this.addChild(linksManager);
         }
 
-        // Intercept search filter
-        if (dispatcher.leaf.view.getViewType() === "graph") {
-            // @ts-ignore
-            this.engine =  this.dispatcher.leaf.view.dataEngine;
-        }
-        else if(dispatcher.leaf.view.getViewType() === "localgraph") {
-            // @ts-ignore
-            this.engine =  this.dispatcher.leaf.view.engine;
-        }
-        else {
-            console.error("[Extended Graph plugin] Leaf is not a graph.");
-            throw new Error("[Extended Graph plugin] Leaf is not a graph.");
-        }
+        this.engine = getEngine(this.dispatcher.leaf);
         
         if (this.nodesSet?.disconnectedNodes) {
             this.engine.filterOptions.search.getValue = (function() {
@@ -69,11 +60,6 @@ export class Graph extends Component {
 
     onload() : void {
         this.initSets().then(() => {
-            // Obsidian handles search filter after loading the graph. Which
-            // means that it will first load and trigger changes with all nodes,
-            // creating a lot of Promises.
-            this.removeAdditionalData();
-
             this.dispatcher.onGraphReady();
         }).catch(e => {
             console.error(e);
@@ -88,71 +74,12 @@ export class Graph extends Component {
         }
     }
 
-    private removeAdditionalData() : void {
-        // Remove invalid nodes
-        let invalidNodes = new Set<string>();
-        this.nodesSet.nodesMap.forEach((nodeWrapper, nodeID) => {
-            if (! this.renderer.nodes.find(n => n.id === nodeID)) {
-                invalidNodes.add(nodeID);
-            }
-        });
-
-        if (invalidNodes.size > 0) {
-            for (const nodeID of invalidNodes) {
-                let wrapper = this.nodesSet.nodesMap.get(nodeID);
-                wrapper?.parent?.removeChild(wrapper);
-                wrapper?.destroy({children:true});
-                this.nodesSet.nodesMap.delete(nodeID);
-                this.nodesSet.connectedNodes.delete(nodeID);
-                for (const set of Object.values(this.nodesSet.disconnectedNodes)) {
-                    set.delete(nodeID);
-                }
-            }
-        }
-
-        // Remove invalid links
-        if (this.linksSet.linkTypesMap) {
-            let invalidLinks = new Set<string>();
-            for (const [linkID, l] of this.linksSet.linksMap.entries()) {
-                if (!l) continue;
-                if (!this.nodesSet.nodesMap.get(l.link.source.id) || !this.nodesSet.nodesMap.get(l.link.target.id)) {
-                    invalidLinks.add(linkID);
-                }
-            }
-            
-            if (invalidLinks.size > 0) {
-                let invalidLinkTypes = new Set<string>();
-                for (const linkID of invalidLinks) {
-                    this.linksSet.linkTypesMap.forEach((linkForType, type) => {
-                        if (linkForType.has(linkID)) {
-                            linkForType.delete(linkID);
-                            if (linkForType.size === 0) {
-                                invalidLinkTypes.add(type);
-                            }
-                        }
-                    });
-                    this.linksSet.linksMap.get(linkID)?.wrapper?.destroy({children:true});
-                    this.linksSet.linksMap.delete(linkID);
-                    this.linksSet.connectedLinks.delete(linkID);
-                    for (const set of Object.values(this.linksSet.disconnectedLinks)) {
-                        set.delete(linkID);
-                    }
-                }
-                if (invalidLinkTypes.size > 0) {
-                    this.linksSet.linksManager?.removeTypes(invalidLinkTypes);
-                }
-            }
-        }
-    }
-
     async initSets() : Promise<void> {
         // Sleep for a short duration to let time to the engine to apply user filters
-        await new Promise(r => setTimeout(r, 200));
+        await new Promise(r => setTimeout(r, 1000));
 
         this.nodesSet.load();
         this.linksSet.load();
-
-        this.removeAdditionalData();
 
         // Update node opacity layer colors
         if (this.settings.fadeOnDisable) {
@@ -160,6 +87,11 @@ export class Graph extends Component {
         }
     }
 
+    /**
+     * Disables link types specified in the types array.
+     * @param types - Array of link types to disable.
+     * @returns boolean - True if links were found and disabled, otherwise false.
+     */
     disableLinkTypes(types: string[]) : boolean {
         const links = this.linksSet.getLinks(types);
         if (links) {
@@ -169,6 +101,11 @@ export class Graph extends Component {
         return false;
     }
 
+    /**
+     * Enables link types specified in the types array.
+     * @param types - Array of link types to enable.
+     * @returns boolean - True if links were found and enabled, otherwise false.
+    */
     enableLinkTypes(types: string[]) : boolean {
         const links = this.linksSet.getLinks(types);
         if (links) {
@@ -178,96 +115,27 @@ export class Graph extends Component {
         return false;
     }
 
-    /*
-    disableOrphans() : boolean {
-        if (this.engine.options.showOrphans) return false;
-
-        let newOrphans = [...this.nodesSet.connectedNodes].filter(id => {
-            return this.nodesSet.nodesMap.get(id)?.node.renderer && this.nodeIsOrphan(id);
-        });
-        if (newOrphans.length === 0) return false;
-
-        console.log(this.engine.options.showOrphans, newOrphans);
-        this.nodesSet.disableNodes(newOrphans, DisconnectionCause.ORPHAN);
-        return true;
-    }
-    enableOrphans() : boolean {
-        if (this.engine.options.showOrphans) {
-            let oldOrphans = this.nodesSet.disconnectedNodes[DisconnectionCause.ORPHAN];
-            if (oldOrphans.size === 0) return false;
-
-            this.nodesSet.enableNodes([...oldOrphans], DisconnectionCause.ORPHAN);
-            return true;
-        }
-        else {
-            let oldOrphans = this.nodesSet.disconnectedNodes[DisconnectionCause.ORPHAN];
-            let nonOrphans = [...oldOrphans].filter(id => !this.nodeIsOrphan(id));
-            if (nonOrphans.length === 0) return false;
-            
-            this.nodesSet.enableNodes(nonOrphans, DisconnectionCause.ORPHAN);
-            return true;
-        }
-    }
-    nodeIsOrphan(id: string) : boolean {
-        for (const linkID of this.linksSet.connectedLinks) {
-            const link = this.linksSet.linksMap.get(linkID)?.link;
-            if (!link) continue;
-            if (link.source.id === id || link.target.id === id) return false;
-        }
-        return true;
-    }
-    */
-
+    /**
+     * Disables links specified by their IDs.
+     * @param ids - Set of link IDs to disable.
+     */
     disableLinks(ids: Set<string>) {
         this.linksSet.disableLinks(ids, DisconnectionCause.USER);
-
-        if (this.settings.removeSource || this.settings.removeTarget) {
-            let nodesToDisable = new Set<string>();
-            for (const id of ids) {
-                let link = this.linksSet.linksMap.get(id)?.link;
-                if (!link) continue;
-
-                if (this.settings.removeSource && this.nodesSet.connectedNodes.has(link.source.id)) {
-                    nodesToDisable.add(link.source.id);
-                }
-                if (this.settings.removeTarget && this.nodesSet.connectedNodes.has(link.target.id)) {
-                    nodesToDisable.add(link.target.id);
-                }
-            }
-            this.nodesSet.disableNodes([...nodesToDisable], DisconnectionCause.LINK_CASCADE);
-
-            let additionalLinksToDisable = this.findLinksToDisable(nodesToDisable);
-            this.linksSet.disableLinks(additionalLinksToDisable, DisconnectionCause.LINK_CASCADE);
-        }
-
-        //this.disableOrphans();
     }
 
+    /**
+     * Enables links specified by their IDs.
+     * @param ids - Set of link IDs to enable.
+     */
     enableLinks(ids: Set<string>) {
         this.linksSet.enableLinks(ids, DisconnectionCause.USER);
-
-        if (this.settings.removeSource || this.settings.removeTarget) {
-            let nodesToEnable = new Set<string>();
-            for (const id of ids) {
-                let link = this.linksSet.linksMap.get(id)?.link;
-                if (!link) continue;
-
-                if (this.settings.removeSource && this.nodesSet.disconnectedNodes[DisconnectionCause.LINK_CASCADE].has(link.source.id)) {
-                    nodesToEnable.add(link.source.id);
-                }
-                if (this.settings.removeTarget && this.nodesSet.disconnectedNodes[DisconnectionCause.LINK_CASCADE].has(link.target.id)) {
-                    nodesToEnable.add(link.target.id);
-                }
-            }
-            this.nodesSet.enableNodes([...nodesToEnable], DisconnectionCause.LINK_CASCADE);
-
-            let additionalLinksToEnable = this.findLinksToEnable(nodesToEnable, DisconnectionCause.LINK_CASCADE);
-            this.linksSet.enableLinks(additionalLinksToEnable, DisconnectionCause.LINK_CASCADE);
-        }
-
-        //this.enableOrphans();
     }
 
+    /**
+     * Finds links to disable based on the provided disabled node IDs.
+     * @param nodeIds - Set of disabled node IDs.
+     * @returns Set<string> - Set of link IDs to disable.
+     */
     findLinksToDisable(nodeIds: Set<string>) : Set<string> {
         let linksToDisable = new Set<string>();
         for (const id of nodeIds) {
@@ -285,6 +153,12 @@ export class Graph extends Component {
         return linksToDisable;
     }
 
+    /**
+     * Finds links to enable based on the provided enabled node IDs and cause.
+     * @param nodeIds - Set of enabled node IDs.
+     * @param cause - The cause for the disconnection.
+     * @returns Set<string> - Set of link IDs to enable.
+     */
     findLinksToEnable(nodeIds: Set<string>, cause: string) : Set<string> {
         let linksToEnable = new Set<string>();
         for (const id of nodeIds) {
@@ -302,6 +176,10 @@ export class Graph extends Component {
         return linksToEnable;
     }
 
+    /**
+     * Disables nodes specified by their IDs and cascades the disconnection to related links.
+     * @param ids - Array of node IDs to disable.
+     */
     disableNodes(ids: string[]) {
         this.nodesSet.disableNodes(ids, DisconnectionCause.USER);
 
@@ -309,6 +187,10 @@ export class Graph extends Component {
         this.linksSet.disableLinks(linksToDisable, DisconnectionCause.NODE_CASCADE);
     }
 
+    /**
+     * Enables nodes specified by their IDs and cascades the reconnection to related links.
+     * @param ids - Array of node IDs to enable.
+     */
     enableNodes(ids: string[]) {
         this.nodesSet.enableNodes(ids, DisconnectionCause.USER);
 
@@ -316,19 +198,14 @@ export class Graph extends Component {
         this.linksSet.enableLinks(linksToEnable, DisconnectionCause.NODE_CASCADE);
     }
         
+    /**
+     * Updates the worker with the current state of nodes and links.
+     */
     updateWorker() : void {
         let nodes: { [node: string] : number[]} = {};
         for (const id of this.nodesSet.connectedNodes) {
             let wrapper = this.nodesSet.nodesMap.get(id);
             (wrapper) && (nodes[id] = [wrapper.node.x, wrapper.node.y]);
-        }
-        let nodesToRemove = this.renderer.nodes.filter(n => !nodes.hasOwnProperty(n.id)).concat(this.findDuplicates(this.renderer.nodes).nodes);
-        console.log("Nodes to send to the worker:", Object.keys(nodes));
-        console.log("Nodes in the renderer:", this.renderer.nodes);
-        console.log("Nodes to remove:", nodesToRemove);
-        for (const node of nodesToRemove) {
-            node.clearGraphics();
-            this.renderer.nodes.remove(node);
         }
 
         let links: any[] = [];
@@ -337,39 +214,19 @@ export class Graph extends Component {
             (l) && links.push([l.link.source.id, l.link.target.id]);
         }
 
-        console.log("Update Worker with", Object.keys(nodes).length, "nodes and", links.length, "links");
-
         this.renderer.worker.postMessage({
             nodes: nodes,
             links: links,
             alpha: .3,
             run: !0
         });
-
-        console.log("Graph after message", this);
     }
 
-    findDuplicates(nodes: ONode[]) {
-        let sortedNodes = nodes.slice().sort((a, b) => {
-            return a.id.localeCompare(b.id);
-        });
-        let duplicateNodes = [];
-        for (let i = 0; i < sortedNodes.length - 1; i++) {
-            if (sortedNodes[i + 1].id == sortedNodes[i].id) {
-                duplicateNodes.push(sortedNodes[i]);
-            }
-        }
-        console.log("Duplicate nodes:", duplicateNodes);
-        return {
-            nodes: duplicateNodes,
-            links: []
-        };
-    }
-
-    setEngineOptions(options: EngineOptions) {
-        this.engine.setOptions(options);
-    }
-
+    /**
+     * Creates a new view with the specified name from the current graph.
+     * @param name - The name of the new view.
+     * @returns string - The ID of the new view.
+     */
     newView(name: string) : string {
         let view = new GraphView(name);
         view.setID();
@@ -378,6 +235,10 @@ export class Graph extends Component {
         return view.data.id;
     }
 
+    /**
+     * Saves the current graph in the view with the specified ID.
+     * @param id - The ID of the view to save.
+     */
     saveView(id: string) : void {
         if (id === DEFAULT_VIEW_ID) return;
         let viewData = this.settings.views.find(v => v.id == id);
@@ -386,13 +247,5 @@ export class Graph extends Component {
         view.setID(id);
         view.saveGraph(this);
         this.dispatcher.graphsManager.onViewNeedsSaving(view.data);
-    }
-
-    deleteView(id: string) : void {
-        this.dispatcher.graphsManager.onViewNeedsDeletion(id);
-    }
-
-    test() : void {
-        
     }
 }

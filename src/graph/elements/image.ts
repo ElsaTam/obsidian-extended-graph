@@ -10,8 +10,8 @@ export class NodeImage extends Sprite {
         super(texture);
         this.textureSize = Math.min(texture.width, texture.height);
 
-        this.width = 10;// this.textureSize;
-        this.height = 10; //this.textureSize;
+        this.width = 10;
+        this.height = 10;
         this.name = "image";
         this.anchor.set(0.5);
                         
@@ -22,7 +22,6 @@ export class NodeImage extends Sprite {
             .endFill();
         mask.width = this.textureSize;
         mask.height = this.textureSize;
-        //mask.scale.set(this.textureSize / (2 * this.circleRadius));
         this.mask = mask;
         this.addChild(mask);
 

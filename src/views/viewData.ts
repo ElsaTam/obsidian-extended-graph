@@ -1,5 +1,3 @@
-import { App } from "obsidian";
-
 export class ColorGroup {
     color: {a: number, rgb: number};
     query: string;
@@ -9,21 +7,21 @@ export class EngineOptions {
     colorGroups: ColorGroup[] = [];
     search: string = "";
     // filterOptions
-    hideUnresolved: boolean = false;
-    showAttachments: boolean = false;
-    showOrphans: boolean = true;
-    showTags: boolean = false;
-    localBacklinks: boolean = true;
-    localForelinks: boolean = true;
-    localInterlinks: boolean = false;
+    hideUnresolved: boolean = !1;
+    showAttachments: boolean = !1;
+    showOrphans: boolean = !0;
+    showTags: boolean = !1;
+    localBacklinks: boolean = !0;
+    localForelinks: boolean = !0;
+    localInterlinks: boolean = !1;
     localJumps: number = 1;
     // displayOptions
     lineSizeMultiplier: number = 1;
     nodeSizeMultiplier: number = 1;
-    showArrow: boolean = false;
+    showArrow: boolean = !1;
     textFadeMultiplier: number = 0;
     // forceOptions
-    centerStrength: number = 0.5187132489703118;
+    centerStrength: number = 1 + 0.5 * Math.log(0.109);
     linkDistance: number = 250;
     linkStrength: number = 1;
     repelStrength: number = 10;
@@ -55,7 +53,9 @@ export class EngineOptions {
 export class GraphViewData {
     id: string = "";
     name: string = "";
-    disabledLinks: string[] = [];
-    disabledTags: string[] = [];
+    disabledTypes: { [interactive: string] : string[] } = {
+        "tag": [],
+        "link": [],
+    };
     engineOptions: EngineOptions = new EngineOptions();
 }

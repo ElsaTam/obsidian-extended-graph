@@ -2,10 +2,8 @@ import { Component, EventRef, WorkspaceLeaf } from "obsidian";
 import { Graph } from "./graph";
 import { LegendUI } from "../ui/legendUI";
 import { ViewsUI } from "../ui/viewsUI";
-import { GraphControlsUI } from "../ui/graphControl";
 import { Renderer } from "./renderer";
 import { GraphsManager } from "src/graphsManager";
-import { DEFAULT_VIEW_ID } from "src/globalVariables";
 
 export type WorkspaceLeafExt = WorkspaceLeaf & {
     on(name: "extended-graph:disable-plugin",   callback: (leaf: WorkspaceLeafExt) => any) : EventRef;
@@ -19,10 +17,6 @@ export type WorkspaceLeafExt = WorkspaceLeaf & {
 
 export class GraphEventsDispatcher extends Component {
     type: string;
-    animationFrameId: number | null = null;
-    stopAnimation: boolean = true;
-
-    observerOrphans: MutationObserver;
 
     graphsManager: GraphsManager;
     leaf: WorkspaceLeafExt;
@@ -31,6 +25,11 @@ export class GraphEventsDispatcher extends Component {
     legendUI: LegendUI | null = null;
     viewsUI: ViewsUI;
 
+    /**
+     * Constructor for GraphEventsDispatcher.
+     * @param leaf - The workspace leaf.
+     * @param graphsManager - The graphs manager.
+     */
     constructor(leaf: WorkspaceLeafExt, graphsManager: GraphsManager) {
         super();
         this.leaf = leaf;
@@ -48,80 +47,56 @@ export class GraphEventsDispatcher extends Component {
         this.viewsUI.updateViewsList(this.graphsManager.plugin.settings.views);
     }
 
+    /**
+     * Called when the component is loaded.
+     */
     onload(): void {
         let view = this.graphsManager.plugin.settings.views.find(v => v.id === this.viewsUI.currentViewID);
-        (view) && this.graph.setEngineOptions(view.engineOptions);
-
-        this.startUpdateFrame();
+        (view) && this.graph.engine.setOptions(view.engineOptions);
     }
 
+    /**
+     * Called when the component is unloaded.
+     */
     onunload(): void {
-        this.stopAnimation = true;
-        this.leaf.view.renderer.worker.removeEventListener("message", this.startUpdateFrame.bind(this));
-        this.leaf.view.renderer.worker.removeEventListener("wheel", this.startUpdateFrame.bind(this));
+        this.leaf.view.renderer.px.stage.children[1].removeEventListener('childAdded', this.onChildAddedToStage.bind(this));
+        this.leaf.view.renderer.px.stage.children[1].removeEventListener('childRemoved', this.onChildRemovedFromStage.bind(this));
 
-        this.leaf.view.renderer.px.stage.children[1].removeEventListener('childAdded', this.childAddedByEngine.bind(this));
-        this.leaf.view.renderer.px.stage.children[1].removeEventListener('childRemoved', this.childRemovedByEngine.bind(this));
-
-        this.observerOrphans.disconnect();
-
-        this.onViewChanged(DEFAULT_VIEW_ID);
+        this.graphsManager.onPluginUnloaded(this.leaf);
     }
 
+    /**
+     * Called when the graph is ready.
+     */
     onGraphReady() : void {
-        if (this.graph.settings.linkCurves) {
-            this.leaf.view.renderer.worker.addEventListener("message", this.startUpdateFrame.bind(this));
-            this.leaf.view.renderer.px.stage.addEventListener("wheel", this.startUpdateFrame.bind(this));
-        }
+        this.leaf.view.renderer.px.stage.children[1].addEventListener('childAdded', this.onChildAddedToStage.bind(this));
+        this.leaf.view.renderer.px.stage.children[1].addEventListener('childRemoved', this.onChildRemovedFromStage.bind(this));
 
-        this.leaf.view.renderer.px.stage.children[1].addEventListener('childAdded', this.childAddedByEngine.bind(this));
-        this.leaf.view.renderer.px.stage.children[1].addEventListener('childRemoved', this.childRemovedByEngine.bind(this));
-
-        this.toggleOrphans = this.toggleOrphans.bind(this);
-        let graphFilterControl = this.leaf.containerEl.querySelector(".tree-item.graph-control-section.mod-filter");
-        if (graphFilterControl) {
-            let listenToOrphanChanges = (function(treeItemChildren: HTMLElement) {
-                // @ts-ignore
-                const label = window.OBSIDIAN_DEFAULT_I18N.plugins.graphView.optionShowOrphansDescription;
-                const cb = treeItemChildren.querySelector(`.setting-item.mod-toggle:has([aria-label="${label}"]) .checkbox-container`);
-                cb?.addEventListener("click", this.toggleOrphans)
-            }).bind(this);
-            this.observerOrphans = new MutationObserver((mutations) => {
-                if (mutations[0].addedNodes.length > 0) {
-                    let treeItemChildren = mutations[0].addedNodes[0];
-                    listenToOrphanChanges(treeItemChildren as HTMLElement);
-                }
-                else {
-                    // @ts-ignore
-                    const label = window.OBSIDIAN_DEFAULT_I18N.plugins.graphView.optionShowOrphansDescription;
-                    let treeItemChildren = mutations[0].removedNodes[0];
-                    const cb = (treeItemChildren as HTMLElement).querySelector(`.setting-item.mod-toggle:has([aria-label="${label}"]) .checkbox-container`);
-                    cb?.removeEventListener("click", this.toggleOrphans)
-                }
-            })
-            this.observerOrphans.observe(graphFilterControl, {childList: true});
-            let treeItemChildren = graphFilterControl.querySelector(".tree-item-children");
-            (treeItemChildren) && listenToOrphanChanges(treeItemChildren as HTMLElement);
-        }
-
-        this.onViewChanged(this.viewsUI.currentViewID);
-        this.graph.test();
+        this.changeView(this.viewsUI.currentViewID);
     }
 
     // UPDATES
 
-    private childRemovedByEngine() : void {
+    /**
+     * Called when a child is removed from the stage by the engine.
+     */
+    private onChildRemovedFromStage() : void {
         
     }
 
-    private childAddedByEngine() : void {
+    /**
+     * Called when a child is added to the stage by the engine.
+     */
+    private onChildAddedToStage() : void {
         if (this.leaf.view.renderer.nodes.length > this.graphsManager.plugin.settings.maxNodes) {
             new Notice(`Try to handle ${this.leaf.view.renderer.nodes.length}, but the limit is ${this.graphsManager.plugin.settings.maxNodes}. Extended Graph disabled.`);
             this.graphsManager.disablePlugin(this.leaf);
             return;
         }
 
+        this.graph.nodesSet.load();
         this.graph.nodesSet.connectNodes();
+        this.graph.linksSet.load();
         this.graph.linksSet.connectLinks();
 
         if (this.graph.linksSet.disconnectedLinks) {
@@ -142,137 +117,113 @@ export class GraphEventsDispatcher extends Component {
         }
     }
 
-    onGraphNeedsUpdate() {
-        if (this.graphsManager.plugin.settings.enableTags && this.graph.nodesSet) {
-            this.graph.initSets().then(() => {
-                this.graph.nodesSet?.resetArcs();
-            }).catch(e => {
-                console.error(e);
-            });
-        }
-    }
-
-    startUpdateFrame() {
-        if (!this.stopAnimation) return;
-        this.stopAnimation = false;
-        requestAnimationFrame(this.updateFrame.bind(this));
-    }
-
-    updateFrame() {
-        this.stopAnimation = (this.stopAnimation)
-            || (this.graph.renderer.idleFrames > 60)
-            || (!this.graph.linksSet);
-
-        if (this.stopAnimation) {
-            return;
-        }
-        if (this.graph.linksSet) {
-            for(const [id, l] of this.graph.linksSet?.linksMap) {
-                l.wrapper?.updateGraphics();
-            }
-        }
-        this.animationFrameId = requestAnimationFrame(this.updateFrame.bind(this));
-    }
-
-    // NODES
-
-    toggleOrphans(ev: Event) {
-        /*
-        console.log(this.graph.engine.options.showOrphans);
-        if (this.graph.engine.options.showOrphans) {
-            if (this.graph.enableOrphans()) {
-                this.graph.updateWorker();
-            }
-        }
-        else {
-            if (this.graph.disableOrphans()) {
-                this.graph.updateWorker();
-            }
-        }
-        */
-    }
-
     // INTERACTIVES
 
+    /**
+     * Handles the addition of interactive elements (tags or links).
+     * @param name - The name of the interactive element type ("tag" or "link").
+     * @param colorMaps - A map of types to their corresponding colors.
+     */
     onInteractivesAdded(name: string, colorMaps: Map<string, Uint8Array>) {
         switch (name) {
-            case "tag":
-                this.onTagTypesAdded(colorMaps);
-                break;
             case "link":
                 this.onLinkTypesAdded(colorMaps);
                 break;
+            default:
+                this.onNodeInteractiveTypesAdded(name, colorMaps);
+                break;
         }
     }
 
+    /**
+     * Handles the removal of interactive elements (tags or links).
+     * @param name - The name of the interactive element type ("tag" or "link").
+     * @param types - A set of types to be removed.
+     */
     onInteractivesRemoved(name: string, types: Set<string>) {
         switch (name) {
-            case "tag":
-                this.onTagTypesRemoved(types);
-                break;
             case "link":
                 this.onLinkTypesRemoved(types);
                 break;
+            default:
+                this.onNodeInteractiveTypesRemoved(name, types);
+                break;
         }
     }
 
+    /**
+     * Handles the color change of interactive elements (tags or links).
+     * @param name - The name of the interactive element type ("tag" or "link").
+     * @param type - The type of the interactive element.
+     * @param color - The new color of the interactive element.
+     */
     onInteractiveColorChanged(name: string, type: string, color: Uint8Array) {
         switch (name) {
-            case "tag":
-                this.onTagColorChanged(type, color);
-                break;
             case "link":
                 this.onLinkColorChanged(type, color);
                 break;
+            default:
+                this.onNodeInteractiveColorChanged(name, type, color);
+                break;
         }
     }
 
+    /**
+     * Handles the disabling of interactive elements (tags or links).
+     * @param name - The name of the interactive element type ("tag" or "link").
+     * @param types - An array of types to be disabled.
+     */
     onInteractivesDisabled(name: string, types: string[]) {
         switch (name) {
-            case "tag":
-                this.disableTagTypes(types);
-                break;
             case "link":
                 this.disableLinkTypes(types);
                 break;
+            default:
+                this.disableNodeInteractiveTypes(name, types);
+                break;
         }
     }
 
+    /**
+     * Handles the enabling of interactive elements (tags or links).
+     * @param name - The name of the interactive element type ("tag" or "link").
+     * @param types - An array of types to be enabled.
+     */
     onInteractivesEnabled(name: string, types: string[]) {
         switch (name) {
-            case "tag":
-                this.enableTagTypes(types);
-                break;
             case "link":
                 this.enableLinkTypes(types);
+                break;
+            default:
+                this.enableNodeInteractiveTypes(name, types);
                 break;
         }
     }
 
     // TAGS
 
-    onTagTypesAdded(colorMaps: Map<string, Uint8Array>) {
-        this.graph.nodesSet?.resetArcs();
+    private onNodeInteractiveTypesAdded(key: string, colorMaps: Map<string, Uint8Array>) {
+        this.graph.nodesSet?.resetArcs(key);
         colorMaps.forEach((color, type) => {
-            this.legendUI?.addLegend("tag", type, color);
+            this.legendUI?.addLegend(key, type, color);
         });
         this.leaf.view.renderer.changed();
     }
 
-    onTagTypesRemoved(types: Set<string>) {
-        this.legendUI?.removeLegend("tag", [...types]);
+    private onNodeInteractiveTypesRemoved(key: string, types: Set<string>) {
+        this.legendUI?.removeLegend(key, [...types]);
     }
 
-    onTagColorChanged(type: string, color: Uint8Array) {
-        this.graph.nodesSet?.updateArcsColor(type, color);
-        this.legendUI?.updateLegend("tag", type, color);
+    private onNodeInteractiveColorChanged(key: string, type: string, color: Uint8Array) {
+        this.graph.nodesSet?.updateArcsColor(key, type, color);
+        this.legendUI?.updateLegend(key, type, color);
         this.leaf.view.renderer.changed();
     }
 
-    disableTagTypes(types: string[]) {
+    private disableNodeInteractiveTypes(key: string, types: string[]) {
         let nodesToDisable: string[] = [];
         for (const type of types) {
-            nodesToDisable = nodesToDisable.concat(this.graph.nodesSet.disableTag(type));
+            nodesToDisable = nodesToDisable.concat(this.graph.nodesSet.disableInteractive(key, type));
         }
         if (!this.graph.settings.fadeOnDisable && nodesToDisable.length > 0) {
             this.graph.disableNodes(nodesToDisable);
@@ -283,10 +234,10 @@ export class GraphEventsDispatcher extends Component {
         }
     }
 
-    enableTagTypes(types: string[]) {
+    private enableNodeInteractiveTypes(key: string, types: string[]) {
         let nodesToEnable: string[] = [];
         for (const type of types) {
-            nodesToEnable = nodesToEnable.concat(this.graph.nodesSet.enableTag(type));
+            nodesToEnable = nodesToEnable.concat(this.graph.nodesSet.enableInteractive(key, type));
         }
         if (!this.graph.settings.fadeOnDisable && nodesToEnable.length > 0) {
             this.graph.enableNodes(nodesToEnable);
@@ -299,7 +250,7 @@ export class GraphEventsDispatcher extends Component {
 
     // LINKS
 
-    onLinkTypesAdded(colorMaps: Map<string, Uint8Array>) {
+    private onLinkTypesAdded(colorMaps: Map<string, Uint8Array>) {
         colorMaps.forEach((color, type) => {
             this.graph.linksSet?.updateLinksColor(type, color);
             this.legendUI?.addLegend("link", type, color);
@@ -307,23 +258,23 @@ export class GraphEventsDispatcher extends Component {
         this.leaf.view.renderer.changed();
     }
 
-    onLinkTypesRemoved(types: Set<string>) {
+    private onLinkTypesRemoved(types: Set<string>) {
         this.legendUI?.removeLegend("link", [...types]);
     }
 
-    onLinkColorChanged(type: string, color: Uint8Array) {
+    private onLinkColorChanged(type: string, color: Uint8Array) {
         this.graph.linksSet?.updateLinksColor(type, color);
         this.legendUI?.updateLegend("link", type, color);
         this.leaf.view.renderer.changed();
     }
 
-    disableLinkTypes(types: string[]) {
+    private disableLinkTypes(types: string[]) {
         if (this.graph.disableLinkTypes(types)) {
             this.graph.updateWorker();
         }
     }
 
-    enableLinkTypes(types: string[]) {
+    private enableLinkTypes(types: string[]) {
         if (this.graph.enableLinkTypes(types)) {
             this.graph.updateWorker();
         }
@@ -331,25 +282,29 @@ export class GraphEventsDispatcher extends Component {
 
     // VIEWS
 
-    onViewChanged(id: string) {
+    /**
+     * Change the current view with the specified ID.
+     * @param id - The ID of the view to change to.
+     */
+    changeView(id: string) {
         const viewData = this.graphsManager.plugin.settings.views.find(v => v.id === id);
         if (!viewData) return;
-        this.graph.setEngineOptions(viewData.engineOptions);
+        this.graph.engine.setOptions(viewData.engineOptions);
         this.graph.engine.updateSearch();
 
         setTimeout(() => {
-            if (this.graph.nodesSet.tagsManager) {
-                this.graph.nodesSet.tagsManager.loadView(viewData);
-                this.legendUI?.enableAll("tag");
-                viewData.disabledTags.forEach(type => {
-                    this.legendUI?.disable("tag", type);
+            for (let [key, manager] of this.graph.nodesSet.managers) {
+                manager.loadView(viewData);
+                this.legendUI?.enableAll(key);
+                viewData.disabledTypes[key]?.forEach(type => {
+                    this.legendUI?.disable(key, type);
                 });
             }
 
             if (this.graph.linksSet.linksManager) {
                 this.graph.linksSet.linksManager.loadView(viewData);
                 this.legendUI?.enableAll("link");
-                viewData.disabledLinks.forEach(type => {
+                viewData.disabledTypes["link"]?.forEach(type => {
                     this.legendUI?.disable("link", type);
                 });
             }
@@ -357,5 +312,13 @@ export class GraphEventsDispatcher extends Component {
             this.graph.updateWorker();
             this.graph.engine.updateSearch();
         }, 200);
+    }
+
+    /**
+     * Deletes the view with the specified ID.
+     * @param id - The ID of the view to delete.
+     */
+    deleteView(id: string) : void {
+        this.graphsManager.onViewNeedsDeletion(id);
     }
 }

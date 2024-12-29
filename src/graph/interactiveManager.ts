@@ -1,12 +1,12 @@
 
-import { Component, WorkspaceLeaf } from "obsidian";
+import { Component } from "obsidian";
 import { getColor, hex2rgb } from "../colors/colors";
 import { INVALID_KEYS, NONE_COLOR } from "src/globalVariables";
 import { GraphViewData } from "src/views/viewData";
 import { ExtendedGraphSettings } from "src/settings/settings";
 import { GraphEventsDispatcher } from "./graphEventsDispatcher";
 
-export class Interactive {
+class Interactive {
     type: string;
     color: Uint8Array;
     isActive: boolean;
@@ -55,18 +55,18 @@ export class InteractiveManager extends Component {
     }
 
     loadView(viewData: GraphViewData) : void {
-        const viewTypesToDisable: string[] = this.name === "tag" ? viewData.disabledTags : viewData.disabledLinks;
+        const viewTypesToDisable: string[] = viewData.disabledTypes[this.name];
         // Enable/Disable tags
         let toDisable: string[] = [];
         let toEnable: string[] = [];
         this.getTypes().forEach(type => {
             let interactive = this.interactives.get(type);
             if (!interactive) return;
-            if (interactive.isActive && viewTypesToDisable.includes(type)) {
+            if (interactive.isActive && viewTypesToDisable?.includes(type)) {
                 interactive.isActive = false;
                 toDisable.push(type);
             }
-            else if (!interactive.isActive && !viewTypesToDisable.includes(type)) {
+            else if (!interactive.isActive && !viewTypesToDisable?.includes(type)) {
                 interactive.isActive = true;
                 toEnable.push(type);
             }
@@ -120,17 +120,12 @@ export class InteractiveManager extends Component {
             this.interactives.set(type, new Interactive(type, color));
         });
         this.interactives = new Map([...this.interactives.entries()].sort());
-        this.dispatcher.onInteractivesAdded(this.name, colorsMaps);
-    }
-
-    getInteractive(type: string) : Interactive | null {
-        const interactive = this.interactives.get(type);
-        if (!interactive) return null;
-        return interactive;
+        if (colorsMaps.size > 0)
+            this.dispatcher.onInteractivesAdded(this.name, colorsMaps);
     }
 
     getColor(type: string) : Uint8Array {
-        let interactive = this.getInteractive(type);
+        let interactive = this.interactives.get(type);
         return interactive ? interactive.color : new Uint8Array([0, 0, 0]);
     }
 
@@ -140,7 +135,7 @@ export class InteractiveManager extends Component {
 
     getTypesWithoutNone() : string[] {
         let types = this.getTypes();
-        types.remove(this.settings.noneType["tag"]);
+        types.remove(this.settings.noneType[this.name]);
         return types;
     }
     

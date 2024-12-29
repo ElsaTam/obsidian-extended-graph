@@ -1,7 +1,7 @@
-import { ColorComponent, DropdownComponent, getAllTags, setIcon, Setting, TextComponent } from "obsidian";
+import { ColorComponent, Modal, setIcon, Setting, TextComponent } from "obsidian";
 import { cmOptions } from "src/colors/colormaps";
 import { ExtendedGraphSettingTab } from "./settingTab";
-import { capitalizeFirstLetter, getTags } from "src/helperFunctions";
+import { capitalizeFirstLetter, getFile, getFileInteractives } from "src/helperFunctions";
 import { plot_colormap } from "src/colors/colors";
 import { getAPI as getDataviewAPI } from "obsidian-dataview";
 import { INVALID_KEYS } from "src/globalVariables";
@@ -24,17 +24,23 @@ export abstract class SettingInteractives {
     constructor(settingTab: ExtendedGraphSettingTab) {
         this.settingTab = settingTab;
     }
+    
 
-    display() {
-        this.colorItems.clear();
-        let containerEl = this.settingTab.containerEl;
-        
+    protected displayPrepend() {
+        // HEADING
         this.allTopElements.push(
-            new Setting(containerEl)
+            new Setting(this.settingTab.containerEl)
                 .setName(capitalizeFirstLetter(this.interactiveName + 's'))
                 .setHeading()
                 .settingEl
         );
+    };
+
+    display() {
+        this.colorItems.clear();
+        let containerEl = this.settingTab.containerEl;
+
+        this.displayPrepend();
 
         // NONE TYPE
         this.allTopElements.push(
@@ -104,10 +110,10 @@ export abstract class SettingInteractives {
         this.allTopElements.push(this.selectionContainer);
 
         let allTypes = this.getAllTypes();
-        for (const tag of allTypes) {
-            const isActive = !this.settingTab.plugin.settings.unselectedInteractives[this.interactiveName].includes(tag);
+        for (const type of allTypes) {
+            const isActive = !this.settingTab.plugin.settings.unselectedInteractives[this.interactiveName].includes(type);
             let label = this.selectionContainer.createEl("label");
-            let text = label.createSpan({text: tag});
+            let text = label.createSpan({text: type});
             let toggle = label.createEl("input", {type: "checkbox"});
             isActive ? this.selectInteractive(label, toggle) : this.deselectInteractive(label, toggle);
             toggle.addEventListener("change", e => {
@@ -202,17 +208,23 @@ export abstract class SettingInteractives {
             const color = colorPicker.getValue();
             this.settingTab.plugin.settings.interactiveColors[this.interactiveName].push({type: type, color: color});
         });
-        this.settingTab.app.workspace.trigger(`extended-graph:settings-${this.interactiveName}-color-changed`, changedType);
+        this.settingTab.app.workspace.trigger(`extended-graph:settings-interactive-color-changed`, this.interactiveName, changedType);
         await this.settingTab.plugin.saveSettings();
+    }
+
+    protected getAllTypes(): string[] {
+        let allTypes = new Set<string>();
+        for (const file of this.settingTab.app.vault.getFiles()) {
+            allTypes = new Set<string>([...allTypes, ...getFileInteractives(this.interactiveName, this.settingTab.app, file)]);
+        }
+        return [...allTypes].sort();
     }
 
     protected abstract saveColor(preview: HTMLElement, type: string, color: string) : void;
     protected abstract isNameValid(name: string) : boolean;
     protected abstract getPlaceholder() : string;
     protected abstract updatePreview(preview: HTMLDivElement, type?: string, color?: string) : void;
-    protected abstract getAllTypes() : string[];
 }
-
 
 export class SettingTags extends SettingInteractives {
 
@@ -225,18 +237,6 @@ export class SettingTags extends SettingInteractives {
 
     display(): void {
         super.display();
-
-        let disableNodes = new Setting(this.settingTab.containerEl)
-            .setName(`Disable nodes`)
-            .setDesc(`When no more tag is available on the node, remove it from the graph. Needs to restart the graph to take effect.`)
-            .addToggle(cb => {
-                cb.setValue(!this.settingTab.plugin.settings.fadeOnDisable);
-                cb.onChange(value => {
-                    this.settingTab.plugin.settings.fadeOnDisable = !value;
-                    this.settingTab.plugin.saveSettings();
-                })
-            });
-        this.allTopElements.push(disableNodes.settingEl);
 
         this.allTopElements.forEach(el => {
             el.addClass("extended-graph-setting-" + this.interactiveName);
@@ -262,19 +262,145 @@ export class SettingTags extends SettingInteractives {
     }
 
     protected updatePreview(preview: HTMLDivElement, type?: string, color?: string) {
-        //preview.innerText = type ? "#" + type : "";
         this.updateCSS(preview, color);
-    }
-
-    protected getAllTypes(): string[] {
-        let allTypes = new Set<string>();
-        for (const file of this.settingTab.app.vault.getFiles()) {
-            allTypes = new Set<string>([...allTypes, ...getTags(this.settingTab.app, file)]);
-        }
-        return [...allTypes].sort();
     }
 }
 
+export class SettingPropertiesArray {
+    settingTab: ExtendedGraphSettingTab;
+    settingInteractives: SettingInteractives[] = [];
+    allTopElements: HTMLElement[] = [];
+    interactiveName: string;
+
+    constructor(settingTab: ExtendedGraphSettingTab) {
+        this.settingTab = settingTab;
+        for (const [key, enabled] of Object.entries(this.settingTab.plugin.settings.additionalProperties)) {
+            this.settingInteractives.push(new SettingProperties(key, enabled, settingTab));
+        }
+    }
+
+    display() {
+        let containerEl = this.settingTab.containerEl;
+        
+        // HEADING
+        this.allTopElements.push(
+            new Setting(containerEl)
+                .setName(capitalizeFirstLetter('Properties'))
+                .setHeading()
+                .addButton(cb => {
+                    setIcon(cb.buttonEl, "plus");
+                    cb.onClick((e) => {
+                        this.openModalToAddInteractive();
+                    })
+                })
+                .settingEl
+        );
+        this.allTopElements.forEach(el => {
+            el.addClass("extended-graph-setting-property");
+        })
+
+        for (const setting of this.settingInteractives) {
+            setting.display();
+        }
+    }
+
+    protected openModalToAddInteractive() {
+        let modal = new Modal(this.settingTab.app);
+        modal.setTitle("Property key");
+        let input = modal.contentEl.createEl("input");
+        input.addEventListener('keydown', e => {
+            if ("Enter" === e.key && input.value.length > 0) {
+                this.addInteractive(input.value);
+                modal.close();
+            }
+        });
+        let btn = modal.contentEl.createEl("button");
+        setIcon(btn, "plus");
+        btn.addEventListener('click', e => {
+            this.addInteractive(input.value);
+            modal.close();
+        })
+        modal.open();
+    }
+
+    protected addInteractive(key: string) {
+        this.settingTab.plugin.settings.additionalProperties[key] = true;
+        this.settingTab.plugin.settings.colormaps[key] = "rainbow";
+        this.settingTab.plugin.settings.interactiveColors[key] = [];
+        this.settingTab.plugin.settings.unselectedInteractives[key] = [];
+        this.settingTab.plugin.settings.noneType[key] = "none";
+        this.settingTab.plugin.saveSettings().then(() => {
+            let setting = new SettingProperties(key, true, this.settingTab);
+            this.settingInteractives.push(setting);
+            setting.display();
+            INVALID_KEYS[key] = [this.settingTab.plugin.settings.noneType[key]];
+        });
+    }
+}
+
+export class SettingProperties extends SettingInteractives {
+    enabled: boolean;
+
+    constructor(key: string, enabled: boolean, settingTab: ExtendedGraphSettingTab) {
+        super(settingTab);
+        this.interactiveName = key;
+        this.elementName = "node";
+        this.previewClass = "arc";
+        this.enabled = enabled;
+    }
+
+    protected displayPrepend(): void {
+        // HEADING
+        this.allTopElements.push(
+            new Setting(this.settingTab.containerEl)
+                .setName('Property: ' + this.interactiveName)
+                .setHeading()
+                .settingEl
+        );
+
+        // ENABLE
+        this.allTopElements.push(new Setting(this.settingTab.containerEl)
+            .setName('Enable')
+            .addToggle(cb => {
+                cb.setValue(this.enabled);
+                cb.onChange((value) => {
+                    this.enabled = value;
+                    this.settingTab.plugin.settings.additionalProperties[this.interactiveName] = value;
+                    this.settingTab.plugin.saveSettings();
+                })
+            }).settingEl);
+    }
+
+    display(): void {
+        super.display();
+
+        this.allTopElements.forEach(el => {
+            el.addClass("extended-graph-setting-property");
+        })
+    }
+
+    protected saveColor(preview: HTMLDivElement, type: string, color: string) {
+        if (this.isNameValid(type)) {
+            this.updatePreview(preview, type, color);
+            super.saveColors(type);
+        }
+        else {
+            preview.innerText = "";
+        }
+    }
+
+    protected isNameValid(name: string) : boolean {
+        return (name.length > 0) && (!name.contains(":"));
+    }
+
+    protected getPlaceholder(): string {
+        return "property-key";
+    }
+
+    protected updatePreview(preview: HTMLDivElement, type?: string, color?: string) {
+        this.updateCSS(preview, color);
+    }
+}
 
 export class SettingLinks extends SettingInteractives {
 
@@ -288,18 +414,6 @@ export class SettingLinks extends SettingInteractives {
     display(): void {
         super.display();
 
-        let linkCurves = new Setting(this.settingTab.containerEl)
-            .setName(`Curved links (WIP)`)
-            .setDesc(`Replace the straight lines of the link with curves`)
-            .addToggle(cb => {
-                cb.setValue(this.settingTab.plugin.settings.linkCurves);
-                cb.onChange(value => {
-                    this.settingTab.plugin.settings.linkCurves = value;
-                    this.settingTab.plugin.saveSettings();
-                })
-            });
-        this.allTopElements.push(linkCurves.settingEl);
-
         this.allTopElements.forEach(el => {
             el.addClass("extended-graph-setting-" + this.interactiveName);
         })
@@ -311,32 +425,6 @@ export class SettingLinks extends SettingInteractives {
             this.deselectInteractive(imageLabel, cb);
             imageLabel.parentNode?.removeChild(imageLabel);
         }
-
-        /*
-        let removeSource = new Setting(this.settingTab.containerEl)
-            .setName(`Remove sources`)
-            .setDesc(`When disabling a link type, also disable the source nodes`)
-            .addToggle(cb => {
-                cb.setValue(this.settingTab.plugin.settings.removeSource);
-                cb.onChange(value => {
-                    this.settingTab.plugin.settings.removeSource = value;
-                    this.settingTab.plugin.saveSettings();
-                })
-            });
-        this.allTopElements.push(removeSource.settingEl);
-
-        let removeTarget = new Setting(this.settingTab.containerEl)
-            .setName(`Remove targets`)
-            .setDesc(`When disabling a link type, also disable the source nodes`)
-            .addToggle(cb => {
-                cb.setValue(this.settingTab.plugin.settings.removeTarget);
-                cb.onChange(value => {
-                    this.settingTab.plugin.settings.removeTarget = value;
-                    this.settingTab.plugin.saveSettings();
-                })
-            });
-        this.allTopElements.push(removeTarget.settingEl);
-        */
     }
 
     protected saveColor(preview: HTMLDivElement, type: string, color: string) {

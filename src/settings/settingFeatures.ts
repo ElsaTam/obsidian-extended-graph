@@ -29,6 +29,19 @@ export class SettingFeatures {
             });
 
         new Setting(containerEl)
+            .setName("Properties")
+            .setDesc("Display and filter by property values")
+            .addToggle(cb => {
+                cb.setValue(this.settingTab.plugin.settings.enableProperties);
+                containerEl.style.setProperty('--display-property-features', this.settingTab.plugin.settings.enableProperties ? 'flex' : 'none');
+                cb.onChange(value => {
+                    this.settingTab.plugin.settings.enableProperties = value;
+                    this.settingTab.plugin.saveSettings();
+                    containerEl.style.setProperty('--display-property-features', value ? 'flex' : 'none');
+                });
+            });
+
+        new Setting(containerEl)
             .setName("Links")
             .setDesc("Display and filter link types")
             .addToggle(cb => {

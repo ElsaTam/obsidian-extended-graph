@@ -1,5 +1,6 @@
-import { App, getAllTags, TFile } from "obsidian";
+import { App, getAllTags, TFile, WorkspaceLeaf } from "obsidian";
 import { Renderer } from "./graph/renderer";
+import { getAPI as getDataviewAPI } from "obsidian-dataview";
 
 export function getBackgroundColor(renderer: Renderer): Uint8Array {
     let bg = window.getComputedStyle(renderer.interactiveEl).backgroundColor;
@@ -94,7 +95,32 @@ export function getImageUri(app: App, keyProperty: string, path: string) : strin
     return null;
 }
 
-export function getTags(app: App, file: TFile) : Set<string> {
+export function getEngine(leaf: WorkspaceLeaf) : any {
+    if (leaf.view.getViewType() === "graph") {
+        // @ts-ignore
+        return leaf.view.dataEngine;
+    }
+    else if(leaf.view.getViewType() === "localgraph") {
+        // @ts-ignore
+        return leaf.view.engine;
+    }
+    else {
+        console.error("[Extended Graph plugin] Leaf is not a graph.");
+        throw new Error("[Extended Graph plugin] Leaf is not a graph.");
+    }
+}
+
+export function getFileInteractives(interactive: string, app: App, file: TFile) : Set<string> {
+    if (file.extension !== "md") return new Set<string>();
+    switch (interactive) {
+        case "tag":
+            return getTags(app, file);
+        default:
+            return getProperty(interactive, app, file);
+    }
+}
+
+function getTags(app: App, file: TFile) : Set<string> {
     let metadataCache = app.metadataCache.getCache(file.path);
     if (!metadataCache) return new Set<string>();
 
@@ -102,4 +128,46 @@ export function getTags(app: App, file: TFile) : Set<string> {
     if (!tags) return new Set<string>();
     
     return new Set<string>(tags.sort());
+}
+
+function getProperty(key: string, app: App, file: TFile) : Set<string> {
+    const dv = getDataviewAPI();
+    let types = new Set<string>();
+
+    // With Dataview
+    if (dv) {
+        const sourcePage = dv.page(file.path);
+        const values = sourcePage[key];
+        if (values === null || values === undefined || values === '') return new Set<string>();
+
+        if (typeof values === "string" || typeof values === "number") {
+            types.add(String(values));
+        }
+        else if (Array.isArray(values)) {
+            for (const value of values) {
+                if (typeof value === "string" || typeof value === "number") {
+                    types.add(String(value));
+                }
+            }
+        }
+    }
+
+    // Links in the frontmatter
+    else {
+        const frontmatter = app.metadataCache.getFileCache(file)?.frontmatter;
+        if (frontmatter?.hasOwnProperty(key)) {
+            if (typeof frontmatter[key] === "string" || typeof frontmatter[key] === "number") {
+                types.add(String(frontmatter[key]));
+            }
+            else if (Array.isArray(frontmatter[key])) {
+                for (const value of frontmatter[key]) {
+                    if (typeof value === "string" || typeof value === "number") {
+                        types.add(String(value));
+                    }
+                }
+            }
+        }
+    }
+
+    return types;
 }

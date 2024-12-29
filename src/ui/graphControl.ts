@@ -1,7 +1,6 @@
 import { Component, setIcon, Setting, WorkspaceLeaf } from "obsidian";
 import { EngineOptions } from "src/views/viewData";
 import { DEFAULT_VIEW_ID } from "src/globalVariables";
-import GraphExtendedPlugin from "src/main";
 import { GraphEventsDispatcher, WorkspaceLeafExt } from "src/graph/graphEventsDispatcher";
 import { GraphsManager } from "src/graphsManager";
 
@@ -108,7 +107,12 @@ export class GraphControlsUI extends Component {
 
     onPluginDisabled() : void {
         this.onlyWhenPluginEnabled.forEach(el => {
-            this.treeItemChildren.removeChild(el);
+            try {
+                this.treeItemChildren.removeChild(el);
+            }
+            catch {
+
+            }
         });
     }
 

@@ -7,7 +7,5 @@ export let INVALID_KEYS: {[interactive: string]: string[]} = {
 
 export const DisconnectionCause = Object.freeze({
     USER: "user",
-    NODE_CASCADE: "node_cascade",
-    LINK_CASCADE: "link_cascade",
-    //ORPHAN: "orphan"
+    NODE_CASCADE: "node_cascade"
 });

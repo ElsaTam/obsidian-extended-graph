@@ -53,7 +53,7 @@ export class ViewsUI extends Component {
         this.select.addEventListener('change', event => {
             this.currentViewID = this.select.value;
             this.displaySaveDeleteButton();
-            this.dispatcher.onViewChanged(this.select.value);
+            this.dispatcher.changeView(this.select.value);
         });
 
         // ADD BUTTON
@@ -93,12 +93,11 @@ export class ViewsUI extends Component {
         this.deleteButton = this.root.createEl("button");
         setIcon(this.deleteButton, "trash-2");
         this.deleteButton.addEventListener('click', event => {
-            this.dispatcher.graph.deleteView(this.select.value);
+            this.dispatcher.deleteView(this.select.value);
         });
 
         // CURRENT VIEW ID
         this.currentViewID = this.select.value;
-
 
         if (this.plugin.settings.collapseView) {
             this.close();

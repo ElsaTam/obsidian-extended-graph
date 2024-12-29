@@ -1,11 +1,9 @@
-import { App, getAllTags, TFile } from 'obsidian';
-import { Assets, Container, Graphics, Sprite, Texture } from 'pixi.js';
+import { App } from 'obsidian';
+import { Assets, Container, Graphics, Texture } from 'pixi.js';
 import { InteractiveManager } from '../interactiveManager';
-import { INVALID_KEYS } from 'src/globalVariables';
 import { Renderer } from '../renderer';
 import { ExtendedGraphSettings } from 'src/settings/settings';
-import { getFile, getImageUri, getTags } from 'src/helperFunctions';
-import { ElementWrapper } from './element';
+import { getFile, getFileInteractives, getImageUri } from 'src/helperFunctions';
 import { ArcsWrapper } from './arcs';
 import { NodeImage } from './image';
 
@@ -47,38 +45,38 @@ export class NodeWrapper extends Container {
     
     isActive: boolean = true;
     nodeImage: NodeImage | null = null;
-    arcsWrapper: ArcsWrapper | null = null;
+    arcsWrappers = new Map<string, ArcsWrapper>();
     background: Graphics;
     scaleFactor: number = 1;
 
-    constructor(node: ONode, app: App, settings: ExtendedGraphSettings, manager: InteractiveManager | null) {
+    constructor(node: ONode, app: App, settings: ExtendedGraphSettings, managers: InteractiveManager[]) {
         super();
         this.node = node;
         this.name = node.id;
         this.settings = settings;
         this.app = app;
 
-        if (node.type === "" && manager) {
+        if (node.type === "" && managers.length > 0) {
             const file = getFile(app, node.id);
             if (file) {
-                let types = getTags(app, file);
-                let validTypes = new Set<string>();
-                for (const type of types) {
-                    if (manager.interactives.has(type)) {
-                        validTypes.add(type);
+                let layer = 1;
+                for (const manager of managers) {
+                    let types = getFileInteractives(manager.name, app, file);
+                    let validTypes = new Set<string>();
+                    for (const type of types) {
+                        if (manager.interactives.has(type)) {
+                            validTypes.add(type);
+                        }
                     }
-                }
-                if (validTypes.size > 0 && !validTypes.has(settings.noneType["tag"])) {
-                    this.arcsWrapper = new ArcsWrapper(this, validTypes, manager);
-                    this.addChild(this.arcsWrapper);
+                    if (validTypes.size > 0 && !validTypes.has(settings.noneType[manager.name])) {
+                        let arcsWrapper = new ArcsWrapper(this, validTypes, manager, layer);
+                        this.arcsWrappers.set(manager.name, arcsWrapper);
+                        this.addChild(arcsWrapper);
+                    }
+                    layer++;
                 }
             }
         }
-
-        // Update background color on hover
-        //this.eventMode = 'static';
-        //this.on('mouseenter', e => this.addBackground());
-        //this.on('mouseleave', e => this.addBackground());
     }
 
     updateNode() : void {
@@ -115,8 +113,8 @@ export class NodeWrapper extends Container {
         }
 
         // Init ArcsWrapper
-        if (this.arcsWrapper) {
-            this.addChild(this.arcsWrapper);
+        for (const arcWrapper of this.arcsWrappers.values()) {
+            this.addChild(arcWrapper);
         }
 
         // Place this
@@ -132,11 +130,9 @@ export class NodeWrapper extends Container {
     clearGraphics(): void {
         this.background.destroy();
         this.nodeImage?.destroy({children: true});
-        this.arcsWrapper?.clearGraphics();
-    }
-
-    updateGraphics(): void {
-        //this.addBackground();
+        for (const arcWrapper of this.arcsWrappers.values()) {
+            arcWrapper.clearGraphics();
+        }
     }
 
     highlight(scale: number, color?: number) {
@@ -155,7 +151,7 @@ export class NodeWrapper extends Container {
     }
 
     updateState() : void {
-        const isFullyDisabled = !!this.arcsWrapper?.isFullyDisabled();
+        const isFullyDisabled = [...this.arcsWrappers.values()].every((arcWrapper: ArcsWrapper) => arcWrapper.isFullyDisabled());
         if (this.isActive && isFullyDisabled) {
             this.fadeOut();
         }
@@ -168,7 +164,9 @@ export class NodeWrapper extends Container {
         this.isActive = true;
         if (this.settings.fadeOnDisable) {
             this.nodeImage?.fadeIn();
-            this.arcsWrapper?.fadeIn();
+            for (const arcWrapper of this.arcsWrappers.values()) {
+                arcWrapper.fadeIn();
+            }
         }
     }
 
@@ -176,7 +174,9 @@ export class NodeWrapper extends Container {
         this.isActive = false;
         if (this.settings.fadeOnDisable) {
             this.nodeImage?.fadeOut();
-            this.arcsWrapper?.fadeOut();
+            for (const arcWrapper of this.arcsWrappers.values()) {
+                arcWrapper.fadeOut();
+            }
         }
     }
 }

@@ -10,10 +10,12 @@ export class ArcsWrapper extends ElementWrapper {
     gap: number = 0.2;
     maxArcSize: number = Math.PI / 2;
     arcSize: number;
+    circleLayer: number;
     graphics = new Map<string, {index: number, graphic: Graphics}>();
 
-    constructor(nodeWrapper: NodeWrapper, types: Set<string>, manager: InteractiveManager) {
+    constructor(nodeWrapper: NodeWrapper, types: Set<string>, manager: InteractiveManager, circleLayer: number) {
         super(nodeWrapper.node.id, types, manager);
+        this.circleLayer = circleLayer;
         this.initGraphics();
         this.updateGraphics();
     }
@@ -42,25 +44,27 @@ export class ArcsWrapper extends ElementWrapper {
 
     updateGraphics(): void {
         for (const type of this.types) {
-            this.updateTypeColor(type);
+            this.redrawArc(type);
         }
     }
 
-    updateTypeColor(type: string, color?: Uint8Array) {
+    redrawArc(type: string, color?: Uint8Array) {
         let arc = this.graphics.get(type);
         if (!arc) return;
 
         if (!color) color = this.manager.getColor(type);
         
+        const alpha = arc.graphic.alpha;
         arc.graphic.clear();
         arc.graphic.lineStyle(this.thickness * this.nodeSize, color)
             .arc(
                 0, 0,
-                (0.5 + this.thickness + this.inset) * this.nodeSize,
+                (0.5 + (this.thickness + this.inset) * this.circleLayer) * this.nodeSize,
                 this.arcSize * arc.index + this.gap * 0.5,
                 this.arcSize * (arc.index + 1) - this.gap * 0.5
             )
             .endFill();
+        arc.graphic.alpha = alpha;
     }
 
     enableType(type: string) : void {
@@ -71,6 +75,10 @@ export class ArcsWrapper extends ElementWrapper {
     disableType(type: string) : void {
         let arc = this.graphics.get(type);
         (arc) && (arc.graphic.alpha = 0.1);
+    }
+
+    setTypes(types: Set<string>) {
+        this.types = types;
     }
 
     fadeIn() {

@@ -4,19 +4,19 @@ import GraphExtendedPlugin from "./main";
 import { GraphViewData } from "./views/viewData";
 import { MenuUI } from "./ui/menu";
 import { GraphControlsUI } from "./ui/graphControl";
+import { getEngine } from "./helperFunctions";
 
 
 export class GraphsManager extends Component {
-    menus = new Map<string, {menu: MenuUI, control: GraphControlsUI}>();
-    isInit = new Map<string, boolean>();
+    globalUI = new Map<string, {menu: MenuUI, control: GraphControlsUI}>();
+    optionsBackup = new Map<string, any>();
     activeFile: TFile | null = null;
 
+    lastBackup: string;
     localGraphID: string | null = null;
     
     plugin: GraphExtendedPlugin;
     dispatchers = new Map<string, GraphEventsDispatcher>();
-
-    optionsBackup: any | null;
     
     constructor(plugin: GraphExtendedPlugin) {
         super();
@@ -56,11 +56,11 @@ export class GraphsManager extends Component {
                     newTypes.push(type);
                 });
         
-                const needsUpdate = !nodeWrapper.arcsWrapper?.matchesTypes(newTypes);
+                const needsUpdate = !nodeWrapper.arcsWrappers.get("tag")?.matchesTypes(newTypes);
         
                 if (needsUpdate) {
-                    const types = dispatcher.graph.nodesSet?.getAllTagsInGraph(this.plugin.app);
-                    (types) && dispatcher.graph.nodesSet?.tagsManager?.update(types);
+                    const types = dispatcher.graph.nodesSet?.getAllInteractivesInGraph("tag");
+                    (types) && dispatcher.graph.nodesSet?.managers.get("tag")?.addTypes(types);
                 }
             });
         }
@@ -102,15 +102,15 @@ export class GraphsManager extends Component {
         if (this.dispatchers.get(leaf.id)) return;
 
         // leaf already opened and is global graph
-        if (this.isInit.get(leaf.id) && leaf.view.getViewType() === "graph") return;
+        if (this.optionsBackup.get(leaf.id) && leaf.view.getViewType() === "graph") return;
 
-        this.isInit.set(leaf.id, true);
+        this.backupOptions(leaf);
     }
 
     onGlobalFilterChanged(filter: string) : void {
         for (const [id, dispatcher] of this.dispatchers) {
             dispatcher.graph.engine.updateSearch();
-            let textarea = this.menus.get(id)?.control.settingGlobalFilter.controlEl.querySelector("textarea");
+            let textarea = this.globalUI.get(id)?.control.settingGlobalFilter.controlEl.querySelector("textarea");
             (textarea) && (textarea.value = filter);
         }
     }
@@ -118,7 +118,7 @@ export class GraphsManager extends Component {
     // MENU
 
     setGlobalUI(leaf: WorkspaceLeafExt) : {menu: MenuUI, control: GraphControlsUI} {
-        let globalUI = this.menus.get(leaf.id);
+        let globalUI = this.globalUI.get(leaf.id);
         if (globalUI) return globalUI;
 
         let menuUI = new MenuUI(leaf);
@@ -132,7 +132,7 @@ export class GraphsManager extends Component {
         leaf.view.addChild(controlsUI);
         
         globalUI = {menu: menuUI, control: controlsUI};
-        this.menus.set(leaf.id, globalUI);
+        this.globalUI.set(leaf.id, globalUI);
         return globalUI;
     }
 
@@ -144,12 +144,10 @@ export class GraphsManager extends Component {
         });
     }
 
-    updateTagColor(type: string) : void {
-        if (this.plugin.settings.enableTags) {
-            this.dispatchers.forEach(dispatcher => {
-                dispatcher.graph.nodesSet?.tagsManager?.recomputeColor(type);
-            });
-        }
+    updateColor(key: string, type: string) : void {
+        this.dispatchers.forEach(dispatcher => {
+            dispatcher.graph.nodesSet?.managers.get(key)?.recomputeColor(type);
+        });
     }
     
     // ENABLE/DISABLE PLUGIN
@@ -176,8 +174,7 @@ export class GraphsManager extends Component {
     enablePlugin(leaf: WorkspaceLeafExt, viewID?: string) : void {
         let dispatcher = this.dispatchers.get(leaf.id);
         let globalUI = this.setGlobalUI(leaf);
-
-        if (!this.optionsBackup) { this.backupNormalView(); }
+        this.backupOptions(leaf);
 
         if (dispatcher) return;
 
@@ -199,7 +196,7 @@ export class GraphsManager extends Component {
 
     disablePluginFromLeafID(leafID: string) {
         let dispatcher = this.dispatchers.get(leafID);
-        let globalUI = this.menus.get(leafID);
+        let globalUI = this.globalUI.get(leafID);
 
         globalUI?.menu.disable();
         globalUI?.control.onPluginDisabled();
@@ -208,14 +205,17 @@ export class GraphsManager extends Component {
         dispatcher.unload();
         dispatcher.graph.nodesSet?.unload();
         dispatcher.graph.linksSet?.unload();
-        this.dispatchers.delete(leafID);
-        
-        if (this.localGraphID === leafID) this.localGraphID = null;
+    }
 
-        if (this.dispatchers.size === 0) {
-            this.applyNormalView(dispatcher.graph.engine);
-            this.optionsBackup = null;
+    onPluginUnloaded(leaf: WorkspaceLeaf) : void {
+        this.dispatchers.delete(leaf.id);
+        
+        if (this.localGraphID === leaf.id) this.localGraphID = null;
+
+        if (leaf.view._loaded) {
+            this.applyNormalView(leaf);
         }
+        this.restoreBackup();
     }
 
     resetPlugin(leaf: WorkspaceLeafExt) : void {
@@ -231,7 +231,7 @@ export class GraphsManager extends Component {
 
     syncWithLeaves(leaves: WorkspaceLeaf[]) : void {
         const currentActiveLeavesID = leaves.map(l => l.id);
-        const currentUsedLeavesID = Array.from(this.isInit.keys());
+        const currentUsedLeavesID = Array.from(this.optionsBackup.keys());
         const localLeaf = leaves.find(l => l.view.getViewType() === "localgraph");
         if (localLeaf) {
             this.localGraphID = localLeaf.id;
@@ -244,8 +244,8 @@ export class GraphsManager extends Component {
         for (const id of currentUsedLeavesID) {
             if (! currentActiveLeavesID.includes(id)) {
                 this.disablePluginFromLeafID(id);
-                this.isInit.delete(id);
-                this.menus.delete(id);
+                this.globalUI.delete(id);
+                if (this.lastBackup !== id) this.optionsBackup.delete(id);
             }
         }
     }
@@ -284,34 +284,44 @@ export class GraphsManager extends Component {
 
     // HANDLE NORMAL AND DEFAULT VIEW
 
-    backupNormalView() {
-        let corePluginInstance: any = this.plugin.app.internalPlugins.getPluginById("graph")?.instance;
-        this.optionsBackup = structuredClone(corePluginInstance.options);
+    backupOptions(leaf: WorkspaceLeaf) {
+        const engine = getEngine(leaf);
+        const options = structuredClone(engine.getOptions());
+        this.optionsBackup.set(leaf.id, options);
+        this.lastBackup = leaf.id;
+        this.plugin.settings.backupGraphOptions = options;
+        this.plugin.saveSettings();
     }
 
-    applyNormalView(engine: any) {
+    restoreBackup() {
+        let backup = this.optionsBackup.get(this.lastBackup);
         let corePluginInstance: any = this.plugin.app.internalPlugins.getPluginById("graph")?.instance;
         // @ts-ignore
-        if (corePluginInstance) {
-            corePluginInstance.options.colorGroups = this.optionsBackup.colorGroups;
-            corePluginInstance.options.search = this.optionsBackup.search;
-            corePluginInstance.options.hideUnresolved = this.optionsBackup.hideUnresolved;
-            corePluginInstance.options.showAttachments = this.optionsBackup.showAttachments;
-            corePluginInstance.options.showOrphans = this.optionsBackup.showOrphans;
-            corePluginInstance.options.showTags = this.optionsBackup.showTags;
-            corePluginInstance.options.localBacklinks = this.optionsBackup.localBacklinks;
-            corePluginInstance.options.localForelinks = this.optionsBackup.localForelinks;
-            corePluginInstance.options.localInterlinks = this.optionsBackup.localInterlinks;
-            corePluginInstance.options.localJumps = this.optionsBackup.localJumps;
-            corePluginInstance.options.lineSizeMultiplier = this.optionsBackup.lineSizeMultiplier;
-            corePluginInstance.options.nodeSizeMultiplier = this.optionsBackup.nodeSizeMultiplier;
-            corePluginInstance.options.showArrow = this.optionsBackup.showArrow;
-            corePluginInstance.options.textFadeMultiplier = this.optionsBackup.textFadeMultiplier;
-            corePluginInstance.options.centerStrength = this.optionsBackup.centerStrength;
-            corePluginInstance.options.linkDistance = this.optionsBackup.linkDistance;
-            corePluginInstance.options.linkStrength = this.optionsBackup.linkStrength;
-            corePluginInstance.options.repelStrength = this.optionsBackup.repelStrength;
+        if (corePluginInstance && backup) {
+            corePluginInstance.options.colorGroups = backup.colorGroups;
+            corePluginInstance.options.search = backup.search;
+            corePluginInstance.options.hideUnresolved = backup.hideUnresolved;
+            corePluginInstance.options.showAttachments = backup.showAttachments;
+            corePluginInstance.options.showOrphans = backup.showOrphans;
+            corePluginInstance.options.showTags = backup.showTags;
+            corePluginInstance.options.localBacklinks = backup.localBacklinks;
+            corePluginInstance.options.localForelinks = backup.localForelinks;
+            corePluginInstance.options.localInterlinks = backup.localInterlinks;
+            corePluginInstance.options.localJumps = backup.localJumps;
+            corePluginInstance.options.lineSizeMultiplier = backup.lineSizeMultiplier;
+            corePluginInstance.options.nodeSizeMultiplier = backup.nodeSizeMultiplier;
+            corePluginInstance.options.showArrow = backup.showArrow;
+            corePluginInstance.options.textFadeMultiplier = backup.textFadeMultiplier;
+            corePluginInstance.options.centerStrength = backup.centerStrength;
+            corePluginInstance.options.linkDistance = backup.linkDistance;
+            corePluginInstance.options.linkStrength = backup.linkStrength;
+            corePluginInstance.options.repelStrength = backup.repelStrength;
         }
-        engine.setOptions(this.optionsBackup);
+    }
+
+    applyNormalView(leaf: WorkspaceLeaf) {
+        const engine = getEngine(leaf);
+        engine?.setOptions(this.optionsBackup.get(leaf.id));
+        engine?.updateSearch();
     }
 }

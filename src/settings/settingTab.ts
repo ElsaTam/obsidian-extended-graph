@@ -1,6 +1,6 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
 import GraphExtendedPlugin from "src/main";
-import { SettingTags, SettingLinks } from "./settingInteractive";
+import { SettingTags, SettingLinks, SettingProperties, SettingPropertiesArray } from "./settingInteractive";
 import { SettingFeatures } from "./settingFeatures";
 import { SettingImages } from "./settingImages";
 import { SettingFocus } from "./settingFocus";
@@ -8,6 +8,7 @@ import { SettingFocus } from "./settingFocus";
 export class ExtendedGraphSettingTab extends PluginSettingTab {
     plugin: GraphExtendedPlugin;
     tagSettings: SettingTags;
+    propertiesSettingsArray: SettingPropertiesArray;
     linkSettings: SettingLinks;
     featuresSettings: SettingFeatures;
     imagesSettings: SettingImages;
@@ -17,6 +18,7 @@ export class ExtendedGraphSettingTab extends PluginSettingTab {
         super(app, plugin);
         this.plugin = plugin;
         this.tagSettings = new SettingTags(this);
+        this.propertiesSettingsArray = new SettingPropertiesArray(this);
         this.linkSettings = new SettingLinks(this);
         this.featuresSettings = new SettingFeatures(this);
         this.imagesSettings = new SettingImages(this);
@@ -53,10 +55,22 @@ export class ExtendedGraphSettingTab extends PluginSettingTab {
                     this.plugin.graphsManager.onGlobalFilterChanged(value);
             }));
 
+        new Setting(containerEl)
+            .setName(`Disable nodes`)
+            .setDesc(`When all arcs are disabled on the node, remove it from the graph.`)
+            .addToggle(cb => {
+                cb.setValue(!this.plugin.settings.fadeOnDisable);
+                cb.onChange(value => {
+                    this.plugin.settings.fadeOnDisable = !value;
+                    this.plugin.saveSettings();
+                })
+            });
+
         // FEATURES
         this.featuresSettings.display();
         this.imagesSettings.display();
         this.tagSettings.display();
+        this.propertiesSettingsArray.display();
         this.linkSettings.display();
         this.focusSettings.display();
     }

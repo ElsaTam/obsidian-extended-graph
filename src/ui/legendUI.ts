@@ -69,7 +69,7 @@ class LegendRow {
     }
 
     toggle(type: string) {
-        const interactive = this.manager.getInteractive(type);
+        const interactive = this.manager.interactives.get(type);
         if (!interactive) return;
 
         if (interactive.isActive) {
@@ -128,9 +128,8 @@ export class LegendUI extends Component {
         this.legendRows = new Map<string, LegendRow>();
         this.root = this.viewContent.createDiv();
         this.root?.addClass("graph-legend-container");
-        for (const name of ["tag", "link"]) {
-            const manager = this.dispatcher.graph.interactiveManagers.get(name);
-            (manager) && this.legendRows.set(name, new LegendRow(name, manager, this.root));
+        for (const [key, manager] of this.dispatcher.graph.interactiveManagers) {
+            (manager) && this.legendRows.set(key, new LegendRow(key, manager, this.root));
         }
 
         if (this.plugin.settings.collapseLegend) {

@@ -3,6 +3,7 @@ import { GraphsManager } from './graphsManager';
 import { DEFAULT_SETTINGS, ExtendedGraphSettings } from './settings/settings';
 import { WorkspaceLeafExt } from './graph/graphEventsDispatcher';
 import { ExtendedGraphSettingTab } from './settings/settingTab';
+import { INVALID_KEYS } from './globalVariables';
 
 // https://pixijs.download/v7.4.2/docs/index.html
 
@@ -13,6 +14,10 @@ export default class GraphExtendedPlugin extends Plugin {
 
     async onload(): Promise<void> {
         await this.loadSettings();
+
+        for (const key of Object.keys(this.settings.additionalProperties)) {
+            INVALID_KEYS[key] = [];
+        }
 
         this.addSettingTab(new ExtendedGraphSettingTab(this.app, this));
 
@@ -29,16 +34,12 @@ export default class GraphExtendedPlugin extends Plugin {
 
 
         // @ts-ignore
-        this.registerEvent(this.app.workspace.on('extended-graph:settings-colorpalette-changed', (interactive: string) => {
-            this.graphsManager.updatePalette(interactive);
+        this.registerEvent(this.app.workspace.on('extended-graph:settings-colorpalette-changed', (key: string) => {
+            this.graphsManager.updatePalette(key);
         }));
         // @ts-ignore
-        this.registerEvent(this.app.workspace.on('extended-graph:settings-tag-color-changed', (type: string) => {
-            this.graphsManager.updatePalette("tag");
-        }));
-        // @ts-ignore
-        this.registerEvent(this.app.workspace.on('extended-graph:settings-link-color-changed', (type: string) => {
-            this.graphsManager.updatePalette("link");
+        this.registerEvent(this.app.workspace.on('extended-graph:settings-interactive-color-changed', (key: string, type: string) => {
+            this.graphsManager.updateColor(key, type);
         }));
     }
 

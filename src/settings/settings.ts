@@ -6,21 +6,21 @@ export interface ExtendedGraphSettings {
     interactiveColors: {[interactive: string]: {type: string, color: string}[]};
     unselectedInteractives: {[interactive: string]: string[]};
     noneType: { [interactive: string] : string };
+    additionalProperties: { [interactive: string] : boolean };
     imageProperty: string;
     maxNodes: number;
     globalFilter: string;
+    backupGraphOptions: EngineOptions;
     views: GraphViewData[];
 
     enableTags: boolean;
+    enableProperties: boolean;
     enableLinks: boolean;
     enableImages: boolean;
     enableFocusActiveNote: boolean;
 
     fadeOnDisable: boolean;
     focusScaleFactor: number;
-    linkCurves: boolean;
-    removeSource: boolean;
-    removeTarget: boolean;
 
     // NOT SET BY THE USER
     collapseView: boolean;
@@ -44,30 +44,32 @@ export const DEFAULT_SETTINGS: Partial<ExtendedGraphSettings> = {
         "tag": "none",
         "link": "none"
     },
+    additionalProperties: {},
     imageProperty: "image",
     maxNodes: 20,
     globalFilter: "",
 
+    backupGraphOptions: new EngineOptions(),
     views: [
         {
             id: DEFAULT_VIEW_ID,
             name: "Vault (default)",
             engineOptions: new EngineOptions(),
-            disabledLinks: [],
-            disabledTags: []
+            disabledTypes: {
+                "tag": [],
+                "link": []
+            }
         }
     ],
 
     enableTags: true,
+    enableProperties: false,
     enableLinks: true,
     enableImages: true,
     enableFocusActiveNote: false,
 
     fadeOnDisable: false,
     focusScaleFactor: 1.8,
-    linkCurves: false,
-    removeSource: false,
-    removeTarget: false,
 
     collapseView: true,
     collapseLegend: true,
