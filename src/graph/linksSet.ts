@@ -19,9 +19,9 @@ export class LinksSet {
      * @param graph - The graph instance.
      * @param linksManager - The links manager.
      */
-    constructor(graph: Graph, linksManager: InteractiveManager | null) {
+    constructor(graph: Graph, linksManager: InteractiveManager | undefined) {
         this.graph = graph;
-        this.linksManager = linksManager;
+        this.linksManager = linksManager ? linksManager : null;
 
         if (this.linksManager) {
             this.linkTypesMap = new Map<string, Set<string>>();
@@ -63,7 +63,7 @@ export class LinksSet {
         if (!this.linksManager || !this.linkTypesMap) return;
 
         const setType = (function(type: string, id: string, types: Set<string>) {
-            if (this.graph.settings.unselectedInteractives["link"].includes(type) || INVALID_KEYS["link"].includes(type)) return;
+            if (this.graph.staticSettings.unselectedInteractives["link"].includes(type) || INVALID_KEYS["link"].includes(type)) return;
             
             if (!this.linkTypesMap.has(type)) {
                 this.linkTypesMap.set(type, new Set<string>());
@@ -90,7 +90,7 @@ export class LinksSet {
             if (dv) {
                 const sourcePage = dv.page(link.source.id);
                 for (const [key, value] of Object.entries(sourcePage)) {
-                    if (key === "file" || key === this.graph.settings.imageProperty) continue;
+                    if (key === "file" || key === this.graph.staticSettings.imageProperty) continue;
                     if (value === null || value === undefined || value === '') continue;
 
                     if ((typeof value === "object") && ("path" in value) && ((value as any).path === link.target.id)) {
@@ -122,7 +122,7 @@ export class LinksSet {
             }
 
             if (linkTypes.size === 0) {
-                setType(this.graph.settings.noneType["link"], linkID, missingTypes);
+                setType(this.graph.staticSettings.noneType["link"], linkID, missingTypes);
             }
 
             missingTypes = new Set([...missingTypes, ...linkTypes]);
@@ -133,8 +133,6 @@ export class LinksSet {
     }
 
     private addMissingLinks() : Set<string> {
-        if (!this.linksManager || !this.linkTypesMap) return new Set<string>();
-
         let missingLinks = new Set<string>();
         for (const link of this.graph.renderer.links) {
             const linkID = getLinkID(link);
@@ -152,17 +150,19 @@ export class LinksSet {
                 missingLinks.add(linkID);
                 let linkWrapper = null;
 
-                // Get the types of the link
-                let types = [...this.linkTypesMap.keys()].filter(type => this.linkTypesMap?.get(type)?.has(linkID));
+                if (this.linkTypesMap && this.linksManager) {
+                    // Get the types of the link
+                    let types = [...this.linkTypesMap.keys()].filter(type => this.linkTypesMap?.get(type)?.has(linkID));
 
-                // If the link has a type
-                if (!this.linkTypesMap.get(this.graph.settings.noneType["link"])?.has(linkID)) {
-                    linkWrapper = new LineLinkWrapper(
-                        link,
-                        new Set<string>(types),
-                        this.linksManager
-                    );
-                    linkWrapper.connect();
+                    // If the link has a type
+                    if (!this.linkTypesMap.get(this.graph.staticSettings.noneType["link"])?.has(linkID)) {
+                        linkWrapper = new LineLinkWrapper(
+                            link,
+                            new Set<string>(types),
+                            this.linksManager
+                        );
+                        linkWrapper.connect();
+                    }
                 }
                 this.linksMap.set(linkID, {wrapper: linkWrapper, link: link});
                 this.connectedLinks.add(linkID);
@@ -179,7 +179,7 @@ export class LinksSet {
     getActiveType(id: string) : string {
         if (!this.linkTypesMap) return "";
         let firstActiveType = [...this.linkTypesMap.keys()].find(type => this.linksManager?.isActive(type) && this.linkTypesMap?.get(type)?.has(id));
-        return firstActiveType ? firstActiveType : this.graph.settings.noneType["link"];
+        return firstActiveType ? firstActiveType : this.graph.staticSettings.noneType["link"];
     }
 
     /**

@@ -12,50 +12,60 @@ import { getLinkID } from './elements/link';
 import { getEngine } from 'src/helperFunctions';
 
 export class Graph extends Component {
+    // Parent dispatcher
+    readonly dispatcher: GraphEventsDispatcher;
+
+    // Elements
+    readonly engine: any;
+    readonly renderer: Renderer;
+    readonly dynamicSettings: ExtendedGraphSettings;
+    readonly staticSettings: ExtendedGraphSettings;
+
+    // Interactive managers
+    interactiveManagers = new Map<string, InteractiveManager>();
+
+    // Sets
     nodesSet: NodesSet;
     linksSet: LinksSet;
-    interactiveManagers = new Map<string, InteractiveManager>();
-    hasChangedFilterSearch: boolean = false;
-
-    dispatcher: GraphEventsDispatcher;
-    engine: any;
-    renderer: Renderer;
-    settings: ExtendedGraphSettings;
 
     constructor(dispatcher: GraphEventsDispatcher) {
         super();
-        this.dispatcher = dispatcher;
-        this.renderer = dispatcher.leaf.view.renderer;
-        this.settings = structuredClone(dispatcher.graphsManager.plugin.settings);
 
-        // Initialize nodes and links sets
-        let keys = Object.keys(this.settings.additionalProperties).filter(k => this.settings.additionalProperties[k]);
-        if (this.settings.enableTags) keys = keys.concat(["tag"]);
+        // Parent dispatcher
+        this.dispatcher = dispatcher;
+
+        // Elements
+        this.engine          = getEngine(this.dispatcher.leaf);
+        this.renderer        = dispatcher.leaf.view.renderer;
+        this.dynamicSettings = dispatcher.graphsManager.plugin.settings;
+        this.staticSettings  = structuredClone(this.dynamicSettings);
+
+        // Interactive managers
+        let keys = Object.keys(this.staticSettings.additionalProperties)
+                         .filter(k => this.staticSettings.additionalProperties[k]);
+        if (this.staticSettings.enableTags)  keys = keys.concat(["tag"]);
+        if (this.staticSettings.enableLinks) keys = keys.concat(["link"]);
         let managers: InteractiveManager[] = [];
         for (const key of keys) {
-            let manager = new InteractiveManager(dispatcher, dispatcher.graphsManager.plugin.settings, key);
+            let manager = new InteractiveManager(
+                dispatcher,
+                this.staticSettings,
+                key
+            );
             this.interactiveManagers.set(key, manager);
             this.addChild(manager);
-            managers.push(manager);
+            if (key !== "link") managers.push(manager);
         }
+
+        // Sets
         this.nodesSet = new NodesSet(this, managers);
+        this.linksSet = new LinksSet(this, this.interactiveManagers.get("link"));
 
-        let linksManager = this.settings.enableLinks ? new InteractiveManager(dispatcher, dispatcher.graphsManager.plugin.settings, "link") : null;
-        this.linksSet = new LinksSet(this, linksManager);
-        if (linksManager) {
-            this.interactiveManagers.set("link", linksManager);
-            this.addChild(linksManager);
-        }
-
-        this.engine = getEngine(this.dispatcher.leaf);
-        
-        if (this.nodesSet?.disconnectedNodes) {
-            this.engine.filterOptions.search.getValue = (function() {
-                let prepend = this.dispatcher.graphsManager.plugin.settings.globalFilter + " ";
-                return prepend + this.engine.filterOptions.search.inputEl.value;
-            }).bind(this);
-            this.hasChangedFilterSearch = true;
-        }
+        // Change the filter search
+        this.engine.filterOptions.search.getValue = (() => {
+            let prepend = this.dynamicSettings.globalFilter + " ";
+            return prepend + this.engine.filterOptions.search.inputEl.value;
+        }).bind(this);
     }
 
     onload() : void {
@@ -67,22 +77,20 @@ export class Graph extends Component {
     }
 
     onunload() : void {
-        if (this.hasChangedFilterSearch) {
-            this.engine.filterOptions.search.getValue = (function() {
-                return this.filterOptions.search.inputEl.value;
-            }).bind(this.engine);
-        }
+        this.engine.filterOptions.search.getValue = (function() {
+            return this.filterOptions.search.inputEl.value;
+        }).bind(this.engine);
     }
 
     async initSets() : Promise<void> {
-        // Sleep for a short duration to let time to the engine to apply user filters
-        await new Promise(r => setTimeout(r, 1000));
+        // Let time to the engine to apply user filters
+        await new Promise(r => setTimeout(r, 500));
 
         this.nodesSet.load();
         this.linksSet.load();
 
         // Update node opacity layer colors
-        if (this.settings.fadeOnDisable) {
+        if (this.staticSettings.fadeOnDisable) {
             this.nodesSet?.updateOpacityLayerColor();
         }
     }
@@ -241,7 +249,7 @@ export class Graph extends Component {
      */
     saveView(id: string) : void {
         if (id === DEFAULT_VIEW_ID) return;
-        let viewData = this.settings.views.find(v => v.id == id);
+        let viewData = this.staticSettings.views.find(v => v.id == id);
         if (!viewData) return;
         let view = new GraphView(viewData?.name);
         view.setID(id);

@@ -171,3 +171,11 @@ function getProperty(key: string, app: App, file: TFile) : Set<string> {
 
     return types;
 }
+
+export function isPropertyKeyValid(key: string) : boolean {
+    if (key.contains(":")) {
+        new Notice("Invalid character ':'");
+        return false;
+    }
+    return (key.length > 0);
+}

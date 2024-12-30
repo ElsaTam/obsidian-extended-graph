@@ -1,10 +1,11 @@
 import { ColorComponent, Modal, setIcon, Setting, TextComponent } from "obsidian";
 import { cmOptions } from "src/colors/colormaps";
 import { ExtendedGraphSettingTab } from "./settingTab";
-import { capitalizeFirstLetter, getFile, getFileInteractives } from "src/helperFunctions";
+import { capitalizeFirstLetter, getFile, getFileInteractives, isPropertyKeyValid } from "src/helperFunctions";
 import { plot_colormap } from "src/colors/colors";
 import { getAPI as getDataviewAPI } from "obsidian-dataview";
 import { INVALID_KEYS } from "src/globalVariables";
+import { NewNameModal } from "src/ui/newNameModal";
 
 export abstract class SettingInteractives {
     settingTab: ExtendedGraphSettingTab;
@@ -13,6 +14,7 @@ export abstract class SettingInteractives {
     previewClass: string;
     noneType: string = "";
     
+    containerEl: HTMLElement;
     settingInteractiveColor: Setting;
     colorsContainer: HTMLDivElement;
     settingInteractiveFilter: Setting;
@@ -23,6 +25,7 @@ export abstract class SettingInteractives {
 
     constructor(settingTab: ExtendedGraphSettingTab) {
         this.settingTab = settingTab;
+        this.containerEl = this.settingTab.containerEl;
     }
     
 
@@ -38,13 +41,12 @@ export abstract class SettingInteractives {
 
     display() {
         this.colorItems.clear();
-        let containerEl = this.settingTab.containerEl;
 
         this.displayPrepend();
 
         // NONE TYPE
         this.allTopElements.push(
-            new Setting(containerEl)
+            new Setting(this.containerEl)
                 .setName('None type id')
                 .setDesc(`The id which will be given to ${this.elementName} with no type`)
                 .addText(cb => cb
@@ -63,7 +65,7 @@ export abstract class SettingInteractives {
         this.noneType = this.settingTab.plugin.settings.noneType[this.interactiveName];
 
         // COLOR PALETTE
-        let settingPalette = new Setting(containerEl)
+        let settingPalette = new Setting(this.containerEl)
             .setName(`Color palette`)
             .setDesc(`Choose the color palette for the ${this.interactiveName}s visualizations`)
             .addDropdown(cb => cb.addOptions(cmOptions).setValue(this.settingTab.plugin.settings.colormaps[this.interactiveName])
@@ -82,7 +84,7 @@ export abstract class SettingInteractives {
         plot_colormap(this.canvasPalette.id, this.settingTab.plugin.settings.colormaps[this.interactiveName], false);
         
         // SPECIFIC COLORS
-        this.settingInteractiveColor = new Setting(containerEl)
+        this.settingInteractiveColor = new Setting(this.containerEl)
             .setName(`Specific ${this.interactiveName} colors`)
             .setDesc(`Choose specific ${this.interactiveName} colors that will not be affected by the color palette`)
             .addButton(cb => {
@@ -93,7 +95,7 @@ export abstract class SettingInteractives {
             });
         this.allTopElements.push(this.settingInteractiveColor.settingEl);
         
-        this.colorsContainer = containerEl.createDiv("settings-colors-container");
+        this.colorsContainer = this.containerEl.createDiv("settings-colors-container");
         this.allTopElements.push(this.colorsContainer);
 
         this.settingTab.plugin.settings.interactiveColors[this.interactiveName].forEach((interactive) => {
@@ -101,12 +103,12 @@ export abstract class SettingInteractives {
         })
 
         // FILTER TYPES
-        this.settingInteractiveFilter = new Setting(containerEl)
+        this.settingInteractiveFilter = new Setting(this.containerEl)
             .setName(`${this.interactiveName}s selection`)
             .setDesc(`Choose which ${this.interactiveName}s should be considered by the plugin`);
         this.allTopElements.push(this.settingInteractiveFilter.settingEl);
         
-        this.selectionContainer = containerEl.createDiv("settings-selection-container");
+        this.selectionContainer = this.containerEl.createDiv("settings-selection-container");
         this.allTopElements.push(this.selectionContainer);
 
         let allTypes = this.getAllTypes();
@@ -221,7 +223,7 @@ export abstract class SettingInteractives {
     }
 
     protected abstract saveColor(preview: HTMLElement, type: string, color: string) : void;
-    protected abstract isNameValid(name: string) : boolean;
+    protected abstract isValueValid(name: string) : boolean;
     protected abstract getPlaceholder() : string;
     protected abstract updatePreview(preview: HTMLDivElement, type?: string, color?: string) : void;
 }
@@ -244,7 +246,7 @@ export class SettingTags extends SettingInteractives {
     }
 
     protected saveColor(preview: HTMLDivElement, type: string, color: string) {
-        if (this.isNameValid(type)) {
+        if (this.isValueValid(type)) {
             this.updatePreview(preview, type, color);
             super.saveColors(type);
         }
@@ -253,7 +255,7 @@ export class SettingTags extends SettingInteractives {
         }
     }
 
-    protected isNameValid(name: string) : boolean {
+    protected isValueValid(name: string) : boolean {
         return /^[a-zA-Z]+$/.test(name);
     }
 
@@ -271,11 +273,12 @@ export class SettingPropertiesArray {
     settingInteractives: SettingInteractives[] = [];
     allTopElements: HTMLElement[] = [];
     interactiveName: string;
+    propertiesContainer: HTMLDivElement;
 
     constructor(settingTab: ExtendedGraphSettingTab) {
         this.settingTab = settingTab;
         for (const [key, enabled] of Object.entries(this.settingTab.plugin.settings.additionalProperties)) {
-            this.settingInteractives.push(new SettingProperties(key, enabled, settingTab));
+            this.settingInteractives.push(new SettingProperties(key, enabled, settingTab, this));
         }
     }
 
@@ -290,6 +293,7 @@ export class SettingPropertiesArray {
                 .addButton(cb => {
                     setIcon(cb.buttonEl, "plus");
                     cb.onClick((e) => {
+                        cb.buttonEl.blur();
                         this.openModalToAddInteractive();
                     })
                 })
@@ -298,68 +302,92 @@ export class SettingPropertiesArray {
         this.allTopElements.forEach(el => {
             el.addClass("extended-graph-setting-property");
         })
+        
+        
+        this.propertiesContainer = containerEl.createDiv("settings-properties-container");
+        this.allTopElements.push(this.propertiesContainer);
 
         for (const setting of this.settingInteractives) {
+            setting.containerEl = this.propertiesContainer;
             setting.display();
         }
+
+        this.allTopElements.forEach(el => {
+            el.addClass("extended-graph-setting-property");
+        })
     }
 
     protected openModalToAddInteractive() {
-        let modal = new Modal(this.settingTab.app);
-        modal.setTitle("Property key");
-        let input = modal.contentEl.createEl("input");
-        input.addEventListener('keydown', e => {
-            if ("Enter" === e.key && input.value.length > 0) {
-                this.addInteractive(input.value);
-                modal.close();
-            }
-        });
-        let btn = modal.contentEl.createEl("button");
-        setIcon(btn, "plus");
-        btn.addEventListener('click', e => {
-            this.addInteractive(input.value);
-            modal.close();
-        })
+        let modal = new NewNameModal(
+            this.settingTab.app,
+            "Property key",
+            this.addInteractive.bind(this)
+        );
         modal.open();
     }
 
-    protected addInteractive(key: string) {
+    isKeyValid(key: string) {
+        if (this.settingTab.plugin.settings.additionalProperties.hasOwnProperty(key)) {
+            new Notice("This property already exists");
+            return false;
+        }
+        return isPropertyKeyValid(key);
+    }
+
+    protected addInteractive(key: string) : boolean {
+        if (!this.isKeyValid(key)) return false;
+
         this.settingTab.plugin.settings.additionalProperties[key] = true;
         this.settingTab.plugin.settings.colormaps[key] = "rainbow";
         this.settingTab.plugin.settings.interactiveColors[key] = [];
         this.settingTab.plugin.settings.unselectedInteractives[key] = [];
         this.settingTab.plugin.settings.noneType[key] = "none";
         this.settingTab.plugin.saveSettings().then(() => {
-            let setting = new SettingProperties(key, true, this.settingTab);
+            let setting = new SettingProperties(key, true, this.settingTab, this);
             this.settingInteractives.push(setting);
+            setting.containerEl = this.propertiesContainer;
             setting.display();
             INVALID_KEYS[key] = [this.settingTab.plugin.settings.noneType[key]];
         });
+        return true;
     }
 }
 
 export class SettingProperties extends SettingInteractives {
     enabled: boolean;
+    array: SettingPropertiesArray;
 
-    constructor(key: string, enabled: boolean, settingTab: ExtendedGraphSettingTab) {
+    constructor(key: string, enabled: boolean, settingTab: ExtendedGraphSettingTab, array: SettingPropertiesArray) {
         super(settingTab);
         this.interactiveName = key;
         this.elementName = "node";
         this.previewClass = "arc";
         this.enabled = enabled;
+        this.array = array;
     }
 
     protected displayPrepend(): void {
         // HEADING
         this.allTopElements.push(
-            new Setting(this.settingTab.containerEl)
+            new Setting(this.containerEl)
                 .setName('Property: ' + this.interactiveName)
                 .setHeading()
+                .addButton(cb => {
+                    setIcon(cb.buttonEl, "trash");
+                    cb.onClick((e) => {
+                        this.remove();
+                        this.settingTab.plugin.saveSettings().then(() => {
+                            for (const el of this.allTopElements) {
+                                this.containerEl.removeChild(el);
+                            }
+                        });
+                    })
+                })
                 .settingEl
         );
 
         // ENABLE
-        this.allTopElements.push(new Setting(this.settingTab.containerEl)
+        this.allTopElements.push(new Setting(this.containerEl)
             .setName('Enable')
             .addToggle(cb => {
                 cb.setValue(this.enabled);
@@ -371,16 +399,21 @@ export class SettingProperties extends SettingInteractives {
             }).settingEl);
     }
 
+    remove() : void {
+        delete this.settingTab.plugin.settings.additionalProperties[this.interactiveName];
+        delete this.settingTab.plugin.settings.colormaps[this.interactiveName];
+        delete this.settingTab.plugin.settings.interactiveColors[this.interactiveName];
+        delete this.settingTab.plugin.settings.unselectedInteractives[this.interactiveName];
+        delete this.settingTab.plugin.settings.noneType[this.interactiveName];
+        this.array.settingInteractives.remove(this);
+    }
+
     display(): void {
         super.display();
-
-        this.allTopElements.forEach(el => {
-            el.addClass("extended-graph-setting-property");
-        })
     }
 
     protected saveColor(preview: HTMLDivElement, type: string, color: string) {
-        if (this.isNameValid(type)) {
+        if (this.isValueValid(type)) {
             this.updatePreview(preview, type, color);
             super.saveColors(type);
         }
@@ -389,8 +422,8 @@ export class SettingProperties extends SettingInteractives {
         }
     }
 
-    protected isNameValid(name: string) : boolean {
-        return (name.length > 0) && (!name.contains(":"));
+    protected isValueValid(name: string) : boolean {
+        return (name.length > 0);
     }
 
     protected getPlaceholder(): string {
@@ -418,7 +451,7 @@ export class SettingLinks extends SettingInteractives {
             el.addClass("extended-graph-setting-" + this.interactiveName);
         })
 
-        let labels = this.settingTab.containerEl.querySelectorAll(`.settings-selection-container.extended-graph-setting-${this.interactiveName} label`);
+        let labels = this.containerEl.querySelectorAll(`.settings-selection-container.extended-graph-setting-${this.interactiveName} label`);
         let imageLabel = Array.from(labels).find(l => (l as HTMLLabelElement).innerText === this.settingTab.plugin.settings.imageProperty) as HTMLLabelElement;
         if (imageLabel) {
             let cb = imageLabel.querySelector("input") as HTMLInputElement ;
@@ -428,14 +461,14 @@ export class SettingLinks extends SettingInteractives {
     }
 
     protected saveColor(preview: HTMLDivElement, type: string, color: string) {
-        if (this.isNameValid(type)) {
+        if (this.isValueValid(type)) {
             this.updatePreview(preview, type, color);
             super.saveColors(type);
         }
     }
 
-    protected isNameValid(name: string) : boolean {
-        return (name.length > 0) && (!name.contains(":"));
+    protected isValueValid(name: string) : boolean {
+        return isPropertyKeyValid(name);
     }
 
     protected getPlaceholder(): string {

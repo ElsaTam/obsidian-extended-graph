@@ -3,6 +3,7 @@ import { GraphViewData } from "src/views/viewData";
 import { DEFAULT_VIEW_ID } from "src/globalVariables";
 import GraphExtendedPlugin from "src/main";
 import { GraphEventsDispatcher } from "src/graph/graphEventsDispatcher";
+import { NewNameModal } from "./newNameModal";
 
 export class ViewsUI extends Component {
     dispatcher: GraphEventsDispatcher;
@@ -63,23 +64,8 @@ export class ViewsUI extends Component {
         addText.innerText = "Add view";
 
         this.addButton.addEventListener('click', event => {
-            let modal = new Modal(this.plugin.app);
-            modal.setTitle("New view name");
-            modal.modalEl.addClass("graph-modal-new-view");
-            let input = modal.contentEl.createEl("input");
-            input.addEventListener('keydown', e => {
-                if ("Enter" === e.key && input.value.length > 0) {
-                    this.newView(input.value);
-                    modal.close();
-                }
-            });
-            let btn = modal.contentEl.createEl("button");
-            setIcon(btn, "plus");
-            btn.addEventListener('click', e => {
-                this.newView(input.value);
-                modal.close();
-            })
-            modal.open();
+            this.addButton.blur();
+            this.openModalToAddView();
         })
 
         // SAVE BUTTON
@@ -112,6 +98,15 @@ export class ViewsUI extends Component {
         this.toggleDiv.parentNode?.removeChild(this.toggleDiv);
     }
 
+    private openModalToAddView() {
+        let modal = new NewNameModal(
+            this.plugin.app,
+            "New view name",
+            this.newView.bind(this)
+        );
+        modal.open();
+    }
+
     addOption(key: string, name: string) : void {
         for (let i = 0; i < this.select.length; ++i) {
             if (this.select.options[i].value == key) {
@@ -130,9 +125,11 @@ export class ViewsUI extends Component {
         this.select.value = key;
     }
 
-    newView(name: string) {
+    newView(name: string) : boolean {
+        if (name.length === 0) return false;
         const id = this.dispatcher.graph.newView(name);
         this.currentViewID = id;
+        return true;
     }
     
     updateViewsList(views: GraphViewData[]) : void {

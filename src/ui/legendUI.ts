@@ -6,7 +6,8 @@ import GraphExtendedPlugin from "src/main";
 class LegendRow {
     name: string;
     container: Element;
-    cssColorVariable: string;
+    cssBGColorVariable: string;
+    cssTextColorVariable: string;
     manager: InteractiveManager;
 
     constructor(name: string, manager: InteractiveManager, root: Element) {
@@ -15,7 +16,8 @@ class LegendRow {
         this.container = root.createDiv();
         this.container.addClass(`graph-legend-row`);
         this.container.addClass(`graph-legend-${name}s-row`);
-        this.cssColorVariable = "--legend-color-rgb";
+        this.cssBGColorVariable = "--legend-color-rgb";
+        this.cssTextColorVariable = "--legend-text-color";
 
         
         let title = this.container.createSpan();
@@ -35,7 +37,9 @@ class LegendRow {
             button.addEventListener('click', e => {
                 this.toggle(type);
             })
-            button.style.setProperty(this.cssColorVariable, `${color[0]}, ${color[1]}, ${color[2]}`);
+            button.style.setProperty(this.cssBGColorVariable, `${color[0]}, ${color[1]}, ${color[2]}`);
+            const textColor = (color[0] * 0.299 + color[1] * 0.587 + color[2] * 0.114 > 150) ? "black" : "white";
+            button.style.setProperty(this.cssTextColorVariable, textColor);
             if (type === this.manager.settings.noneType[this.name]) {
                 button.addClass("graph-legend-none");
             }
@@ -57,7 +61,7 @@ class LegendRow {
             this.addLegend(type, color)
         }
         else {
-            (button as HTMLElement).style.setProperty(this.cssColorVariable, `${color[0]}, ${color[1]}, ${color[2]}`);
+            (button as HTMLElement).style.setProperty(this.cssBGColorVariable, `${color[0]}, ${color[1]}, ${color[2]}`);
         }
     }
 

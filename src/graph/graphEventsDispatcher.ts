@@ -40,7 +40,7 @@ export class GraphEventsDispatcher extends Component {
 
         this.viewsUI = new ViewsUI(this);
         this.addChild(this.viewsUI);
-        if (this.graphsManager.plugin.settings.enableLinks || this.graphsManager.plugin.settings.enableTags) {
+        if (this.graphsManager.plugin.settings.enableLinks || this.graphsManager.plugin.settings.enableTags || Object.values(this.graphsManager.plugin.settings.additionalProperties).some(p => p)) {
             this.legendUI = new LegendUI(this);
             this.addChild(this.legendUI);
         }
@@ -225,7 +225,7 @@ export class GraphEventsDispatcher extends Component {
         for (const type of types) {
             nodesToDisable = nodesToDisable.concat(this.graph.nodesSet.disableInteractive(key, type));
         }
-        if (!this.graph.settings.fadeOnDisable && nodesToDisable.length > 0) {
+        if (!this.graph.staticSettings.fadeOnDisable && nodesToDisable.length > 0) {
             this.graph.disableNodes(nodesToDisable);
             this.graph.updateWorker();
         }
@@ -239,7 +239,7 @@ export class GraphEventsDispatcher extends Component {
         for (const type of types) {
             nodesToEnable = nodesToEnable.concat(this.graph.nodesSet.enableInteractive(key, type));
         }
-        if (!this.graph.settings.fadeOnDisable && nodesToEnable.length > 0) {
+        if (!this.graph.staticSettings.fadeOnDisable && nodesToEnable.length > 0) {
             this.graph.enableNodes(nodesToEnable);
             this.graph.updateWorker();
         }

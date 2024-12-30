@@ -18,6 +18,7 @@ export class NodesSet {
     constructor(graph: Graph, managers: InteractiveManager[]) {
         this.graph = graph;
         for (const manager of managers) {
+            if (manager.name === "link") continue;
             this.managers.set(manager.name, manager);
             this.disabledInteractives.set(manager.name, new Set<string>());
         }
@@ -62,7 +63,7 @@ export class NodesSet {
         if (!this.managers.has(key)) return;
 
         const setType = (function(type: string, types: Set<string>) : boolean {
-            if (this.graph.settings.unselectedInteractives[key].includes(type)) return false;
+            if (this.graph.staticSettings.unselectedInteractives[key].includes(type)) return false;
             if (INVALID_KEYS[key].includes(type)) return false;
 
             types.add(type);
@@ -89,8 +90,8 @@ export class NodesSet {
                     hasType = true;
                 }
             }
-            if (!hasType && !this.managers.get(key)?.interactives.has(this.graph.settings.noneType[key])) {
-                missingTypes.add(this.graph.settings.noneType[key]);
+            if (!hasType && !this.managers.get(key)?.interactives.has(this.graph.staticSettings.noneType[key])) {
+                missingTypes.add(this.graph.staticSettings.noneType[key]);
             }
         }
 
@@ -116,7 +117,7 @@ export class NodesSet {
                 let nodeWrapper = new NodeWrapper(
                     node,
                     this.graph.dispatcher.graphsManager.plugin.app,
-                    this.graph.settings,
+                    this.graph.staticSettings,
                     [...this.managers.values()]
                 );
                 nodeWrapper.connect();
@@ -130,7 +131,7 @@ export class NodesSet {
     loadAssets(ids: Set<string>) : void {
         let imageURIs: string[] = [];
         for (const id of ids) {
-            let imageUri = getImageUri(this.graph.dispatcher.graphsManager.plugin.app, this.graph.settings.imageProperty, id);
+            let imageUri = getImageUri(this.graph.dispatcher.graphsManager.plugin.app, this.graph.staticSettings.imageProperty, id);
             (imageUri) && imageURIs.push(imageUri);
         }
         Assets.load(imageURIs).then(() => {
@@ -171,7 +172,7 @@ export class NodesSet {
      * @returns A set of tag types, or null if tags are not enabled.
      */
     getAllInteractivesInGraph(key: string) : Set<string> | null {
-        if (!this.graph.settings.enableTags) return null;
+        if (!this.graph.staticSettings.enableTags) return null;
         let types = new Set<string>();
 
         this.nodesMap.forEach(wrapper => {
@@ -192,7 +193,7 @@ export class NodesSet {
         this.disabledInteractives.get(key)?.add(type);
         let nodesToDisable: string[] = [];
         for (const [id, wrapper] of this.nodesMap) {
-            if (!wrapper.arcsWrappers.has(key) && type === this.graph.settings.noneType[key]) {
+            if (!wrapper.arcsWrappers.has(key) && type === this.graph.staticSettings.noneType[key]) {
                 nodesToDisable.push(id);
                 continue;
             }
@@ -220,7 +221,7 @@ export class NodesSet {
         this.disabledInteractives.get(key)?.delete(type);
         let nodesToEnable: string[] = [];
         for (const [id, wrapper] of this.nodesMap) {
-            if (!wrapper.arcsWrappers.has(key) && type === this.graph.settings.noneType[key]) {
+            if (!wrapper.arcsWrappers.has(key) && type === this.graph.staticSettings.noneType[key]) {
                 nodesToEnable.push(id);
                 continue;
             }
@@ -242,7 +243,7 @@ export class NodesSet {
      * Reset arcs for each node
      */
     resetArcs(key: string) : void {
-        if (!this.graph.settings.enableTags) return;
+        if (!this.graph.staticSettings.enableTags) return;
         for (let [id, wrapper] of this.nodesMap) {
             let file = getFile(wrapper.app, id);
             let arcWrapper = wrapper.arcsWrappers.get(key);
@@ -260,7 +261,7 @@ export class NodesSet {
      * @param color - The new color.
      */
     updateArcsColor(key: string, type: string, color: Uint8Array) : void {
-        if (!this.graph.settings.enableTags) return;
+        if (!this.graph.staticSettings.enableTags) return;
         this.nodesMap.forEach(w => {
             let arcWrapper = w.arcsWrappers.get(key);
             arcWrapper?.redrawArc(type, color);
@@ -324,12 +325,12 @@ export class NodesSet {
      * @param highlight - Whether to highlight or unhighlight the node.
      */
     highlightNode(file: TFile, highlight: boolean) : void {
-        if (!this.graph.settings.enableFocusActiveNote) return;
+        if (!this.graph.staticSettings.enableFocusActiveNote) return;
         let nodeWrapper = this.nodesMap.get(file.path);
         if (!nodeWrapper) return;
 
         if (highlight) {
-            nodeWrapper.highlight(this.graph.settings.focusScaleFactor, this.graph.renderer.colors.fillFocused.rgb);
+            nodeWrapper.highlight(this.graph.staticSettings.focusScaleFactor, this.graph.renderer.colors.fillFocused.rgb);
         }
         else {
             nodeWrapper.highlight(1);

@@ -53,10 +53,10 @@ body {
 }
 
 .graph-legend-row button {
-    background-color: color-mix(in srgb, var(--ext-graph-background-container), rgb(var(--legend-color-rgb)) 50%);
+    background-color: rgb(var(--legend-color-rgb));
+    color: var(--legend-text-color);
     padding: var(--size-4-2);
     border-radius: var(--radius-s);
-    font-weight: var(--font-bold);
 }
 
 .graph-legend-row button.is-hidden {
@@ -113,11 +113,14 @@ body {
     font-variant: small-caps;
 }
 
-.graph-modal-new-view .modal-content {
+
+/* MODALS */
+
+.graph-modal-new .modal-content {
     display: flex;
     gap: var(--size-4-4);
 }
-.graph-modal-new-view input {
+.graph-modal-new input {
     flex: 1 0 0;
     font-size: var(--font-ui-medium);
     padding: var(--size-4-1) var(--size-4-3);
@@ -201,7 +204,8 @@ body {
     .extended-graph-setting-image    { display: var(--display-image-features);    }
     .extended-graph-setting-focus    { display: var(--display-focus-features);    }
 
-    .settings-colors-container {
+    .settings-colors-container,
+    .settings-properties-container {
         flex-direction: column;
         align-items: stretch;
     }
@@ -269,6 +273,11 @@ body {
             border-radius: var(--radius-s);
             height: 5px;
         }
+    }
+
+    .settings-properties-container .settings-selection-container {
+        display: flex;
+        flex-direction: row;
     }
 
     .settings-selection-container {

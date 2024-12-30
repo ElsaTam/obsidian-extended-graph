@@ -1,5 +1,6 @@
 import { Setting } from "obsidian";
 import { ExtendedGraphSettingTab } from "./settingTab";
+import { isPropertyKeyValid } from "src/helperFunctions";
 
 export class SettingImages {
     settingTab: ExtendedGraphSettingTab;
@@ -24,9 +25,11 @@ export class SettingImages {
                 .setDesc('Name of the propery used to query the image of the node\'s note.')
                 .addText(cb => cb
                     .setValue(this.settingTab.plugin.settings.imageProperty)
-                    .onChange(async (value) => {
-                        this.settingTab.plugin.settings.imageProperty = value;
-                        await this.settingTab.plugin.saveSettings();
+                    .onChange(async (key) => {
+                        if (isPropertyKeyValid(key)) {
+                            this.settingTab.plugin.settings.imageProperty = key;
+                            await this.settingTab.plugin.saveSettings();
+                        }
                 }))
                 .settingEl
         );
