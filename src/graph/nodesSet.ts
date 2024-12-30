@@ -1,11 +1,10 @@
-import { App, TFile } from "obsidian";
-import { ONode, NodeWrapper } from "./elements/node";
+import { TFile } from "obsidian";
+import { NodeWrapper } from "./elements/node";
 import { InteractiveManager } from "./interactiveManager";
 import { getBackgroundColor, getFile, getFileInteractives, getImageUri } from "src/helperFunctions";
 import { Graph } from "./graph";
 import { Assets, Texture } from "pixi.js";
 import { DisconnectionCause, INVALID_KEYS } from "src/globalVariables";
-import { text } from "stream/consumers";
 
 export class NodesSet {
     nodesMap = new Map<string, NodeWrapper>();

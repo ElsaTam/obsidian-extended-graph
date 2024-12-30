@@ -1,8 +1,10 @@
-import { Component, setIcon, Setting, WorkspaceLeaf } from "obsidian";
+import { Component, setIcon, Setting } from "obsidian";
 import { EngineOptions } from "src/views/viewData";
 import { DEFAULT_VIEW_ID } from "src/globalVariables";
-import { GraphEventsDispatcher, WorkspaceLeafExt } from "src/graph/graphEventsDispatcher";
+import { GraphEventsDispatcher } from "src/graph/graphEventsDispatcher";
 import { GraphsManager } from "src/graphsManager";
+import { getEngine } from "src/helperFunctions";
+import { WorkspaceLeafExt } from "src/types/leaf";
 
 export class GraphControlsUI extends Component {
     graphsManager: GraphsManager;
@@ -19,8 +21,6 @@ export class GraphControlsUI extends Component {
     onlyWhenPluginEnabled: HTMLElement[] = [];
 
     settingGlobalFilter: Setting;
-
-    optionListeners: (t: any) => any;
     
     constructor(leaf: WorkspaceLeafExt, graphsManager: GraphsManager) {
         super();
@@ -138,15 +138,7 @@ export class GraphControlsUI extends Component {
     saveSettingsAsDefault() {
         let viewData = this.graphsManager.plugin.settings.views.find(v => v.id === DEFAULT_VIEW_ID);
         if (!viewData) return;
-        let engine: any;
-        if (this.leaf.view.getViewType() === "graph") {
-            // @ts-ignore
-            engine =  this.leaf.view.dataEngine;
-        }
-        else if(this.leaf.view.getViewType() === "localgraph") {
-            // @ts-ignore
-            engine =  this.leaf.view.engine;
-        }
+        let engine = getEngine(this.leaf);
         viewData.engineOptions = new EngineOptions(engine.getOptions());
         this.graphsManager.onViewNeedsSaving(viewData);
     }

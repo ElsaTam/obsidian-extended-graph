@@ -1,4 +1,4 @@
-import { Component, Modal, setIcon } from "obsidian";
+import { Component, setIcon } from "obsidian";
 import { GraphViewData } from "src/views/viewData";
 import { DEFAULT_VIEW_ID } from "src/globalVariables";
 import GraphExtendedPlugin from "src/main";

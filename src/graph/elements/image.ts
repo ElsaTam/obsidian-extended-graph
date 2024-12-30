@@ -1,4 +1,4 @@
-import { Graphics, Sprite, Texture } from "pixi.js";
+import { ColorSource, Graphics, Sprite, Texture } from "pixi.js";
 
 export class NodeImage extends Sprite {
     borderFactor: number = 0.06;
@@ -41,7 +41,7 @@ export class NodeImage extends Sprite {
         this.texture = texture;
     }
 
-    updateOpacityLayerColor(backgroundColor: any) : void {
+    updateOpacityLayerColor(backgroundColor: ColorSource) : void {
         this.opacityLayer.clear();
         this.opacityLayer
             .beginFill(backgroundColor)

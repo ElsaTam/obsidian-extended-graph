@@ -1,7 +1,6 @@
 import { Graphics, Container } from "pixi.js";
 import { ONode } from './node';
-import { Renderer } from "../renderer";
-import { bezier, lengthQuadratic, quadratic } from "src/helperFunctions";
+import { Renderer } from "../../types/renderer";
 import { InteractiveManager } from "../interactiveManager";
 import { ElementWrapper } from "./element";
 
@@ -85,6 +84,6 @@ export class LineLinkWrapper extends LinkWrapper {
     }
 }
 
-export function getLinkID(link: any) {
+export function getLinkID(link: {source: {id: string}, target: {id: string}}) : string {
     return link.source.id + "--to--" + link.target.id;
 }

@@ -1,6 +1,6 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
 import GraphExtendedPlugin from "src/main";
-import { SettingTags, SettingLinks, SettingProperties, SettingPropertiesArray } from "./settingInteractive";
+import { SettingTags, SettingLinks, SettingPropertiesArray } from "./settingInteractive";
 import { SettingFeatures } from "./settingFeatures";
 import { SettingImages } from "./settingImages";
 import { SettingFocus } from "./settingFocus";

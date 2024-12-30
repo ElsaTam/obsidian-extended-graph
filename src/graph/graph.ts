@@ -1,6 +1,6 @@
 
 import { Component } from 'obsidian';
-import { Renderer } from './renderer';
+import { Renderer } from '../types/renderer';
 import { InteractiveManager } from './interactiveManager';
 import { GraphView } from 'src/views/view';
 import { NodesSet } from './nodesSet';
@@ -10,13 +10,14 @@ import { GraphEventsDispatcher } from './graphEventsDispatcher';
 import { ExtendedGraphSettings } from 'src/settings/settings';
 import { getLinkID } from './elements/link';
 import { getEngine } from 'src/helperFunctions';
+import { GraphEngine } from 'src/types/engine';
 
 export class Graph extends Component {
     // Parent dispatcher
     readonly dispatcher: GraphEventsDispatcher;
 
     // Elements
-    readonly engine: any;
+    readonly engine: GraphEngine;
     readonly renderer: Renderer;
     readonly dynamicSettings: ExtendedGraphSettings;
     readonly staticSettings: ExtendedGraphSettings;
@@ -211,7 +212,7 @@ export class Graph extends Component {
             (wrapper) && (nodes[id] = [wrapper.node.x, wrapper.node.y]);
         }
 
-        let links: any[] = [];
+        let links: string[][] = [];
         for (const id of this.linksSet.connectedLinks) {
             const l = this.linksSet.linksMap.get(id);
             (l) && links.push([l.link.source.id, l.link.target.id]);

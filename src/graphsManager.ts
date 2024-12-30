@@ -1,15 +1,17 @@
 import { CachedMetadata, Component, FileView, TFile, WorkspaceLeaf } from "obsidian";
-import { GraphEventsDispatcher, WorkspaceLeafExt } from "./graph/graphEventsDispatcher";
+import { GraphEventsDispatcher } from "./graph/graphEventsDispatcher";
 import GraphExtendedPlugin from "./main";
 import { GraphViewData } from "./views/viewData";
 import { MenuUI } from "./ui/menu";
 import { GraphControlsUI } from "./ui/graphControl";
 import { getEngine } from "./helperFunctions";
+import { GraphCorePluginInstance, GraphPluginOptions } from "./types/graphPluginInstance";
+import { WorkspaceLeafExt } from "./types/leaf";
 
 
 export class GraphsManager extends Component {
     globalUI = new Map<string, {menu: MenuUI, control: GraphControlsUI}>();
-    optionsBackup = new Map<string, any>();
+    optionsBackup = new Map<string, GraphPluginOptions>();
     activeFile: TFile | null = null;
 
     lastBackup: string;
@@ -203,11 +205,11 @@ export class GraphsManager extends Component {
         if (!dispatcher) return;
 
         dispatcher.unload();
-        dispatcher.graph.nodesSet?.unload();
-        dispatcher.graph.linksSet?.unload();
+        dispatcher.graph.nodesSet.unload();
+        dispatcher.graph.linksSet.unload();
     }
 
-    onPluginUnloaded(leaf: WorkspaceLeaf) : void {
+    onPluginUnloaded(leaf: WorkspaceLeafExt) : void {
         this.dispatchers.delete(leaf.id);
         
         if (this.localGraphID === leaf.id) this.localGraphID = null;
@@ -284,7 +286,7 @@ export class GraphsManager extends Component {
 
     // HANDLE NORMAL AND DEFAULT VIEW
 
-    backupOptions(leaf: WorkspaceLeaf) {
+    backupOptions(leaf: WorkspaceLeafExt) {
         const engine = getEngine(leaf);
         const options = structuredClone(engine.getOptions());
         this.optionsBackup.set(leaf.id, options);
@@ -295,8 +297,7 @@ export class GraphsManager extends Component {
 
     restoreBackup() {
         let backup = this.optionsBackup.get(this.lastBackup);
-        let corePluginInstance: any = this.plugin.app.internalPlugins.getPluginById("graph")?.instance;
-        // @ts-ignore
+        let corePluginInstance: GraphCorePluginInstance = (this.plugin.app.internalPlugins.getPluginById("graph")?.instance as GraphCorePluginInstance);
         if (corePluginInstance && backup) {
             corePluginInstance.options.colorGroups = backup.colorGroups;
             corePluginInstance.options.search = backup.search;
@@ -319,7 +320,7 @@ export class GraphsManager extends Component {
         }
     }
 
-    applyNormalView(leaf: WorkspaceLeaf) {
+    applyNormalView(leaf: WorkspaceLeafExt) {
         const engine = getEngine(leaf);
         engine?.setOptions(this.optionsBackup.get(leaf.id));
         engine?.updateSearch();

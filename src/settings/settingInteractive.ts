@@ -1,4 +1,4 @@
-import { ColorComponent, Modal, setIcon, Setting, TextComponent } from "obsidian";
+import { ColorComponent, setIcon, Setting, TextComponent } from "obsidian";
 import { cmOptions } from "src/colors/colormaps";
 import { ExtendedGraphSettingTab } from "./settingTab";
 import { capitalizeFirstLetter, getFile, getFileInteractives, isPropertyKeyValid } from "src/helperFunctions";

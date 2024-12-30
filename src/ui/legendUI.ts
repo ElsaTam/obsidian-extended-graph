@@ -1,4 +1,4 @@
-import { Component, setIcon, WorkspaceLeaf } from "obsidian";
+import { Component, setIcon } from "obsidian";
 import { GraphEventsDispatcher } from "src/graph/graphEventsDispatcher";
 import { InteractiveManager } from "src/graph/interactiveManager";
 import GraphExtendedPlugin from "src/main";

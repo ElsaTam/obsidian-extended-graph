@@ -1,6 +1,6 @@
 import { Container }  from 'pixi.js';
-import { ONode } from './elements/node';
-import { Link } from './elements/link';
+import { ONode } from '../graph/elements/node';
+import { Link } from '../graph/elements/link';
 
 export interface Renderer {
     colors: {

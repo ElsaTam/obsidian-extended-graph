@@ -1,9 +1,6 @@
-export class ColorGroup {
-    color: {a: number, rgb: number};
-    query: string;
-}
+import { ColorGroup, GraphPluginOptions } from "src/types/graphPluginInstance";
 
-export class EngineOptions {
+export class EngineOptions implements GraphPluginOptions {
     colorGroups: ColorGroup[] = [];
     search: string = "";
     // filterOptions

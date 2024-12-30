@@ -1,9 +1,9 @@
 import { App } from 'obsidian';
-import { Assets, Container, Graphics, Texture } from 'pixi.js';
+import { Container, Graphics, Texture } from 'pixi.js';
 import { InteractiveManager } from '../interactiveManager';
-import { Renderer } from '../renderer';
+import { Renderer } from '../../types/renderer';
 import { ExtendedGraphSettings } from 'src/settings/settings';
-import { getBackgroundColor, getFile, getFileInteractives, getImageUri } from 'src/helperFunctions';
+import { getFile, getFileInteractives } from 'src/helperFunctions';
 import { ArcsWrapper } from './arcs';
 import { NodeImage } from './image';
 

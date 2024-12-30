@@ -1,19 +1,9 @@
-import { Component, EventRef, WorkspaceLeaf } from "obsidian";
+import { Component } from "obsidian";
 import { Graph } from "./graph";
 import { LegendUI } from "../ui/legendUI";
 import { ViewsUI } from "../ui/viewsUI";
-import { Renderer } from "./renderer";
 import { GraphsManager } from "src/graphsManager";
-
-export type WorkspaceLeafExt = WorkspaceLeaf & {
-    on(name: "extended-graph:disable-plugin",   callback: (leaf: WorkspaceLeafExt) => any) : EventRef;
-    on(name: "extended-graph:enable-plugin",    callback: (leaf: WorkspaceLeafExt) => any) : EventRef;
-    on(name: "extended-graph:reset-plugin",     callback: (leaf: WorkspaceLeafExt) => any) : EventRef;
-
-    view: {
-        renderer: Renderer
-    }
-}
+import { WorkspaceLeafExt } from "src/types/leaf";
 
 export class GraphEventsDispatcher extends Component {
     type: string;

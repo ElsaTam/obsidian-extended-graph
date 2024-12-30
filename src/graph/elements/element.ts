@@ -1,4 +1,4 @@
-import { Container, Graphics } from "pixi.js";
+import { Graphics } from "pixi.js";
 import { InteractiveManager } from "../interactiveManager";
 
 export abstract class ElementWrapper extends Graphics {
