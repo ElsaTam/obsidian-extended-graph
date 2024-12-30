@@ -28,6 +28,10 @@ export class Graph extends Component {
     // Sets
     nodesSet: NodesSet;
     linksSet: LinksSet;
+    
+    // Functions callbacks
+    onOptionsChangeOriginal: () => void;
+    searchGetValueOriginal: () => string;
 
     constructor(dispatcher: GraphEventsDispatcher) {
         super();
@@ -63,10 +67,15 @@ export class Graph extends Component {
         this.linksSet = new LinksSet(this, this.interactiveManagers.get(LINK_KEY));
 
         // Change the filter search
+        this.searchGetValueOriginal = this.engine.filterOptions.search.getValue;
         this.engine.filterOptions.search.getValue = (() => {
             let prepend = this.dynamicSettings.globalFilter + " ";
             return prepend + this.engine.filterOptions.search.inputEl.value;
         }).bind(this);
+
+        // Change the onOptionsChange
+        this.onOptionsChangeOriginal = this.dispatcher.leaf.view.onOptionsChange;
+        this.dispatcher.leaf.view.onOptionsChange = (() => { console.log("Options changed cancelled"); });
     }
 
     onload() : void {
@@ -78,9 +87,8 @@ export class Graph extends Component {
     }
 
     onunload() : void {
-        this.engine.filterOptions.search.getValue = (function() {
-            return this.filterOptions.search.inputEl.value;
-        }).bind(this.engine);
+        this.engine.filterOptions.search.getValue = this.searchGetValueOriginal;
+        this.dispatcher.leaf.view.onOptionsChange = this.onOptionsChangeOriginal;
     }
 
     async initSets() : Promise<void> {

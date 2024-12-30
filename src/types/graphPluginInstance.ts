@@ -2,6 +2,7 @@ import { GraphPluginInstance } from "obsidian-typings";
 
 export interface GraphCorePluginInstance extends GraphPluginInstance {
     options: GraphPluginOptions;
+    saveOptions: () => void;
 }
 
 export interface GraphPluginOptions {

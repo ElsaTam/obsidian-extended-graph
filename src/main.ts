@@ -5,6 +5,7 @@ import { ExtendedGraphSettingTab } from './settings/settingTab';
 import { INVALID_KEYS } from './globalVariables';
 import { WorkspaceLeafExt } from './types/leaf';
 import { WorkspaceExt } from './types/workspace';
+import { logToFile } from './logs';
 
 // https://pixijs.download/v7.4.2/docs/index.html
 
@@ -15,6 +16,8 @@ export default class GraphExtendedPlugin extends Plugin {
 
     async onload(): Promise<void> {
         await this.loadSettings();
+
+        logToFile(this.app, 'Plugin loaded\n');
 
         for (const key of Object.keys(this.settings.additionalProperties)) {
             INVALID_KEYS[key] = [];

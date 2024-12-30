@@ -50,12 +50,13 @@ body {
     display: flex;
     align-items: center;
     gap: var(--size-4-4);
+    --input-height: 1.7em;
 }
 
 .graph-legend-row button {
     background-color: rgb(var(--legend-color-rgb));
     color: var(--legend-text-color);
-    padding: var(--size-4-2);
+    padding: var(--size-2-2) var(--size-4-2);
     border-radius: var(--radius-s);
 }
 
@@ -71,6 +72,7 @@ body {
 
 .graph-legend-title {
     font-variant: small-caps;
+    width: 5ch;
 }
 
 /* VIEWS */

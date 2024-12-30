@@ -5,6 +5,8 @@ import { GraphEventsDispatcher } from "src/graph/graphEventsDispatcher";
 import { GraphsManager } from "src/graphsManager";
 import { getEngine } from "src/helperFunctions";
 import { WorkspaceLeafExt } from "src/types/leaf";
+import { GraphPlugin, GraphPluginInstance } from "obsidian-typings";
+import { GraphCorePluginInstance } from "src/types/graphPluginInstance";
 
 export class GraphControlsUI extends Component {
     graphsManager: GraphsManager;
@@ -40,11 +42,8 @@ export class GraphControlsUI extends Component {
         });
 
         this.treeItemChildren = this.root.createDiv("tree-item-children");
-        this.createSaveSettingsAsDefault();
-
-        let filterHeader = new Setting(this.treeItemChildren).setName("Filter");
-        this.onlyWhenPluginEnabled.push(filterHeader.settingEl);
-
+        this.createSaveForDefaultView();
+        this.onlyWhenPluginEnabled.push(this.createSaveForNormalView().settingEl);
         this.settingGlobalFilter = this.createGlobalFilter();
         this.onlyWhenPluginEnabled.push(this.settingGlobalFilter.settingEl);
 
@@ -60,18 +59,34 @@ export class GraphControlsUI extends Component {
         this.collapseGraphControlSection();
     }
 
-    createSaveSettingsAsDefault() : Setting {
+    createSaveForDefaultView() : Setting {
         let setting = new Setting(this.treeItemChildren)
-            .setName("Save settings as default");
+            .setName("Save for default view")
+            .setTooltip("Save the current settings as the default view settings");
         let icon = setting.controlEl.createDiv("clickable-icon save-button");
-        setIcon(icon, "save");
+        setIcon(icon, "arrow-up-to-line");
         icon.addEventListener('click', e => {
-            this.saveSettingsAsDefault();
+            this.saveForDefaultView();
+        });
+        return setting;
+    }
+
+    createSaveForNormalView() : Setting {
+        let setting = new Setting(this.treeItemChildren)
+            .setName("Save for normal view")
+            .setTooltip("Save the current settings as the normal view settings (no plugin enabled)");
+        let icon = setting.controlEl.createDiv("clickable-icon save-button");
+        setIcon(icon, "arrow-down-to-line");
+        icon.addEventListener('click', e => {
+            this.saveForNormalView();
         });
         return setting;
     }
 
     createGlobalFilter() : Setting {
+        let filterHeader = new Setting(this.treeItemChildren).setName("Global filter");
+        this.onlyWhenPluginEnabled.push(filterHeader.settingEl);
+
         return new Setting(this.treeItemChildren)
             .setClass("mod-search-setting")
             .addTextArea(cb => {
@@ -135,11 +150,22 @@ export class GraphControlsUI extends Component {
         this.isCollapsed = true;
     }
 
-    saveSettingsAsDefault() {
+    saveForDefaultView() {
         let viewData = this.graphsManager.plugin.settings.views.find(v => v.id === DEFAULT_VIEW_ID);
         if (!viewData) return;
         let engine = getEngine(this.leaf);
         viewData.engineOptions = new EngineOptions(engine.getOptions());
         this.graphsManager.onViewNeedsSaving(viewData);
+    }
+
+    saveForNormalView() {
+        let globalFilter = this.graphsManager.plugin.settings.globalFilter;
+        this.graphsManager.plugin.settings.globalFilter = "";
+        let instance: GraphCorePluginInstance = ((this.leaf.app.internalPlugins.getPluginById("graph") as GraphPlugin).instance as GraphCorePluginInstance);
+        
+        let engine = getEngine(this.leaf);
+        instance.options = engine.getOptions();
+        instance.saveOptions();
+        this.graphsManager.plugin.settings.globalFilter = globalFilter;
     }
 }

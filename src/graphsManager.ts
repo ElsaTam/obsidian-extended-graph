@@ -8,6 +8,7 @@ import { getEngine } from "./helperFunctions";
 import { GraphCorePluginInstance, GraphPluginOptions } from "./types/graphPluginInstance";
 import { WorkspaceLeafExt } from "./types/leaf";
 import { TAG_KEY } from "./globalVariables";
+import { logToFile } from "./logs";
 
 
 export class GraphsManager extends Component {
@@ -29,6 +30,14 @@ export class GraphsManager extends Component {
     onload(): void {
         this.registerEvent(this.plugin.app.metadataCache.on('changed', (file: TFile, data: string, cache: CachedMetadata) => {
             this.onMetadataCacheChange(file, data, cache);
+        }));
+        this.registerEvent(this.plugin.app.workspace.on('quit', () => {
+            logToFile(this.plugin.app, "Quitting");
+            for (const [id, dispatcher] of this.dispatchers) {
+                dispatcher.leaf.view.removeChild(dispatcher);
+                this.disablePluginFromLeafID(id);
+            }
+            this.restoreBackup();
         }));
         
         this.registerEvent(this.plugin.app.workspace.on('css-change', this.onThemeChange.bind(this)));
@@ -211,6 +220,7 @@ export class GraphsManager extends Component {
     }
 
     onPluginUnloaded(leaf: WorkspaceLeafExt) : void {
+        logToFile(this.plugin.app, "Plugin unloaded");
         this.dispatchers.delete(leaf.id);
         
         if (this.localGraphID === leaf.id) this.localGraphID = null;
@@ -290,6 +300,7 @@ export class GraphsManager extends Component {
     backupOptions(leaf: WorkspaceLeafExt) {
         const engine = getEngine(leaf);
         const options = structuredClone(engine.getOptions());
+        logToFile(this.plugin.app, "Backing up options: " + JSON.stringify(options));
         this.optionsBackup.set(leaf.id, options);
         this.lastBackup = leaf.id;
         this.plugin.settings.backupGraphOptions = options;
@@ -298,6 +309,7 @@ export class GraphsManager extends Component {
 
     restoreBackup() {
         let backup = this.optionsBackup.get(this.lastBackup);
+        logToFile(this.plugin.app, "Restoring backup: " + JSON.stringify(backup));
         let corePluginInstance: GraphCorePluginInstance = (this.plugin.app.internalPlugins.getPluginById("graph")?.instance as GraphCorePluginInstance);
         if (corePluginInstance && backup) {
             corePluginInstance.options.colorGroups = backup.colorGroups;
@@ -319,6 +331,7 @@ export class GraphsManager extends Component {
             corePluginInstance.options.linkStrength = backup.linkStrength;
             corePluginInstance.options.repelStrength = backup.repelStrength;
         }
+        corePluginInstance.saveOptions();
     }
 
     applyNormalView(leaf: WorkspaceLeafExt) {
