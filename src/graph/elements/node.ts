@@ -101,6 +101,10 @@ export class NodeWrapper extends Container {
     }
 
     initGraphics(texture: Texture | undefined): void {
+        // Place this
+        this.x = NODE_CIRCLE_X;
+        this.y = NODE_CIRCLE_Y;
+
         // Init NodeImage
         this.nodeImage = new NodeImage(texture);
         this.addChild(this.nodeImage);
@@ -109,10 +113,6 @@ export class NodeWrapper extends Container {
         for (const arcWrapper of this.arcsWrappers.values()) {
             this.addChild(arcWrapper);
         }
-
-        // Place this
-        this.x = NODE_CIRCLE_X;
-        this.y = NODE_CIRCLE_Y;
 
         // Init background
         this.background = new Graphics();
@@ -144,8 +144,8 @@ export class NodeWrapper extends Container {
     }
 
     fadeIn() {
-        const isFullyDisabled = [...this.arcsWrappers.values()].every((arcWrapper: ArcsWrapper) => arcWrapper.isFullyDisabled());
-        if (isFullyDisabled && this.arcsWrappers.size > 0) return;
+        const isDisabled = [...this.arcsWrappers.values()].some((arcWrapper: ArcsWrapper) => arcWrapper.isFullyDisabled());
+        if (isDisabled && this.arcsWrappers.size > 0) return;
         this.isActive = true;
         if (this.settings.fadeOnDisable) {
             this.nodeImage?.fadeIn();
@@ -153,8 +153,8 @@ export class NodeWrapper extends Container {
     }
 
     fadeOut() {
-        const isFullyDisabled = [...this.arcsWrappers.values()].every((arcWrapper: ArcsWrapper) => arcWrapper.isFullyDisabled());
-        if (!isFullyDisabled && this.arcsWrappers.size > 0) return;
+        const isDisabled = [...this.arcsWrappers.values()].some((arcWrapper: ArcsWrapper) => arcWrapper.isFullyDisabled());
+        if (!isDisabled && this.arcsWrappers.size > 0) return;
         this.isActive = false;
         if (this.settings.fadeOnDisable) {
             this.nodeImage?.fadeOut();

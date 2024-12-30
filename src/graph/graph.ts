@@ -46,10 +46,14 @@ export class Graph extends Component {
         this.staticSettings  = structuredClone(this.dynamicSettings);
 
         // Interactive managers
-        let keys = Object.keys(this.staticSettings.additionalProperties)
-                         .filter(k => this.staticSettings.additionalProperties[k]);
-        if (this.staticSettings.enableTags)  keys = keys.concat([TAG_KEY]);
-        if (this.staticSettings.enableLinks) keys = keys.concat([LINK_KEY]);
+        let keys: string[] = [];
+        if (this.staticSettings.enableProperties) {
+            for (const property in this.staticSettings.additionalProperties) {
+                if (this.staticSettings.additionalProperties[property]) keys.push(property);
+            }
+        }
+        if (this.staticSettings.enableTags)  keys.push(TAG_KEY);
+        if (this.staticSettings.enableLinks) keys.push(LINK_KEY);
         let managers: InteractiveManager[] = [];
         for (const key of keys) {
             let manager = new InteractiveManager(
@@ -89,6 +93,14 @@ export class Graph extends Component {
     onunload() : void {
         this.engine.filterOptions.search.getValue = this.searchGetValueOriginal;
         this.dispatcher.leaf.view.onOptionsChange = this.onOptionsChangeOriginal;
+
+        for (const cause of Object.values(DisconnectionCause)) {
+            this.nodesSet.enableNodes([...this.nodesSet.disconnectedNodes[cause]], cause);
+        }
+        for (const cause of Object.values(DisconnectionCause)) {
+            this.linksSet.enableLinks(this.linksSet.disconnectedLinks[cause], cause);
+        }
+        this.updateWorker();
     }
 
     async initSets() : Promise<void> {
