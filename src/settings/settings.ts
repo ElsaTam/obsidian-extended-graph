@@ -29,20 +29,20 @@ export interface ExtendedGraphSettings {
 
 export const DEFAULT_SETTINGS: Partial<ExtendedGraphSettings> = {
     colormaps: {
-        "tag": "hsv",
-        "link": "rainbow"
+        TAG_KEY: "hsv",
+        LINK_KEY: "rainbow"
     },
     interactiveColors: {
-        "tag": [],
-        "link": []
+        TAG_KEY: [],
+        LINK_KEY: []
     },
     unselectedInteractives: {
-        "tag": [],
-        "link": []
+        TAG_KEY: [],
+        LINK_KEY: []
     },
     noneType: {
-        "tag": "none",
-        "link": "none"
+        TAG_KEY: "none",
+        LINK_KEY: "none"
     },
     additionalProperties: {},
     imageProperty: "image",
@@ -56,8 +56,8 @@ export const DEFAULT_SETTINGS: Partial<ExtendedGraphSettings> = {
             name: "Vault (default)",
             engineOptions: new EngineOptions(),
             disabledTypes: {
-                "tag": [],
-                "link": []
+                TAG_KEY: [],
+                LINK_KEY: []
             }
         }
     ],

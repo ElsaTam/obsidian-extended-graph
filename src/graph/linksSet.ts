@@ -1,7 +1,7 @@
 import { InteractiveManager } from "./interactiveManager";
 import { getLinkID, LineLinkWrapper, Link, LinkWrapper } from "./elements/link";
 import { Graph } from "./graph";
-import { DisconnectionCause, INVALID_KEYS } from "src/globalVariables";
+import { DisconnectionCause, INVALID_KEYS, LINK_KEY } from "src/globalVariables";
 import { getAPI as getDataviewAPI } from "obsidian-dataview";
 import { getFile } from "src/helperFunctions";
 
@@ -63,7 +63,7 @@ export class LinksSet {
         if (!this.linksManager || !this.linkTypesMap) return;
 
         const setType = (function(type: string, id: string, types: Set<string>) {
-            if (this.graph.staticSettings.unselectedInteractives["link"].includes(type) || INVALID_KEYS["link"].includes(type)) return;
+            if (this.graph.staticSettings.unselectedInteractives[LINK_KEY].includes(type) || INVALID_KEYS[LINK_KEY].includes(type)) return;
             
             if (!this.linkTypesMap.has(type)) {
                 this.linkTypesMap.set(type, new Set<string>());
@@ -122,7 +122,7 @@ export class LinksSet {
             }
 
             if (linkTypes.size === 0) {
-                setType(this.graph.staticSettings.noneType["link"], linkID, missingTypes);
+                setType(this.graph.staticSettings.noneType[LINK_KEY], linkID, missingTypes);
             }
 
             missingTypes = new Set([...missingTypes, ...linkTypes]);
@@ -155,7 +155,7 @@ export class LinksSet {
                     let types = [...this.linkTypesMap.keys()].filter(type => this.linkTypesMap?.get(type)?.has(linkID));
 
                     // If the link has a type
-                    if (!this.linkTypesMap.get(this.graph.staticSettings.noneType["link"])?.has(linkID)) {
+                    if (!this.linkTypesMap.get(this.graph.staticSettings.noneType[LINK_KEY])?.has(linkID)) {
                         linkWrapper = new LineLinkWrapper(
                             link,
                             new Set<string>(types),
@@ -179,7 +179,7 @@ export class LinksSet {
     getActiveType(id: string) : string {
         if (!this.linkTypesMap) return "";
         let firstActiveType = [...this.linkTypesMap.keys()].find(type => this.linksManager?.isActive(type) && this.linkTypesMap?.get(type)?.has(id));
-        return firstActiveType ? firstActiveType : this.graph.staticSettings.noneType["link"];
+        return firstActiveType ? firstActiveType : this.graph.staticSettings.noneType[LINK_KEY];
     }
 
     /**

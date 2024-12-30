@@ -7,6 +7,7 @@ import { GraphControlsUI } from "./ui/graphControl";
 import { getEngine } from "./helperFunctions";
 import { GraphCorePluginInstance, GraphPluginOptions } from "./types/graphPluginInstance";
 import { WorkspaceLeafExt } from "./types/leaf";
+import { TAG_KEY } from "./globalVariables";
 
 
 export class GraphsManager extends Component {
@@ -58,11 +59,11 @@ export class GraphsManager extends Component {
                     newTypes.push(type);
                 });
         
-                const needsUpdate = !nodeWrapper.arcsWrappers.get("tag")?.matchesTypes(newTypes);
+                const needsUpdate = !nodeWrapper.arcsWrappers.get(TAG_KEY)?.matchesTypes(newTypes);
         
                 if (needsUpdate) {
-                    const types = dispatcher.graph.nodesSet?.getAllInteractivesInGraph("tag");
-                    (types) && dispatcher.graph.nodesSet?.managers.get("tag")?.addTypes(types);
+                    const types = dispatcher.graph.nodesSet?.getAllInteractivesInGraph(TAG_KEY);
+                    (types) && dispatcher.graph.nodesSet?.managers.get(TAG_KEY)?.addTypes(types);
                 }
             });
         }

@@ -4,6 +4,7 @@ import { LegendUI } from "../ui/legendUI";
 import { ViewsUI } from "../ui/viewsUI";
 import { GraphsManager } from "src/graphsManager";
 import { WorkspaceLeafExt } from "src/types/leaf";
+import { LINK_KEY } from "src/globalVariables";
 
 export class GraphEventsDispatcher extends Component {
     type: string;
@@ -119,13 +120,13 @@ export class GraphEventsDispatcher extends Component {
     // INTERACTIVES
 
     /**
-     * Handles the addition of interactive elements (tags or links).
-     * @param name - The name of the interactive element type ("tag" or "link").
+     * Handles the addition of interactive elements.
+     * @param name - The name of the interactive element type.
      * @param colorMaps - A map of types to their corresponding colors.
      */
     onInteractivesAdded(name: string, colorMaps: Map<string, Uint8Array>) {
         switch (name) {
-            case "link":
+            case LINK_KEY:
                 this.onLinkTypesAdded(colorMaps);
                 break;
             default:
@@ -135,13 +136,13 @@ export class GraphEventsDispatcher extends Component {
     }
 
     /**
-     * Handles the removal of interactive elements (tags or links).
-     * @param name - The name of the interactive element type ("tag" or "link").
+     * Handles the removal of interactive elements.
+     * @param name - The name of the interactive element type.
      * @param types - A set of types to be removed.
      */
     onInteractivesRemoved(name: string, types: Set<string>) {
         switch (name) {
-            case "link":
+            case LINK_KEY:
                 this.onLinkTypesRemoved(types);
                 break;
             default:
@@ -151,14 +152,14 @@ export class GraphEventsDispatcher extends Component {
     }
 
     /**
-     * Handles the color change of interactive elements (tags or links).
-     * @param name - The name of the interactive element type ("tag" or "link").
+     * Handles the color change of interactive elements.
+     * @param name - The name of the interactive element type.
      * @param type - The type of the interactive element.
      * @param color - The new color of the interactive element.
      */
     onInteractiveColorChanged(name: string, type: string, color: Uint8Array) {
         switch (name) {
-            case "link":
+            case LINK_KEY:
                 this.onLinkColorChanged(type, color);
                 break;
             default:
@@ -168,13 +169,13 @@ export class GraphEventsDispatcher extends Component {
     }
 
     /**
-     * Handles the disabling of interactive elements (tags or links).
-     * @param name - The name of the interactive element type ("tag" or "link").
+     * Handles the disabling of interactive elements.
+     * @param name - The name of the interactive element type.
      * @param types - An array of types to be disabled.
      */
     onInteractivesDisabled(name: string, types: string[]) {
         switch (name) {
-            case "link":
+            case LINK_KEY:
                 this.disableLinkTypes(types);
                 break;
             default:
@@ -184,13 +185,13 @@ export class GraphEventsDispatcher extends Component {
     }
 
     /**
-     * Handles the enabling of interactive elements (tags or links).
-     * @param name - The name of the interactive element type ("tag" or "link").
+     * Handles the enabling of interactive elements.
+     * @param name - The name of the interactive element type.
      * @param types - An array of types to be enabled.
      */
     onInteractivesEnabled(name: string, types: string[]) {
         switch (name) {
-            case "link":
+            case LINK_KEY:
                 this.enableLinkTypes(types);
                 break;
             default:
@@ -252,18 +253,18 @@ export class GraphEventsDispatcher extends Component {
     private onLinkTypesAdded(colorMaps: Map<string, Uint8Array>) {
         colorMaps.forEach((color, type) => {
             this.graph.linksSet?.updateLinksColor(type, color);
-            this.legendUI?.addLegend("link", type, color);
+            this.legendUI?.addLegend(LINK_KEY, type, color);
         });
         this.leaf.view.renderer.changed();
     }
 
     private onLinkTypesRemoved(types: Set<string>) {
-        this.legendUI?.removeLegend("link", [...types]);
+        this.legendUI?.removeLegend(LINK_KEY, [...types]);
     }
 
     private onLinkColorChanged(type: string, color: Uint8Array) {
         this.graph.linksSet?.updateLinksColor(type, color);
-        this.legendUI?.updateLegend("link", type, color);
+        this.legendUI?.updateLegend(LINK_KEY, type, color);
         this.leaf.view.renderer.changed();
     }
 
@@ -302,9 +303,9 @@ export class GraphEventsDispatcher extends Component {
 
             if (this.graph.linksSet.linksManager) {
                 this.graph.linksSet.linksManager.loadView(viewData);
-                this.legendUI?.enableAll("link");
-                viewData.disabledTypes["link"]?.forEach(type => {
-                    this.legendUI?.disable("link", type);
+                this.legendUI?.enableAll(LINK_KEY);
+                viewData.disabledTypes[LINK_KEY]?.forEach(type => {
+                    this.legendUI?.disable(LINK_KEY, type);
                 });
             }
 

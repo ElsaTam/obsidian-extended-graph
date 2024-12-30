@@ -4,6 +4,7 @@ import { getAPI as getDataviewAPI } from "obsidian-dataview";
 import { WorkspaceLeafExt } from "./types/leaf";
 import { GraphView, LocalGraphView } from "./types/view";
 import { GraphEngine } from "./types/engine";
+import { TAG_KEY } from "./globalVariables";
 
 export function getBackgroundColor(renderer: Renderer): Uint8Array {
     let bg = window.getComputedStyle(renderer.interactiveEl).backgroundColor;
@@ -114,7 +115,7 @@ export function getEngine(leaf: WorkspaceLeafExt) : GraphEngine {
 export function getFileInteractives(interactive: string, app: App, file: TFile) : Set<string> {
     if (file.extension !== "md") return new Set<string>();
     switch (interactive) {
-        case "tag":
+        case TAG_KEY:
             return getTags(app, file);
         default:
             return getProperty(interactive, app, file);

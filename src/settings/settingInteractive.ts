@@ -4,7 +4,7 @@ import { ExtendedGraphSettingTab } from "./settingTab";
 import { capitalizeFirstLetter, getFile, getFileInteractives, isPropertyKeyValid } from "src/helperFunctions";
 import { plot_colormap } from "src/colors/colors";
 import { getAPI as getDataviewAPI } from "obsidian-dataview";
-import { INVALID_KEYS } from "src/globalVariables";
+import { INVALID_KEYS, LINK_KEY, TAG_KEY } from "src/globalVariables";
 import { NewNameModal } from "src/ui/newNameModal";
 
 export abstract class SettingInteractives {
@@ -331,6 +331,14 @@ export class SettingPropertiesArray {
             new Notice("This property already exists");
             return false;
         }
+        else if (key === LINK_KEY) {
+            new Notice("This property key is reserved for links");
+            return false;
+        }
+        else if (key === TAG_KEY) {
+            new Notice("This property key is reserved for tags");
+            return false;
+        }
         return isPropertyKeyValid(key);
     }
 
@@ -486,7 +494,7 @@ export class SettingLinks extends SettingInteractives {
         if (dv) {
             for (const page of dv.pages()) {
                 for (const [key, value] of Object.entries(page)) {
-                    if (key === "file" || key === this.settingTab.plugin.settings.imageProperty || INVALID_KEYS["link"].includes(key)) continue;
+                    if (key === "file" || key === this.settingTab.plugin.settings.imageProperty || INVALID_KEYS[LINK_KEY].includes(key)) continue;
                     if (value === null || value === undefined || value === '') continue;
 
                     if ((typeof value === "object") && ("path" in value)) {
@@ -505,7 +513,7 @@ export class SettingLinks extends SettingInteractives {
             for (const file of this.settingTab.app.vault.getFiles()) {
                 let frontmatterLinks = this.settingTab.app.metadataCache.getCache(file.path)?.frontmatterLinks;
                 if (!frontmatterLinks) continue;
-                let types = frontmatterLinks.map(l => l.key.split('.')[0]).filter(k => k !== this.settingTab.plugin.settings.imageProperty && !INVALID_KEYS["link"].includes(k));
+                let types = frontmatterLinks.map(l => l.key.split('.')[0]).filter(k => k !== this.settingTab.plugin.settings.imageProperty && !INVALID_KEYS[LINK_KEY].includes(k));
                 allTypes = new Set<string>([...allTypes, ...types]);
             }
         }

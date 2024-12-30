@@ -4,7 +4,7 @@ import { InteractiveManager } from "./interactiveManager";
 import { getBackgroundColor, getFile, getFileInteractives, getImageUri } from "src/helperFunctions";
 import { Graph } from "./graph";
 import { Assets, Texture } from "pixi.js";
-import { DisconnectionCause, INVALID_KEYS } from "src/globalVariables";
+import { DisconnectionCause, INVALID_KEYS, LINK_KEY } from "src/globalVariables";
 
 export class NodesSet {
     nodesMap = new Map<string, NodeWrapper>();
@@ -18,7 +18,7 @@ export class NodesSet {
     constructor(graph: Graph, managers: InteractiveManager[]) {
         this.graph = graph;
         for (const manager of managers) {
-            if (manager.name === "link") continue;
+            if (manager.name === LINK_KEY) continue;
             this.managers.set(manager.name, manager);
             this.disabledInteractives.set(manager.name, new Set<string>());
         }

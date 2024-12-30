@@ -5,7 +5,7 @@ import { InteractiveManager } from './interactiveManager';
 import { GraphView } from 'src/views/view';
 import { NodesSet } from './nodesSet';
 import { LinksSet } from './linksSet';
-import { DEFAULT_VIEW_ID, DisconnectionCause } from 'src/globalVariables';
+import { DEFAULT_VIEW_ID, DisconnectionCause, LINK_KEY, TAG_KEY } from 'src/globalVariables';
 import { GraphEventsDispatcher } from './graphEventsDispatcher';
 import { ExtendedGraphSettings } from 'src/settings/settings';
 import { getLinkID } from './elements/link';
@@ -44,8 +44,8 @@ export class Graph extends Component {
         // Interactive managers
         let keys = Object.keys(this.staticSettings.additionalProperties)
                          .filter(k => this.staticSettings.additionalProperties[k]);
-        if (this.staticSettings.enableTags)  keys = keys.concat(["tag"]);
-        if (this.staticSettings.enableLinks) keys = keys.concat(["link"]);
+        if (this.staticSettings.enableTags)  keys = keys.concat([TAG_KEY]);
+        if (this.staticSettings.enableLinks) keys = keys.concat([LINK_KEY]);
         let managers: InteractiveManager[] = [];
         for (const key of keys) {
             let manager = new InteractiveManager(
@@ -55,12 +55,12 @@ export class Graph extends Component {
             );
             this.interactiveManagers.set(key, manager);
             this.addChild(manager);
-            if (key !== "link") managers.push(manager);
+            if (key !== LINK_KEY) managers.push(manager);
         }
 
         // Sets
         this.nodesSet = new NodesSet(this, managers);
-        this.linksSet = new LinksSet(this, this.interactiveManagers.get("link"));
+        this.linksSet = new LinksSet(this, this.interactiveManagers.get(LINK_KEY));
 
         // Change the filter search
         this.engine.filterOptions.search.getValue = (() => {
