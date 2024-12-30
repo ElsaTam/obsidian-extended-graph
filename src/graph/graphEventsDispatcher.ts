@@ -87,7 +87,6 @@ export class GraphEventsDispatcher extends Component {
      * Called when a child is added to the stage by the engine.
      */
     private onChildAddedToStage() : void {
-        console.log("Child added to stage", this);
         if (this.leaf.view.renderer.nodes.length > this.graphsManager.plugin.settings.maxNodes) {
             new Notice(`Try to handle ${this.leaf.view.renderer.nodes.length}, but the limit is ${this.graphsManager.plugin.settings.maxNodes}. Extended Graph disabled.`);
             this.graphsManager.disablePlugin(this.leaf);
