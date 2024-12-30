@@ -69,6 +69,11 @@ export class GraphEventsDispatcher extends Component {
      * Called when the graph is ready.
      */
     onGraphReady() : void {
+        // Update node opacity layer colors
+        if (this.graph.staticSettings.fadeOnDisable) {
+            this.graph.nodesSet.updateOpacityLayerColor();
+        }
+
         this.leaf.view.renderer.px.stage.children[1].addEventListener('childAdded', this.onChildAddedToStage.bind(this));
         this.leaf.view.renderer.px.stage.children[1].addEventListener('childRemoved', this.onChildRemovedFromStage.bind(this));
 

@@ -6,7 +6,7 @@ export class NodeImage extends Sprite {
     opacityLayer: Graphics;
     textureSize: number;
 
-    constructor(texture: Texture) {
+    constructor(texture: Texture = Texture.EMPTY) {
         super(texture);
         this.textureSize = Math.min(texture.width, texture.height);
 
@@ -14,7 +14,7 @@ export class NodeImage extends Sprite {
         this.height = 10;
         this.name = "image";
         this.anchor.set(0.5);
-                        
+        
         // Mask
         let mask = new Graphics()
             .beginFill(0xFFFFFF)

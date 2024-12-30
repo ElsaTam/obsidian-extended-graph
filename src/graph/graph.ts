@@ -88,11 +88,6 @@ export class Graph extends Component {
 
         this.nodesSet.load();
         this.linksSet.load();
-
-        // Update node opacity layer colors
-        if (this.staticSettings.fadeOnDisable) {
-            this.nodesSet?.updateOpacityLayerColor();
-        }
     }
 
     /**

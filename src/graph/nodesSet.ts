@@ -3,8 +3,9 @@ import { ONode, NodeWrapper } from "./elements/node";
 import { InteractiveManager } from "./interactiveManager";
 import { getBackgroundColor, getFile, getFileInteractives, getImageUri } from "src/helperFunctions";
 import { Graph } from "./graph";
-import { Assets } from "pixi.js";
+import { Assets, Texture } from "pixi.js";
 import { DisconnectionCause, INVALID_KEYS } from "src/globalVariables";
+import { text } from "stream/consumers";
 
 export class NodesSet {
     nodesMap = new Map<string, NodeWrapper>();
@@ -129,24 +130,34 @@ export class NodesSet {
     }
     
     loadAssets(ids: Set<string>) : void {
-        let imageURIs: string[] = [];
+        let imageURIs = new Map<string, string>();
+        let emptyTextures: string[] = [];
         for (const id of ids) {
             let imageUri = getImageUri(this.graph.dispatcher.graphsManager.plugin.app, this.graph.staticSettings.imageProperty, id);
-            (imageUri) && imageURIs.push(imageUri);
+            if (imageUri)
+                imageURIs.set(id, imageUri);
+            else
+                emptyTextures.push(id);
         }
-        Assets.load(imageURIs).then(() => {
-            for (const id of ids) {
-                this.nodesMap.get(id)?.initGraphics();
+        Assets.load([...imageURIs.values()]).then((textures: Record<string, Texture>) => {
+            for (const [id, uri] of imageURIs) {
+                this.nodesMap.get(id)?.initGraphics(textures[uri]);
+                this.nodesMap.get(id)?.nodeImage.updateOpacityLayerColor(getBackgroundColor(this.graph.renderer));
             }
         });
+        for (const id of emptyTextures) {
+            this.nodesMap.get(id)?.initGraphics(undefined);
+            this.nodesMap.get(id)?.nodeImage.updateOpacityLayerColor(getBackgroundColor(this.graph.renderer));
+        }
     }
     
     /**
      * Update the background color. Called when the theme changes.
      */
     updateOpacityLayerColor() : void {
+        const color = getBackgroundColor(this.graph.renderer);
         this.nodesMap.forEach(wrapper => {
-            wrapper.nodeImage?.updateOpacityLayerColor(getBackgroundColor(this.graph.renderer));
+            wrapper.nodeImage?.updateOpacityLayerColor(color);
         });
     }
     
@@ -194,6 +205,7 @@ export class NodesSet {
         let nodesToDisable: string[] = [];
         for (const [id, wrapper] of this.nodesMap) {
             if (!wrapper.arcsWrappers.has(key) && type === this.graph.staticSettings.noneType[key]) {
+                wrapper.fadeOut();
                 nodesToDisable.push(id);
                 continue;
             }
@@ -203,7 +215,7 @@ export class NodesSet {
 
             const wasActive = wrapper.isActive;
             wrapper.arcsWrappers.get(key)?.disableType(type);
-            wrapper.updateState();
+            wrapper.fadeOut();
             if(wrapper.isActive != wasActive && !wrapper.isActive) {
                 nodesToDisable.push(id);
             }
@@ -222,6 +234,7 @@ export class NodesSet {
         let nodesToEnable: string[] = [];
         for (const [id, wrapper] of this.nodesMap) {
             if (!wrapper.arcsWrappers.has(key) && type === this.graph.staticSettings.noneType[key]) {
+                wrapper.fadeIn();
                 nodesToEnable.push(id);
                 continue;
             }
@@ -231,7 +244,7 @@ export class NodesSet {
             
             const wasActive = wrapper.isActive;
             wrapper.arcsWrappers.get(key)?.enableType(type);
-            wrapper.updateState();
+            wrapper.fadeIn();
             if(wrapper.isActive != wasActive && wrapper.isActive) {
                 nodesToEnable.push(id);
             }

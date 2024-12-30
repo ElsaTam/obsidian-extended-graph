@@ -3,7 +3,7 @@ import { Assets, Container, Graphics, Texture } from 'pixi.js';
 import { InteractiveManager } from '../interactiveManager';
 import { Renderer } from '../renderer';
 import { ExtendedGraphSettings } from 'src/settings/settings';
-import { getFile, getFileInteractives, getImageUri } from 'src/helperFunctions';
+import { getBackgroundColor, getFile, getFileInteractives, getImageUri } from 'src/helperFunctions';
 import { ArcsWrapper } from './arcs';
 import { NodeImage } from './image';
 
@@ -44,7 +44,7 @@ export class NodeWrapper extends Container {
     settings: ExtendedGraphSettings;
     
     isActive: boolean = true;
-    nodeImage: NodeImage | null = null;
+    nodeImage: NodeImage;
     arcsWrappers = new Map<string, ArcsWrapper>();
     background: Graphics;
     scaleFactor: number = 1;
@@ -100,17 +100,10 @@ export class NodeWrapper extends Container {
         this.removeFromParent();
     }
 
-    initGraphics(): void {
+    initGraphics(texture: Texture | undefined): void {
         // Init NodeImage
-        let imageUri = getImageUri(this.app, this.settings.imageProperty, this.node.id);
-        if (imageUri) {
-            Assets.load(imageUri).then((texture: Texture) => {
-                this.nodeImage = new NodeImage(texture);
-                this.addChild(this.nodeImage);
-            }).catch(e => {
-                console.error(e);
-            });
-        }
+        this.nodeImage = new NodeImage(texture);
+        this.addChild(this.nodeImage);
 
         // Init ArcsWrapper
         for (const arcWrapper of this.arcsWrappers.values()) {
@@ -150,33 +143,21 @@ export class NodeWrapper extends Container {
         this.scale.set(this.scaleFactor);
     }
 
-    updateState() : void {
-        const isFullyDisabled = [...this.arcsWrappers.values()].every((arcWrapper: ArcsWrapper) => arcWrapper.isFullyDisabled());
-        if (this.isActive && isFullyDisabled) {
-            this.fadeOut();
-        }
-        else if (!this.isActive && !isFullyDisabled) {
-            this.fadeIn();
-        }
-    }
-
     fadeIn() {
+        const isFullyDisabled = [...this.arcsWrappers.values()].every((arcWrapper: ArcsWrapper) => arcWrapper.isFullyDisabled());
+        if (isFullyDisabled && this.arcsWrappers.size > 0) return;
         this.isActive = true;
         if (this.settings.fadeOnDisable) {
             this.nodeImage?.fadeIn();
-            for (const arcWrapper of this.arcsWrappers.values()) {
-                arcWrapper.fadeIn();
-            }
         }
     }
 
     fadeOut() {
+        const isFullyDisabled = [...this.arcsWrappers.values()].every((arcWrapper: ArcsWrapper) => arcWrapper.isFullyDisabled());
+        if (!isFullyDisabled && this.arcsWrappers.size > 0) return;
         this.isActive = false;
         if (this.settings.fadeOnDisable) {
             this.nodeImage?.fadeOut();
-            for (const arcWrapper of this.arcsWrappers.values()) {
-                arcWrapper.fadeOut();
-            }
         }
     }
 }
