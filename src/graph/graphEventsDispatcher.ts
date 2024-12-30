@@ -59,8 +59,8 @@ export class GraphEventsDispatcher extends Component {
      * Called when the component is unloaded.
      */
     onunload(): void {
-        this.leaf.view.renderer.px.stage.children[1].removeEventListener('childAdded', this.onChildAddedToStage.bind(this));
-        this.leaf.view.renderer.px.stage.children[1].removeEventListener('childRemoved', this.onChildRemovedFromStage.bind(this));
+        this.leaf.view.renderer.px.stage.children[1].removeEventListener('childAdded', this.onChildAddedToStage);
+        this.leaf.view.renderer.px.stage.children[1].removeEventListener('childRemoved', this.onChildRemovedFromStage);
 
         this.graphsManager.onPluginUnloaded(this.leaf);
     }
@@ -74,8 +74,11 @@ export class GraphEventsDispatcher extends Component {
             this.graph.nodesSet.updateOpacityLayerColor();
         }
 
-        this.leaf.view.renderer.px.stage.children[1].addEventListener('childAdded', this.onChildAddedToStage.bind(this));
-        this.leaf.view.renderer.px.stage.children[1].addEventListener('childRemoved', this.onChildRemovedFromStage.bind(this));
+        this.onChildAddedToStage = this.onChildAddedToStage.bind(this)
+        this.onChildRemovedFromStage = this.onChildRemovedFromStage.bind(this)
+
+        this.leaf.view.renderer.px.stage.children[1].addEventListener('childAdded', this.onChildAddedToStage);
+        this.leaf.view.renderer.px.stage.children[1].addEventListener('childRemoved', this.onChildRemovedFromStage);
 
         this.changeView(this.viewsUI.currentViewID);
     }
@@ -93,6 +96,7 @@ export class GraphEventsDispatcher extends Component {
      * Called when a child is added to the stage by the engine.
      */
     private onChildAddedToStage() : void {
+        console.log("Child added to stage", this);
         if (this.leaf.view.renderer.nodes.length > this.graphsManager.plugin.settings.maxNodes) {
             new Notice(`Try to handle ${this.leaf.view.renderer.nodes.length}, but the limit is ${this.graphsManager.plugin.settings.maxNodes}. Extended Graph disabled.`);
             this.graphsManager.disablePlugin(this.leaf);

@@ -43,7 +43,7 @@ export class NodesSet {
      */
     unload() {
         this.nodesMap.forEach(wrapper => {
-            wrapper.node.circle?.removeChild(wrapper);
+            wrapper.disconnect();
             wrapper.clearGraphics();
             wrapper.destroy();
         });
@@ -134,7 +134,7 @@ export class NodesSet {
         let emptyTextures: string[] = [];
         for (const id of ids) {
             let imageUri = getImageUri(this.graph.dispatcher.graphsManager.plugin.app, this.graph.staticSettings.imageProperty, id);
-            if (imageUri)
+            if (imageUri && this.graph.staticSettings.enableImages)
                 imageURIs.set(id, imageUri);
             else
                 emptyTextures.push(id);

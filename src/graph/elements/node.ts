@@ -117,7 +117,7 @@ export class NodeWrapper extends Container {
         // Init background
         this.background = new Graphics();
         this.background.scale.set(NODE_CIRCLE_RADIUS / 10);
-        this.addChild(this.background);
+        this.addChildAt(this.background, 0);
     }
 
     clearGraphics(): void {
