@@ -133,7 +133,7 @@ export class LegendUI extends Component {
         this.root = this.viewContent.createDiv();
         this.root?.addClass("graph-legend-container");
         for (const [key, manager] of this.dispatcher.graph.interactiveManagers) {
-            (manager) && this.legendRows.set(key, new LegendRow(key, manager, this.root));
+            if (manager) this.legendRows.set(key, new LegendRow(key, manager, this.root));
         }
 
         if (this.plugin.settings.collapseLegend) {

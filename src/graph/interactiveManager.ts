@@ -40,18 +40,24 @@ export class InteractiveManager extends Component {
         let disabledTypes: string[] = [];
         types.forEach(type => {
             let interactive = this.interactives.get(type);
-            (interactive) && (interactive.isActive = false, disabledTypes.push(type));
+            if (interactive) {
+                interactive.isActive = false;
+                disabledTypes.push(type);
+            }
         });
-        (disabledTypes.length > 0) && (this.dispatcher.onInteractivesDisabled(this.name, disabledTypes));
+        if (disabledTypes.length > 0) this.dispatcher.onInteractivesDisabled(this.name, disabledTypes);
     }
 
     enable(types: string[]): void {
         let enabledTypes: string[] = [];
         types.forEach(type => {
             let interactive = this.interactives.get(type);
-            (interactive) && (interactive.isActive = true, enabledTypes.push(type));
+            if (interactive) {
+                interactive.isActive = true;
+                enabledTypes.push(type);
+            }
         });
-        (enabledTypes.length > 0) && this.dispatcher.onInteractivesEnabled(this.name, enabledTypes);
+        if (enabledTypes.length > 0) this.dispatcher.onInteractivesEnabled(this.name, enabledTypes);
     }
 
     loadView(viewData: GraphViewData): void {
@@ -72,8 +78,8 @@ export class InteractiveManager extends Component {
             }
         });
 
-        (toDisable.length > 0) && this.dispatcher.onInteractivesDisabled(this.name, toDisable);
-        (toEnable.length > 0) && this.dispatcher.onInteractivesEnabled(this.name, toEnable);
+        if (toDisable.length > 0) this.dispatcher.onInteractivesDisabled(this.name, toDisable);
+        if (toEnable.length > 0) this.dispatcher.onInteractivesEnabled(this.name, toEnable);
     }
 
     isActive(type: string): boolean {
@@ -148,7 +154,7 @@ export class InteractiveManager extends Component {
         let i = 0;
         this.interactives.forEach((interactive, type) => {
             let color = this.tryComputeColorFromType(type);
-            (color) && this.setColor(type, color);
+            if (color) this.setColor(type, color);
         });
     }
 
@@ -156,7 +162,7 @@ export class InteractiveManager extends Component {
         if (!this.interactives.has(type)) return;
 
         let color = this.tryComputeColorFromType(type);
-        (color) && this.setColor(type, color);
+        if (color) this.setColor(type, color);
     }
 
     private tryComputeColorFromType(type: string): Uint8Array | null{

@@ -203,11 +203,11 @@ export class Graph extends Component {
             if (!node) continue;
             for (const forward in node.forward) {
                 const linkID = getLinkID({source: {id: id}, target: {id: forward}});
-                this.linksSet.connectedLinks.has(linkID) && linksToDisable.add(linkID);
+                if (this.linksSet.connectedLinks.has(linkID)) linksToDisable.add(linkID);
             }
             for (const reverse in node.reverse) {
                 const linkID = getLinkID({source: {id: reverse}, target: {id: id}});
-                this.linksSet.connectedLinks.has(linkID) && linksToDisable.add(linkID);
+                if (this.linksSet.connectedLinks.has(linkID)) linksToDisable.add(linkID);
             }
         }
         return linksToDisable;
@@ -226,11 +226,11 @@ export class Graph extends Component {
             if (!node) continue;
             for (const forward in node.forward) {
                 const linkID = getLinkID({source: {id: id}, target: {id: forward}});
-                this.linksSet.disconnectedLinks[cause].has(linkID) && linksToEnable.add(linkID);
+                if (this.linksSet.disconnectedLinks[cause].has(linkID)) linksToEnable.add(linkID);
             }
             for (const reverse in node.reverse) {
                 const linkID = getLinkID({source: {id: reverse}, target: {id: id}});
-                this.linksSet.disconnectedLinks[cause].has(linkID) && linksToEnable.add(linkID);
+                if (this.linksSet.disconnectedLinks[cause].has(linkID)) linksToEnable.add(linkID);
             }
         }
         return linksToEnable;

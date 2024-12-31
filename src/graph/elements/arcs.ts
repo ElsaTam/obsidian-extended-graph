@@ -94,7 +94,7 @@ export class ArcsWrapper extends ElementWrapper {
      */
     enableType(type: string): void {
         let arc = this.graphics.get(type);
-        (arc) && (arc.graphic.alpha = 1);
+        if (arc) arc.graphic.alpha = 1;
     }
 
     /**
@@ -103,7 +103,7 @@ export class ArcsWrapper extends ElementWrapper {
      */
     disableType(type: string): void {
         let arc = this.graphics.get(type);
-        (arc) && (arc.graphic.alpha = 0.1);
+        if (arc) arc.graphic.alpha = 0.1;
     }
 
     /**
