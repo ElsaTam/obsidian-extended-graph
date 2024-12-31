@@ -1,3 +1,4 @@
+import { HexString } from 'obsidian';
 import * as cm from './colormaps';
 import { evaluate_cmap } from './colormaps';
 
@@ -5,43 +6,11 @@ export function getColor(palette: string, x: number): Uint8Array {
     return new Uint8Array(cm.evaluate_cmap(x, palette, false));
 }
 
-export function int2rgb(int: number): Uint8Array {
-    return new Uint8Array([
-        Math.floor(int / (256*256)),
-        Math.floor(int / 256) % 256,
-        int % 256,
-    ]);
-}
-
-export function rgb2int(rgb: Uint8Array): number {
-    return rgb[0] * (256*256) + rgb[1] * 256 + rgb[2];
-}
-
-export function rgb2hsv(rgb: Uint8Array): { h: number, s: number, v: number } {
-    let r = rgb[0], g = rgb[1], b = rgb[2];
-    r /= 255, g /= 255, b /= 255;
-  
-    var max = Math.max(r, g, b), min = Math.min(r, g, b);
-    var h, s, v = max;
-  
-    var d = max - min;
-    s = max == 0 ? 0 : d / max;
-  
-    if (max == min) {
-      h = 0; // achromatic
-    }
-    else {
-        switch (max) {
-            case r:  h = (g - b) / d + (g < b ? 6 : 0); break;
-            case g:  h = (b - r) / d + 2; break;
-            default: h = (r - g) / d + 4; break;
-        }
-        h /= 6;
-    }
-  
-    return {h: Math.floor(h * 360), s: Math.floor(s * 100), v: Math.floor(v * 100)};
-}
-
+/**
+ * Convert HSV to RGB
+ * @param hsv h: 0-360, s: 0-100, v: 0-100
+ * @returns RGB 8 bit array
+ */
 export function hsv2rgb(hsv: {h: number, s: number, v: number}): Uint8Array {
     hsv.h /= 360; hsv.s /= 100; hsv.v /= 100;
     var r, g, b;
@@ -64,11 +33,11 @@ export function hsv2rgb(hsv: {h: number, s: number, v: number}): Uint8Array {
     return new Uint8Array([ r * 255, g * 255, b * 255 ]);
 }
 
-export function rgb2hex(rgb: Uint8Array): number {
-    const binaryRGB = rgb[0] << 16 | rgb[1] << 8 | rgb[2];    
-    return binaryRGB;
-}
-
+/**
+ * Convert a hex color to an RGB array
+ * @param hex format: #RRGGBB
+ * @returns RGB 8 bit array
+ */
 export function hex2rgb(hex: string): Uint8Array {
     var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     if (!result) return new Uint8Array([0, 0, 0]);
@@ -79,31 +48,12 @@ export function hex2rgb(hex: string): Uint8Array {
     ]);
 }
 
-export function int2hex(int: number): number {
-    return rgb2hex(int2rgb(int));
-}
-
-export function randomColor(baseColor?: {h: number, s: number, v: number}) {
-    const newH = Math.floor(360 * Math.random());
-
-    if (baseColor) {
-        return hsv2rgb({
-            h: newH,
-            s: baseColor.s,
-            v: baseColor.v
-        });
+export function componentToHex(c: number): string {
+    var result = c.toString(16);
+    if (result.length === 1) {
+        result = '0' + result;
     }
-    else {
-        const body = document.getElementsByTagName("body")[0];
-        const s = body.classList.contains("theme-dark") ? 90 : 100;
-        const v = body.classList.contains("theme-dark") ? 100 : 60;
-
-        return hsv2rgb({
-            h: newH,
-            s: s,
-            v: v
-        });
-    }
+    return result;
 }
 
 export function plot_colormap(canvas_id: string, name: string, reverse: boolean) {
@@ -118,5 +68,23 @@ export function plot_colormap(canvas_id: string, name: string, reverse: boolean)
         let b = color[2];
         ctx.fillStyle = 'rgb(' + r + ',' + g + ',' + b + ')';
         ctx.fillRect(x * canvas.width / 256, 0, canvas.width / 256, canvas.height);
+    }
+}
+
+export function randomColor(): string {
+    return GoldenColor.random(50, 95);
+}
+
+class GoldenColor {
+    private static goldenRatioConjugate: number = 0.618033988749895;
+    private static h: number = Math.random();
+
+    private constructor() { }
+
+    public static random(s: number = 50, v: number = 95): string {
+        GoldenColor.h += GoldenColor.goldenRatioConjugate;
+        GoldenColor.h %= 1;
+        var color = hsv2rgb({h: Math.floor(GoldenColor.h * 360), s: s, v: v});
+        return "#" + componentToHex(color[0]) + componentToHex(color[1]) + componentToHex(color[2]);
     }
 }

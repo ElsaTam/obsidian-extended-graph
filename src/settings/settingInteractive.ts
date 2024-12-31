@@ -1,8 +1,8 @@
 import { ColorComponent, setIcon, Setting, TextComponent } from "obsidian";
 import { cmOptions } from "src/colors/colormaps";
 import { ExtendedGraphSettingTab } from "./settingTab";
-import { capitalizeFirstLetter, getFile, getFileInteractives, isPropertyKeyValid } from "src/helperFunctions";
-import { plot_colormap } from "src/colors/colors";
+import { capitalizeFirstLetter, getFileInteractives, isPropertyKeyValid } from "src/helperFunctions";
+import { plot_colormap, randomColor } from "src/colors/colors";
 import { getAPI as getDataviewAPI } from "obsidian-dataview";
 import { INVALID_KEYS, LINK_KEY, TAG_KEY } from "src/globalVariables";
 import { NewNameModal } from "src/ui/newNameModal";
@@ -128,17 +128,19 @@ export abstract class SettingInteractives {
         let colorSetting = new Setting(this.colorsContainer);
         let uuid = crypto.randomUUID();
         this.colorItems.set(uuid, colorSetting);
+
+        color = color ? color : randomColor();
         
         colorSetting.addText(cb => {
             cb.setPlaceholder(this.getPlaceholder());
-            type && cb.setValue(type);
+            if (type) cb.setValue(type);
             cb.onChange((name: string) => {
                 this.saveColorSetting(uuid);
             })
         });
 
         colorSetting.addColorPicker(cb => {
-            color && cb.setValue(color);
+            cb.setValue(color);
             cb.onChange((color: string) => {
                 this.saveColorSetting(uuid);
             })
