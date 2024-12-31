@@ -1,4 +1,4 @@
-import { ColorComponent, setIcon, Setting, TextComponent } from "obsidian";
+import { ColorComponent, HexString, setIcon, Setting, TextComponent } from "obsidian";
 import { cmOptions } from "src/colors/colormaps";
 import { ExtendedGraphSettingTab } from "./settingTab";
 import { capitalizeFirstLetter, getFileInteractives, isPropertyKeyValid } from "src/helperFunctions";
@@ -90,7 +90,7 @@ export abstract class SettingInteractives {
             .addButton(cb => {
                 setIcon(cb.buttonEl, "plus");
                 cb.onClick((e) => {
-                    this.addColor();
+                    this.addColor("", randomColor());
                 })
             });
         this.allTopElements.push(this.settingInteractiveColor.settingEl);
@@ -124,16 +124,14 @@ export abstract class SettingInteractives {
         }
     }
 
-    protected addColor(type?: string, color?: string): Setting {
+    protected addColor(type: string, color: HexString): Setting {
         let colorSetting = new Setting(this.colorsContainer);
         let uuid = crypto.randomUUID();
         this.colorItems.set(uuid, colorSetting);
-
-        color = color ? color : randomColor();
         
         colorSetting.addText(cb => {
             cb.setPlaceholder(this.getPlaceholder());
-            if (type) cb.setValue(type);
+            cb.setValue(type);
             cb.onChange((name: string) => {
                 this.saveColorSetting(uuid);
             })

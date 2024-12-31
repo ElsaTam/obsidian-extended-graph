@@ -71,7 +71,7 @@ export function plot_colormap(canvas_id: string, name: string, reverse: boolean)
     }
 }
 
-export function randomColor(): string {
+export function randomColor(): HexString {
     return GoldenColor.random(50, 95);
 }
 
