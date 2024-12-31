@@ -1,7 +1,7 @@
 {
 	"id": "extended-graph",
 	"name": "Extended Graph",
-	"version": "1.0.7",
+	"version": "1.1.0",
 	"minAppVersion": "1.7.0",
 	"description": "Add features to the graph.",
 	"author": "Kapirklaa",
