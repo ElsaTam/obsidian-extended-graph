@@ -140,7 +140,7 @@ export class GraphEventsDispatcher extends Component {
                 for (const id of set) {
                     let l = this.graph.linksSet.linksMap.get(id);
                     if (!l) continue;
-                    if (this.graph.renderer.links.find(link => l.link.source.id === link.source.id && l.link.target.id === link.target.id)) {
+                    if (this.graph.renderer.links.find(link => l?.link.source.id === link.source.id && l?.link.target.id === link.target.id)) {
                         linksToDisable.add(id);
                     }
                 }
