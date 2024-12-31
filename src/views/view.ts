@@ -14,7 +14,7 @@ export class GraphView {
     }
 
     saveGraph(graph: Graph) {
-        this.data.disabledTypes[LINK_KEY] = graph.linksSet.linksManager ? graph.linksSet.linksManager.getTypes().filter(type => !graph.linksSet.linksManager?.isActive(type)) : [];
+        this.data.disabledTypes[LINK_KEY] = graph.linksSet.linksManager ? graph.linksSet.linksManager.getTypes().filter(type => !graph.linksSet.linksManager?.isActive(type)): [];
         for (const [key, manager] of graph.nodesSet.managers) {
             this.data.disabledTypes[key] = manager.getTypes().filter(type => !manager.isActive(type));
         }

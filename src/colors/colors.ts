@@ -1,7 +1,7 @@
 import * as cm from './colormaps';
 import { evaluate_cmap } from './colormaps';
 
-export function getColor(palette: string, x: number) : Uint8Array {
+export function getColor(palette: string, x: number): Uint8Array {
     return new Uint8Array(cm.evaluate_cmap(x, palette, false));
 }
 
@@ -17,7 +17,7 @@ export function rgb2int(rgb: Uint8Array): number {
     return rgb[0] * (256*256) + rgb[1] * 256 + rgb[2];
 }
 
-export function rgb2hsv(rgb: Uint8Array) : { h: number, s: number, v: number } {
+export function rgb2hsv(rgb: Uint8Array): { h: number, s: number, v: number } {
     let r = rgb[0], g = rgb[1], b = rgb[2];
     r /= 255, g /= 255, b /= 255;
   
@@ -42,7 +42,7 @@ export function rgb2hsv(rgb: Uint8Array) : { h: number, s: number, v: number } {
     return {h: Math.floor(h * 360), s: Math.floor(s * 100), v: Math.floor(v * 100)};
 }
 
-export function hsv2rgb(hsv: {h: number, s: number, v: number}) : Uint8Array {
+export function hsv2rgb(hsv: {h: number, s: number, v: number}): Uint8Array {
     hsv.h /= 360; hsv.s /= 100; hsv.v /= 100;
     var r, g, b;
   
@@ -64,12 +64,12 @@ export function hsv2rgb(hsv: {h: number, s: number, v: number}) : Uint8Array {
     return new Uint8Array([ r * 255, g * 255, b * 255 ]);
 }
 
-export function rgb2hex(rgb: Uint8Array) : number {
+export function rgb2hex(rgb: Uint8Array): number {
     const binaryRGB = rgb[0] << 16 | rgb[1] << 8 | rgb[2];    
     return binaryRGB;
 }
 
-export function hex2rgb(hex: string) : Uint8Array {
+export function hex2rgb(hex: string): Uint8Array {
     var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     if (!result) return new Uint8Array([0, 0, 0]);
     return new Uint8Array([
@@ -79,7 +79,7 @@ export function hex2rgb(hex: string) : Uint8Array {
     ]);
 }
 
-export function int2hex(int: number) : number {
+export function int2hex(int: number): number {
     return rgb2hex(int2rgb(int));
 }
 

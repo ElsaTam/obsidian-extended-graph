@@ -25,7 +25,7 @@ export class ExtendedGraphSettingTab extends PluginSettingTab {
         this.focusSettings = new SettingFocus(this);
     }
 
-    display() : void {
+    display(): void {
         const {containerEl} = this;
         containerEl.empty();
 

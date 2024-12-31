@@ -14,23 +14,23 @@ export abstract class ElementWrapper extends Graphics {
         this.manager = manager;
     }
 
-    getActiveType() : string | null {
+    getActiveType(): string | null {
         for (const type of this.types) {
             if (this.manager.isActive(type)) return type;
         }
         return null;
     }
 
-    matchesTypes(types: string[]) : boolean {
+    matchesTypes(types: string[]): boolean {
         return types.sort().join(',') === [...this.types].join(',');
     }
 
-    hasType(type: string) : boolean {
-        return this.types ? this.types.has(type) : false;
+    hasType(type: string): boolean {
+        return this.types ? this.types.has(type): false;
     }
 
-    abstract enableType(type: string) : void
-    abstract disableType(type: string) : void
+    abstract enableType(type: string): void
+    abstract disableType(type: string): void
     abstract initGraphics(): void;
     abstract clearGraphics(): void;
     abstract updateGraphics(): void;

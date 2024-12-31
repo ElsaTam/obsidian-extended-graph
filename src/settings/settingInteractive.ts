@@ -117,14 +117,14 @@ export abstract class SettingInteractives {
             let label = this.selectionContainer.createEl("label");
             let text = label.createSpan({text: type});
             let toggle = label.createEl("input", {type: "checkbox"});
-            isActive ? this.selectInteractive(label, toggle) : this.deselectInteractive(label, toggle);
+            isActive ? this.selectInteractive(label, toggle): this.deselectInteractive(label, toggle);
             toggle.addEventListener("change", e => {
-                toggle.checked ? this.selectInteractive(label, toggle) : this.deselectInteractive(label, toggle);
+                toggle.checked ? this.selectInteractive(label, toggle): this.deselectInteractive(label, toggle);
             })
         }
     }
 
-    protected addColor(type?: string, color?: string) : Setting {
+    protected addColor(type?: string, color?: string): Setting {
         let colorSetting = new Setting(this.colorsContainer);
         let uuid = crypto.randomUUID();
         this.colorItems.set(uuid, colorSetting);
@@ -159,7 +159,7 @@ export abstract class SettingInteractives {
 
     protected updateCSS(preview: HTMLElement, color?: string) {
         let parent = preview.parentElement;
-        color ? parent?.style.setProperty("--interactive-color", color) : parent?.style.setProperty("--interactive-color", "transparent");
+        color ? parent?.style.setProperty("--interactive-color", color): parent?.style.setProperty("--interactive-color", "transparent");
     }
 
     protected removeColorSetting(uuid: string) {
@@ -222,10 +222,10 @@ export abstract class SettingInteractives {
         return [...allTypes].sort();
     }
 
-    protected abstract saveColor(preview: HTMLElement, type: string, color: string) : void;
-    protected abstract isValueValid(name: string) : boolean;
-    protected abstract getPlaceholder() : string;
-    protected abstract updatePreview(preview: HTMLDivElement, type?: string, color?: string) : void;
+    protected abstract saveColor(preview: HTMLElement, type: string, color: string): void;
+    protected abstract isValueValid(name: string): boolean;
+    protected abstract getPlaceholder(): string;
+    protected abstract updatePreview(preview: HTMLDivElement, type?: string, color?: string): void;
 }
 
 export class SettingTags extends SettingInteractives {
@@ -255,7 +255,7 @@ export class SettingTags extends SettingInteractives {
         }
     }
 
-    protected isValueValid(name: string) : boolean {
+    protected isValueValid(name: string): boolean {
         return /^[a-zA-Z]+$/.test(name);
     }
 
@@ -342,7 +342,7 @@ export class SettingPropertiesArray {
         return isPropertyKeyValid(key);
     }
 
-    protected addInteractive(key: string) : boolean {
+    protected addInteractive(key: string): boolean {
         if (!this.isKeyValid(key)) return false;
 
         this.settingTab.plugin.settings.additionalProperties[key] = true;
@@ -407,7 +407,7 @@ export class SettingProperties extends SettingInteractives {
             }).settingEl);
     }
 
-    remove() : void {
+    remove(): void {
         delete this.settingTab.plugin.settings.additionalProperties[this.interactiveName];
         delete this.settingTab.plugin.settings.colormaps[this.interactiveName];
         delete this.settingTab.plugin.settings.interactiveColors[this.interactiveName];
@@ -430,7 +430,7 @@ export class SettingProperties extends SettingInteractives {
         }
     }
 
-    protected isValueValid(name: string) : boolean {
+    protected isValueValid(name: string): boolean {
         return (name.length > 0);
     }
 
@@ -475,7 +475,7 @@ export class SettingLinks extends SettingInteractives {
         }
     }
 
-    protected isValueValid(name: string) : boolean {
+    protected isValueValid(name: string): boolean {
         return isPropertyKeyValid(name);
     }
 

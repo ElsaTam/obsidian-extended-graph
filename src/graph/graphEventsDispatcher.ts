@@ -5,6 +5,8 @@ import { ViewsUI } from "../ui/viewsUI";
 import { GraphsManager } from "src/graphsManager";
 import { WorkspaceLeafExt } from "src/types/leaf";
 import { LINK_KEY } from "src/globalVariables";
+import { ExtendedGraphSettings } from "src/settings/settings";
+import { GraphViewData } from "src/views/viewData";
 
 export class GraphEventsDispatcher extends Component {
     type: string;
@@ -16,6 +18,8 @@ export class GraphEventsDispatcher extends Component {
     legendUI: LegendUI | null = null;
     viewsUI: ViewsUI;
 
+    // ============================== CONSTRUCTOR ==============================
+
     /**
      * Constructor for GraphEventsDispatcher.
      * @param leaf - The workspace leaf.
@@ -25,79 +29,111 @@ export class GraphEventsDispatcher extends Component {
         super();
         this.leaf = leaf;
         this.graphsManager = graphsManager;
+        this.initializeUI();
+    }
 
+    private initializeUI(): void {
         this.graph = new Graph(this);
         this.addChild(this.graph);
 
+        this.initializeLegendUI();
+
         this.viewsUI = new ViewsUI(this);
+        this.viewsUI.updateViewsList(this.graphsManager.plugin.settings.views);
         this.addChild(this.viewsUI);
-        if (this.graphsManager.plugin.settings.enableLinks || this.graphsManager.plugin.settings.enableTags || Object.values(this.graphsManager.plugin.settings.additionalProperties).some(p => p)) {
+    }
+
+    private initializeLegendUI(): void {
+        const settings = this.graphsManager.plugin.settings;
+        if (settings.enableLinks || settings.enableTags || this.hasAdditionalProperties(settings)) {
             this.legendUI = new LegendUI(this);
             this.addChild(this.legendUI);
         }
-        this.viewsUI.updateViewsList(this.graphsManager.plugin.settings.views);
     }
+
+    private hasAdditionalProperties(settings: ExtendedGraphSettings): boolean {
+        return Object.values(settings.additionalProperties).some(p => p);
+    }
+
+    // ================================ LOADING ================================
 
     /**
      * Called when the component is loaded.
      */
     onload(): void {
-        let view = this.graphsManager.plugin.settings.views.find(v => v.id === this.viewsUI.currentViewID);
-        (view) && this.graph.engine.setOptions(view.engineOptions);
+        this.loadCurrentView();
     }
 
-    /**
-     * Called when the component is unloaded.
-     */
-    onunload(): void {
-        this.leaf.view.renderer.px.stage.children[1].removeEventListener('childAdded', this.onChildAddedToStage);
-        this.leaf.view.renderer.px.stage.children[1].removeEventListener('childRemoved', this.onChildRemovedFromStage);
-
-        this.graphsManager.onPluginUnloaded(this.leaf);
+    private loadCurrentView(): void {
+        const view = this.graphsManager.plugin.settings.views.find(v => v.id === this.viewsUI.currentViewID);
+        if (view) {
+            this.graph.engine.setOptions(view.engineOptions);
+        }
     }
 
     /**
      * Called when the graph is ready.
      */
-    onGraphReady() : void {
-        // Update node opacity layer colors
-        if (this.graph.staticSettings.fadeOnDisable) {
-            this.graph.nodesSet.updateOpacityLayerColor();
-        }
-
-        this.onChildAddedToStage = this.onChildAddedToStage.bind(this)
-        this.onChildRemovedFromStage = this.onChildRemovedFromStage.bind(this)
-
-        this.leaf.view.renderer.px.stage.children[1].addEventListener('childAdded', this.onChildAddedToStage);
-        this.leaf.view.renderer.px.stage.children[1].addEventListener('childRemoved', this.onChildRemovedFromStage);
-
+    onGraphReady(): void {
+        this.updateOpacityLayerColor();
+        this.bindStageEvents();
         this.changeView(this.viewsUI.currentViewID);
     }
 
-    // UPDATES
+    private updateOpacityLayerColor(): void {
+        if (this.graph.staticSettings.fadeOnDisable) {
+            this.graph.nodesSet.updateOpacityLayerColor();
+        }
+    }
+
+    private bindStageEvents(): void {
+        this.onChildAddedToStage = this.onChildAddedToStage.bind(this);
+        //this.onChildRemovedFromStage = this.onChildRemovedFromStage.bind(this);
+    
+        const stage = this.leaf.view.renderer.px.stage.children[1];
+        stage.addEventListener('childAdded', this.onChildAddedToStage);
+        //stage.addEventListener('childRemoved', this.onChildRemovedFromStage);
+    }
+
+    // =============================== UNLOADING ===============================
 
     /**
-     * Called when a child is removed from the stage by the engine.
+     * Called when the component is unloaded.
      */
-    private onChildRemovedFromStage() : void {
-        
+    onunload(): void {
+        this.unbindStageEvents();
+        this.graphsManager.onPluginUnloaded(this.leaf);
     }
+
+    private unbindStageEvents(): void {
+        const stage = this.leaf.view.renderer.px.stage.children[1];
+        stage.removeEventListener('childAdded', this.onChildAddedToStage);
+        //stage.removeEventListener('childRemoved', this.onChildRemovedFromStage);
+    }
+
+    // ============================= STAGE EVENTS ==============================
 
     /**
      * Called when a child is added to the stage by the engine.
      */
-    private onChildAddedToStage() : void {
-        if (this.leaf.view.renderer.nodes.length > this.graphsManager.plugin.settings.maxNodes) {
-            new Notice(`Try to handle ${this.leaf.view.renderer.nodes.length}, but the limit is ${this.graphsManager.plugin.settings.maxNodes}. Extended Graph disabled.`);
+    private onChildAddedToStage(): void {
+        if (this.graphsManager.isNodeLimitExceeded(this.leaf)) {
             this.graphsManager.disablePlugin(this.leaf);
             return;
         }
 
+        this.loadAndConnectNodesAndLinks();
+        this.disableDisconnectedLinks();
+    }
+
+    private loadAndConnectNodesAndLinks(): void {
         this.graph.nodesSet.load();
         this.graph.nodesSet.connectNodes();
         this.graph.linksSet.load();
         this.graph.linksSet.connectLinks();
+    }
 
+    private disableDisconnectedLinks(): void {
         if (this.graph.linksSet.disconnectedLinks) {
             let linksToDisable = new Set<string>();
             for (const [cause, set] of Object.entries(this.graph.linksSet.disconnectedLinks)) {
@@ -116,7 +152,7 @@ export class GraphEventsDispatcher extends Component {
         }
     }
 
-    // INTERACTIVES
+    // ============================= INTERACTIVES ==============================
 
     /**
      * Handles the addition of interactive elements.
@@ -124,13 +160,10 @@ export class GraphEventsDispatcher extends Component {
      * @param colorMaps - A map of types to their corresponding colors.
      */
     onInteractivesAdded(name: string, colorMaps: Map<string, Uint8Array>) {
-        switch (name) {
-            case LINK_KEY:
-                this.onLinkTypesAdded(colorMaps);
-                break;
-            default:
-                this.onNodeInteractiveTypesAdded(name, colorMaps);
-                break;
+        if (name === LINK_KEY) {
+            this.onLinkTypesAdded(colorMaps);
+        } else {
+            this.onNodeInteractiveTypesAdded(name, colorMaps);
         }
     }
 
@@ -140,13 +173,10 @@ export class GraphEventsDispatcher extends Component {
      * @param types - A set of types to be removed.
      */
     onInteractivesRemoved(name: string, types: Set<string>) {
-        switch (name) {
-            case LINK_KEY:
-                this.onLinkTypesRemoved(types);
-                break;
-            default:
-                this.onNodeInteractiveTypesRemoved(name, types);
-                break;
+        if (name === LINK_KEY) {
+            this.onLinkTypesRemoved(types);
+        } else {
+            this.onNodeInteractiveTypesRemoved(name, types);
         }
     }
 
@@ -157,13 +187,10 @@ export class GraphEventsDispatcher extends Component {
      * @param color - The new color of the interactive element.
      */
     onInteractiveColorChanged(name: string, type: string, color: Uint8Array) {
-        switch (name) {
-            case LINK_KEY:
-                this.onLinkColorChanged(type, color);
-                break;
-            default:
-                this.onNodeInteractiveColorChanged(name, type, color);
-                break;
+        if (name === LINK_KEY) {
+            this.onLinkColorChanged(type, color);
+        } else {
+            this.onNodeInteractiveColorChanged(name, type, color);
         }
     }
 
@@ -173,13 +200,10 @@ export class GraphEventsDispatcher extends Component {
      * @param types - An array of types to be disabled.
      */
     onInteractivesDisabled(name: string, types: string[]) {
-        switch (name) {
-            case LINK_KEY:
-                this.disableLinkTypes(types);
-                break;
-            default:
-                this.disableNodeInteractiveTypes(name, types);
-                break;
+        if (name === LINK_KEY) {
+            this.disableLinkTypes(types);
+        } else {
+            this.disableNodeInteractiveTypes(name, types);
         }
     }
 
@@ -189,23 +213,24 @@ export class GraphEventsDispatcher extends Component {
      * @param types - An array of types to be enabled.
      */
     onInteractivesEnabled(name: string, types: string[]) {
-        switch (name) {
-            case LINK_KEY:
-                this.enableLinkTypes(types);
-                break;
-            default:
-                this.enableNodeInteractiveTypes(name, types);
-                break;
+        if (name === LINK_KEY) {
+            this.enableLinkTypes(types);
+        } else {
+            this.enableNodeInteractiveTypes(name, types);
         }
     }
+
+    // ================================= TAGS ==================================
 
     // TAGS
 
     private onNodeInteractiveTypesAdded(key: string, colorMaps: Map<string, Uint8Array>) {
-        this.graph.nodesSet?.resetArcs(key);
-        colorMaps.forEach((color, type) => {
-            this.legendUI?.addLegend(key, type, color);
-        });
+        this.graph.nodesSet.resetArcs(key);
+        if (this.legendUI) {
+            for (const [type, color] of colorMaps) {
+                this.legendUI.addLegend(key, type, color);
+            }
+        }
         this.leaf.view.renderer.changed();
     }
 
@@ -214,7 +239,7 @@ export class GraphEventsDispatcher extends Component {
     }
 
     private onNodeInteractiveColorChanged(key: string, type: string, color: Uint8Array) {
-        this.graph.nodesSet?.updateArcsColor(key, type, color);
+        this.graph.nodesSet.updateArcsColor(key, type, color);
         this.legendUI?.updateLegend(key, type, color);
         this.leaf.view.renderer.changed();
     }
@@ -247,11 +272,11 @@ export class GraphEventsDispatcher extends Component {
         }
     }
 
-    // LINKS
+    // ================================= LINKS =================================
 
     private onLinkTypesAdded(colorMaps: Map<string, Uint8Array>) {
         colorMaps.forEach((color, type) => {
-            this.graph.linksSet?.updateLinksColor(type, color);
+            this.graph.linksSet.updateLinksColor(type, color);
             this.legendUI?.addLegend(LINK_KEY, type, color);
         });
         this.leaf.view.renderer.changed();
@@ -262,7 +287,7 @@ export class GraphEventsDispatcher extends Component {
     }
 
     private onLinkColorChanged(type: string, color: Uint8Array) {
-        this.graph.linksSet?.updateLinksColor(type, color);
+        this.graph.linksSet.updateLinksColor(type, color);
         this.legendUI?.updateLegend(LINK_KEY, type, color);
         this.leaf.view.renderer.changed();
     }
@@ -279,45 +304,64 @@ export class GraphEventsDispatcher extends Component {
         }
     }
 
-    // VIEWS
+    // ================================= VIEWS =================================
 
     /**
      * Change the current view with the specified ID.
      * @param id - The ID of the view to change to.
      */
     changeView(id: string) {
-        const viewData = this.graphsManager.plugin.settings.views.find(v => v.id === id);
+        const viewData = this.graphsManager.plugin.getViewDataById(id);
         if (!viewData) return;
-        this.graph.engine.setOptions(viewData.engineOptions);
-        this.graph.engine.updateSearch();
 
-        setTimeout(() => {
-            for (let [key, manager] of this.graph.nodesSet.managers) {
-                manager.loadView(viewData);
-                this.legendUI?.enableAll(key);
-                viewData.disabledTypes[key]?.forEach(type => {
-                    this.legendUI?.disable(key, type);
-                });
-            }
-
-            if (this.graph.linksSet.linksManager) {
-                this.graph.linksSet.linksManager.loadView(viewData);
-                this.legendUI?.enableAll(LINK_KEY);
-                viewData.disabledTypes[LINK_KEY]?.forEach(type => {
-                    this.legendUI?.disable(LINK_KEY, type);
-                });
-            }
-
+        this.applyViewOptions(viewData);
+        this.updateInteractiveManagers(viewData).then(() => {
             this.graph.updateWorker();
             this.graph.engine.updateSearch();
+        });
+    }
+
+    private applyViewOptions(viewData: GraphViewData): void {
+        this.graph.engine.setOptions(viewData.engineOptions);
+        this.graph.engine.updateSearch();
+    }
+
+    private async updateInteractiveManagers(viewData: GraphViewData): Promise<void> {
+        await setTimeout(() => {
+            this.updateNodeManagers(viewData);
+            this.updateLinkManager(viewData);
         }, 200);
+    }
+
+    private updateNodeManagers(viewData: GraphViewData): void {
+        for (const [key, manager] of this.graph.nodesSet.managers) {
+            manager.loadView(viewData);
+            if (this.legendUI) {
+                this.legendUI.enableAll(key);
+                for (const type of viewData.disabledTypes[key]) {
+                    this.legendUI.disable(key, type);
+                }
+            }
+        }
+    }
+    
+    private updateLinkManager(viewData: GraphViewData): void {
+        if (this.graph.linksSet.linksManager) {
+            this.graph.linksSet.linksManager.loadView(viewData);
+            if (this.legendUI) {
+                this.legendUI.enableAll(LINK_KEY);
+                for (const type of viewData.disabledTypes[LINK_KEY]) {
+                    this.legendUI.disable(LINK_KEY, type);
+                }
+            }
+        }
     }
 
     /**
      * Deletes the view with the specified ID.
      * @param id - The ID of the view to delete.
      */
-    deleteView(id: string) : void {
+    deleteView(id: string): void {
         this.graphsManager.onViewNeedsDeletion(id);
     }
 }

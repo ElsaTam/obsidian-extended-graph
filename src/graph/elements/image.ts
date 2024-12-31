@@ -41,7 +41,7 @@ export class NodeImage extends Sprite {
         this.texture = texture;
     }
 
-    updateOpacityLayerColor(backgroundColor: ColorSource) : void {
+    updateOpacityLayerColor(backgroundColor: ColorSource): void {
         this.opacityLayer.clear();
         this.opacityLayer
             .beginFill(backgroundColor)

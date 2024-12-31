@@ -30,7 +30,7 @@ export class ArcsWrapper extends ElementWrapper {
         this.updateGraphics();
     }
 
-    clearGraphics() : void {
+    clearGraphics(): void {
         for (const arc of this.graphics.values()) {
             arc.graphic.destroy();
         }
@@ -41,7 +41,7 @@ export class ArcsWrapper extends ElementWrapper {
     /**
      * Initializes the graphics of the arcs.
      */
-    initGraphics() : void {
+    initGraphics(): void {
         const allTypes = this.manager.getTypesWithoutNone();
         const nTags    = allTypes.length;
         this.arcSize   = Math.min(2 * Math.PI / nTags, ArcsWrapper.maxArcSize);
@@ -92,7 +92,7 @@ export class ArcsWrapper extends ElementWrapper {
      * Enables the arc of a given type.
      * @param type The type of the arc
      */
-    enableType(type: string) : void {
+    enableType(type: string): void {
         let arc = this.graphics.get(type);
         (arc) && (arc.graphic.alpha = 1);
     }
@@ -101,7 +101,7 @@ export class ArcsWrapper extends ElementWrapper {
      * Disables the arc of a given type.
      * @param type The type of the arc
      */
-    disableType(type: string) : void {
+    disableType(type: string): void {
         let arc = this.graphics.get(type);
         (arc) && (arc.graphic.alpha = 0.1);
     }
@@ -114,7 +114,7 @@ export class ArcsWrapper extends ElementWrapper {
         this.types = types;
     }
 
-    isFullyDisabled() : boolean {
+    isFullyDisabled(): boolean {
         for (const type of this.types) {
             if (this.manager.isActive(type)) return false;
         }

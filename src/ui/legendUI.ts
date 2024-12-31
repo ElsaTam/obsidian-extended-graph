@@ -25,11 +25,11 @@ class LegendRow {
         title.addClass("graph-legend-title");
     }
 
-    private getClassName(type: string) : string {
+    private getClassName(type: string): string {
         return "graph-legend-" + type.replace(" ", "-");
     }
 
-    addLegend(type: string, color: Uint8Array) : void {
+    addLegend(type: string, color: Uint8Array): void {
         if (!this.container.getElementsByClassName(this.getClassName(type))[0]) {
             let button = this.container.createEl("button");
             button.addClasses([this.getClassName(type), "graph-legend"]);
@@ -55,7 +55,7 @@ class LegendRow {
         }
     }
 
-    updateLegend(type: string, color: Uint8Array) : void {
+    updateLegend(type: string, color: Uint8Array): void {
         const button = this.container.getElementsByClassName(this.getClassName(type))[0];
         if (!button) {
             this.addLegend(type, color)

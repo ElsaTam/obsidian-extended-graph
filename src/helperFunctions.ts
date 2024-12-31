@@ -26,7 +26,7 @@ interface Point {
     x: number;
     y: number;
 }
-export function bezier(t: number, p0: Point, p1: Point, p2: Point, p3: Point) : Point {
+export function bezier(t: number, p0: Point, p1: Point, p2: Point, p3: Point): Point {
     const cX = 3 * (p1.x - p0.x),
         bX = 3 * (p2.x - p1.x) - cX,
         aX = p3.x - p0.x - cX - bX;
@@ -41,7 +41,7 @@ export function bezier(t: number, p0: Point, p1: Point, p2: Point, p3: Point) : 
     return { x: x, y: y };
 }
 
-export function quadratic(t: number, p0: Point, p1: Point, p2: Point) : Point {
+export function quadratic(t: number, p0: Point, p1: Point, p2: Point): Point {
     const c1x = (1 - t) * ((1 - t) * p0.x + t * p1.x);
     const c1y = (1 - t) * ((1 - t) * p0.y + t * p1.y);
     const c2x = t * ((1 - t) * p1.x + t * p2.x);
@@ -52,7 +52,7 @@ export function quadratic(t: number, p0: Point, p1: Point, p2: Point) : Point {
 }
 
 // https://stackoverflow.com/questions/11854907/calculate-the-length-of-a-segment-of-a-quadratic-bezier
-export function lengthQuadratic(t: number, p0: Point, p1: Point, p2: Point) : number {
+export function lengthQuadratic(t: number, p0: Point, p1: Point, p2: Point): number {
     const ax = p0.x - p1.x - p1.x + p2.x;
     const ay = p0.y - p1.y - p1.y + p2.y;
     const bx = p1.x + p1.x - p0.x - p0.x;
@@ -74,11 +74,11 @@ export function lengthQuadratic(t: number, p0: Point, p1: Point, p2: Point) : nu
     return L;
 }
 
-export function getFile(app: App, path: string) : TFile | null {
+export function getFile(app: App, path: string): TFile | null {
     return app.vault.getFileByPath(path);
 }
 
-export function getImageUri(app: App, keyProperty: string, path: string) : string | null {
+export function getImageUri(app: App, keyProperty: string, path: string): string | null {
     let file = getFile(app, path);
     if (file) {
         const metadata = app.metadataCache.getFileCache(file);
@@ -91,15 +91,15 @@ export function getImageUri(app: App, keyProperty: string, path: string) : strin
             else if (Array.isArray(frontmatter[keyProperty])) {
                 imageLink = frontmatter[keyProperty][0]?.replace("[[", "").replace("]]", "");
             }
-            const imageFile = imageLink ? app.metadataCache.getFirstLinkpathDest(imageLink, ".") : null;
-            const imageUri = imageFile ? app.vault.getResourcePath(imageFile) : null;
+            const imageFile = imageLink ? app.metadataCache.getFirstLinkpathDest(imageLink, "."): null;
+            const imageUri = imageFile ? app.vault.getResourcePath(imageFile): null;
             if (imageUri) return imageUri;
         }
     }
     return null;
 }
 
-export function getEngine(leaf: WorkspaceLeafExt) : GraphEngine {
+export function getEngine(leaf: WorkspaceLeafExt): GraphEngine {
     if (leaf.view.getViewType() === "graph") {
         return (leaf.view as GraphView).dataEngine;
     }
@@ -112,7 +112,7 @@ export function getEngine(leaf: WorkspaceLeafExt) : GraphEngine {
     }
 }
 
-export function getFileInteractives(interactive: string, app: App, file: TFile) : Set<string> {
+export function getFileInteractives(interactive: string, app: App, file: TFile): Set<string> {
     if (file.extension !== "md") return new Set<string>();
     switch (interactive) {
         case TAG_KEY:
@@ -122,7 +122,7 @@ export function getFileInteractives(interactive: string, app: App, file: TFile) 
     }
 }
 
-function getTags(app: App, file: TFile) : Set<string> {
+function getTags(app: App, file: TFile): Set<string> {
     let metadataCache = app.metadataCache.getCache(file.path);
     if (!metadataCache) return new Set<string>();
 
@@ -132,7 +132,7 @@ function getTags(app: App, file: TFile) : Set<string> {
     return new Set<string>(tags.sort());
 }
 
-function getProperty(key: string, app: App, file: TFile) : Set<string> {
+function getProperty(key: string, app: App, file: TFile): Set<string> {
     const dv = getDataviewAPI();
     let types = new Set<string>();
 
@@ -174,7 +174,7 @@ function getProperty(key: string, app: App, file: TFile) : Set<string> {
     return types;
 }
 
-export function isPropertyKeyValid(key: string) : boolean {
+export function isPropertyKeyValid(key: string): boolean {
     if (key.contains(":")) {
         new Notice("Invalid character ':'");
         return false;

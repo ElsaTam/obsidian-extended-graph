@@ -59,7 +59,7 @@ export class GraphControlsUI extends Component {
         this.collapseGraphControlSection();
     }
 
-    createSaveForDefaultView() : Setting {
+    createSaveForDefaultView(): Setting {
         let setting = new Setting(this.treeItemChildren)
             .setName("Save for default view")
             .setTooltip("Save the current settings as the default view settings");
@@ -71,7 +71,7 @@ export class GraphControlsUI extends Component {
         return setting;
     }
 
-    createSaveForNormalView() : Setting {
+    createSaveForNormalView(): Setting {
         let setting = new Setting(this.treeItemChildren)
             .setName("Save for normal view")
             .setTooltip("Save the current settings as the normal view settings (no plugin enabled)");
@@ -83,7 +83,7 @@ export class GraphControlsUI extends Component {
         return setting;
     }
 
-    createGlobalFilter() : Setting {
+    createGlobalFilter(): Setting {
         let filterHeader = new Setting(this.treeItemChildren).setName("Global filter");
         this.onlyWhenPluginEnabled.push(filterHeader.settingEl);
 
@@ -113,14 +113,14 @@ export class GraphControlsUI extends Component {
             });
     }
 
-    onPluginEnabled(dispatcher: GraphEventsDispatcher) : void {
+    onPluginEnabled(dispatcher: GraphEventsDispatcher): void {
         this.dispatcher = dispatcher;
         this.onlyWhenPluginEnabled.forEach(el => {
             this.treeItemChildren.appendChild(el);
         });
     }
 
-    onPluginDisabled() : void {
+    onPluginDisabled(): void {
         this.onlyWhenPluginEnabled.forEach(el => {
             try {
                 this.treeItemChildren.removeChild(el);

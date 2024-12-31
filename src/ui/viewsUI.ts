@@ -107,7 +107,7 @@ export class ViewsUI extends Component {
         modal.open();
     }
 
-    addOption(key: string, name: string) : void {
+    addOption(key: string, name: string): void {
         for (let i = 0; i < this.select.length; ++i) {
             if (this.select.options[i].value == key) {
                 this.select.options[i].innerText = name;
@@ -125,14 +125,14 @@ export class ViewsUI extends Component {
         this.select.value = key;
     }
 
-    newView(name: string) : boolean {
+    newView(name: string): boolean {
         if (name.length === 0) return false;
         const id = this.dispatcher.graph.newView(name);
         this.currentViewID = id;
         return true;
     }
     
-    updateViewsList(views: GraphViewData[]) : void {
+    updateViewsList(views: GraphViewData[]): void {
         this.clear();
         views.forEach(view => {
             this.addOption(view.id, view.name);
