@@ -3,7 +3,7 @@ export const DEFAULT_VIEW_ID: string = "default-vault";
 
 export const TAG_KEY: string = "tag";
 export const LINK_KEY: string = "link";
-export let INVALID_KEYS: {[interactive: string]: string[]} = {};
+export const INVALID_KEYS: {[interactive: string]: string[]} = {};
 INVALID_KEYS[TAG_KEY] = [];
 INVALID_KEYS[LINK_KEY] = ["tags", "file"];
 

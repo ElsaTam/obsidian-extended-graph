@@ -20,7 +20,7 @@ class LegendRow {
         this.cssTextColorVariable = "--legend-text-color";
 
         
-        let title = this.container.createSpan();
+        const title = this.container.createSpan();
         title.innerText = this.name + "s";
         title.addClass("graph-legend-title");
     }
@@ -31,7 +31,7 @@ class LegendRow {
 
     addLegend(type: string, color: Uint8Array): void {
         if (!this.container.getElementsByClassName(this.getClassName(type))[0]) {
-            let button = this.container.createEl("button");
+            const button = this.container.createEl("button");
             button.addClasses([this.getClassName(type), "graph-legend"]);
             button.setText(type);
             button.addEventListener('click', e => {
@@ -49,7 +49,7 @@ class LegendRow {
             return b.className.replace("graph-legend", "").toLowerCase().localeCompare(a.className.replace("graph-legend", "").toLowerCase());
         };
     
-        let sortedChildren = Array.from(this.container.getElementsByClassName("graph-legend")).sort(sortByName);
+        const sortedChildren = Array.from(this.container.getElementsByClassName("graph-legend")).sort(sortByName);
         for (let i = sortedChildren.length-1; i >= 0; i--) {
             this.container.appendChild(sortedChildren[i]);
         }
@@ -67,7 +67,7 @@ class LegendRow {
 
     removeLegend(types: string[]) {
         types.forEach(type => {
-            let button = this.container.getElementsByClassName(this.getClassName(type))[0];
+            const button = this.container.getElementsByClassName(this.getClassName(type))[0];
             button?.parentNode?.removeChild(button);
         })
     }
@@ -87,12 +87,12 @@ class LegendRow {
     }
 
     disable(type: string) {
-        let button = this.container.getElementsByClassName(this.getClassName(type))[0];
+        const button = this.container.getElementsByClassName(this.getClassName(type))[0];
         if (button) button.addClass("is-hidden");
     }
 
     enable(type: string) {
-        let button = this.container.getElementsByClassName(this.getClassName(type))[0];
+        const button = this.container.getElementsByClassName(this.getClassName(type))[0];
         if (button) button.removeClass("is-hidden");
     }
 }
@@ -116,7 +116,7 @@ export class LegendUI extends Component {
         this.viewContent = dispatcher.leaf.containerEl.getElementsByClassName("view-content")[0] as HTMLElement;
     
         // TOGGLE BUTTON
-        let graphControls = this.viewContent.querySelector(".graph-controls") as HTMLDivElement;
+        const graphControls = this.viewContent.querySelector(".graph-controls") as HTMLDivElement;
         this.toggleDiv = graphControls.createDiv("clickable-icon graph-controls-button mod-legend");
         this.toggleDiv.ariaLabel = "Open legend (tags/links)";
         setIcon(this.toggleDiv, "tags");

@@ -54,7 +54,7 @@ export class NodesSet {
     private addMissingInteractiveTypes(key: string): boolean | undefined {
         if (!this.managers.has(key)) return;
 
-        let missingTypes = new Set<string>();
+        const missingTypes = new Set<string>();
         let isNodeMissing = false;
         for (const node of this.graph.renderer.nodes) {
             if (this.nodesMap.has(node.id)) continue;
@@ -100,9 +100,9 @@ export class NodesSet {
      * @returns A set of node IDs that are missing from the nodes set.
      */
     private addMissingNodes(): Set<string> {
-        let missingNodes = new Set<string>();
+        const missingNodes = new Set<string>();
         for (const node of this.graph.renderer.nodes) {
-            let nodeWrapper = this.nodesMap.get(node.id);
+            const nodeWrapper = this.nodesMap.get(node.id);
             if (nodeWrapper) {
                 this.updateNodeWrapper(nodeWrapper, node);
             }
@@ -240,7 +240,7 @@ export class NodesSet {
      */
     disableInteractive(key: string, type: string): string[] {
         this.disabledInteractives.get(key)?.add(type);
-        let nodesToDisable = this.toggleInteractive(key, type, false);
+        const nodesToDisable = this.toggleInteractive(key, type, false);
         return nodesToDisable;
     }
 
@@ -251,7 +251,7 @@ export class NodesSet {
      */
     enableInteractive(key: string, type: string): string[] {
         this.disabledInteractives.get(key)?.delete(type);
-        let nodesToEnable = this.toggleInteractive(key, type, true);
+        const nodesToEnable = this.toggleInteractive(key, type, true);
         return nodesToEnable;
     }
 
@@ -337,9 +337,9 @@ export class NodesSet {
         
         this.connectedNodes.add(id);
         nodeWrapper.fadeIn();
+        nodeWrapper.updateNode();
         nodeWrapper.node.initGraphics();
         this.graph.renderer.nodes.push(nodeWrapper.node);
-        nodeWrapper.updateNode();
         nodeWrapper.connect();
         return true;
     }

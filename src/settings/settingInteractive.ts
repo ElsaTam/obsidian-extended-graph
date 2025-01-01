@@ -64,7 +64,7 @@ export abstract class SettingInteractives {
         this.noneType = this.settingTab.plugin.settings.noneType[this.interactiveName];
 
         // COLOR PALETTE
-        let settingPalette = new Setting(this.containerEl)
+        const settingPalette = new Setting(this.containerEl)
             .setName(`Color palette`)
             .setDesc(`Choose the color palette for the ${this.interactiveName}s visualizations`)
             .addDropdown(cb => cb.addOptions(cmOptions).setValue(this.settingTab.plugin.settings.colormaps[this.interactiveName])
@@ -110,12 +110,12 @@ export abstract class SettingInteractives {
         this.selectionContainer = this.containerEl.createDiv("settings-selection-container");
         this.allTopElements.push(this.selectionContainer);
 
-        let allTypes = this.getAllTypes();
+        const allTypes = this.getAllTypes();
         for (const type of allTypes) {
             const isActive = !this.settingTab.plugin.settings.unselectedInteractives[this.interactiveName].includes(type);
-            let label = this.selectionContainer.createEl("label");
-            let text = label.createSpan({text: type});
-            let toggle = label.createEl("input", {type: "checkbox"});
+            const label = this.selectionContainer.createEl("label");
+            const text = label.createSpan({text: type});
+            const toggle = label.createEl("input", {type: "checkbox"});
             isActive ? this.selectInteractive(label, toggle): this.deselectInteractive(label, toggle);
             toggle.addEventListener("change", e => {
                 toggle.checked ? this.selectInteractive(label, toggle): this.deselectInteractive(label, toggle);
@@ -124,8 +124,8 @@ export abstract class SettingInteractives {
     }
 
     protected addColor(type: string, color: HexString): Setting {
-        let colorSetting = new Setting(this.colorsContainer);
-        let uuid = crypto.randomUUID();
+        const colorSetting = new Setting(this.colorsContainer);
+        const uuid = crypto.randomUUID();
         this.colorItems.set(uuid, colorSetting);
         
         colorSetting.addText(cb => {
@@ -150,14 +150,14 @@ export abstract class SettingInteractives {
             }))
         });
 
-        let preview = colorSetting.controlEl.createDiv(`preview ${this.previewClass}`);
+        const preview = colorSetting.controlEl.createDiv(`preview ${this.previewClass}`);
         this.updatePreview(preview, type, color);
 
         return colorSetting;
     }
 
     protected updateCSS(preview: HTMLElement, color?: string) {
-        let parent = preview.parentElement;
+        const parent = preview.parentElement;
         color ? parent?.style.setProperty("--interactive-color", color): parent?.style.setProperty("--interactive-color", "transparent");
     }
 
@@ -282,7 +282,7 @@ export class SettingPropertiesArray {
     }
 
     display() {
-        let containerEl = this.settingTab.containerEl;
+        const containerEl = this.settingTab.containerEl;
         
         // HEADING
         this.allTopElements.push(
@@ -317,7 +317,7 @@ export class SettingPropertiesArray {
     }
 
     protected openModalToAddInteractive() {
-        let modal = new NewNameModal(
+        const modal = new NewNameModal(
             this.settingTab.app,
             "Property key",
             this.addInteractive.bind(this)
@@ -350,7 +350,7 @@ export class SettingPropertiesArray {
         this.settingTab.plugin.settings.unselectedInteractives[key] = [];
         this.settingTab.plugin.settings.noneType[key] = "none";
         this.settingTab.plugin.saveSettings().then(() => {
-            let setting = new SettingProperties(key, true, this.settingTab, this);
+            const setting = new SettingProperties(key, true, this.settingTab, this);
             this.settingInteractives.push(setting);
             setting.containerEl = this.propertiesContainer;
             setting.display();
@@ -458,10 +458,10 @@ export class SettingLinks extends SettingInteractives {
             el.addClass("extended-graph-setting-" + this.interactiveName);
         })
 
-        let labels = this.containerEl.querySelectorAll(`.settings-selection-container.extended-graph-setting-${this.interactiveName} label`);
-        let imageLabel = Array.from(labels).find(l => (l as HTMLLabelElement).innerText === this.settingTab.plugin.settings.imageProperty) as HTMLLabelElement;
+        const labels = this.containerEl.querySelectorAll(`.settings-selection-container.extended-graph-setting-${this.interactiveName} label`);
+        const imageLabel = Array.from(labels).find(l => (l as HTMLLabelElement).innerText === this.settingTab.plugin.settings.imageProperty) as HTMLLabelElement;
         if (imageLabel) {
-            let cb = imageLabel.querySelector("input") as HTMLInputElement ;
+            const cb = imageLabel.querySelector("input") as HTMLInputElement ;
             this.deselectInteractive(imageLabel, cb);
             imageLabel.parentNode?.removeChild(imageLabel);
         }
@@ -532,9 +532,9 @@ export class SettingLinks extends SettingInteractives {
         }
         else {
             for (const file of this.settingTab.app.vault.getFiles()) {
-                let frontmatterLinks = this.settingTab.app.metadataCache.getCache(file.path)?.frontmatterLinks;
+                const frontmatterLinks = this.settingTab.app.metadataCache.getCache(file.path)?.frontmatterLinks;
                 if (!frontmatterLinks) continue;
-                let types = frontmatterLinks.map(l => l.key.split('.')[0]).filter(k => k !== this.settingTab.plugin.settings.imageProperty && !INVALID_KEYS[LINK_KEY].includes(k));
+                const types = frontmatterLinks.map(l => l.key.split('.')[0]).filter(k => k !== this.settingTab.plugin.settings.imageProperty && !INVALID_KEYS[LINK_KEY].includes(k));
                 allTypes = new Set<string>([...allTypes, ...types]);
             }
         }

@@ -79,7 +79,7 @@ export function getFile(app: App, path: string): TFile | null {
 }
 
 export function getImageUri(app: App, keyProperty: string, path: string): string | null {
-    let file = getFile(app, path);
+    const file = getFile(app, path);
     if (file) {
         const metadata = app.metadataCache.getFileCache(file);
         const frontmatter = metadata?.frontmatter;
@@ -123,10 +123,10 @@ export function getFileInteractives(interactive: string, app: App, file: TFile):
 }
 
 function getTags(app: App, file: TFile): Set<string> {
-    let metadataCache = app.metadataCache.getCache(file.path);
+    const metadataCache = app.metadataCache.getCache(file.path);
     if (!metadataCache) return new Set<string>();
 
-    let tags = getAllTags(metadataCache)?.map(t => t.replace('#', ''));
+    const tags = getAllTags(metadataCache)?.map(t => t.replace('#', ''));
     if (!tags) return new Set<string>();
     
     return new Set<string>(tags.sort());
@@ -134,7 +134,7 @@ function getTags(app: App, file: TFile): Set<string> {
 
 function getProperty(key: string, app: App, file: TFile): Set<string> {
     const dv = getDataviewAPI();
-    let types = new Set<string>();
+    const types = new Set<string>();
 
     // With Dataview
     if (dv) {

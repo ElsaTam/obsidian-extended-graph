@@ -12,9 +12,10 @@ export class GraphEventsDispatcher extends Component {
     type: string;
 
     graphsManager: GraphsManager;
-    leaf: WorkspaceLeafExt;
-    
     graph: Graph;
+    leaf: WorkspaceLeafExt;
+    observerOrphans: MutationObserver;
+
     legendUI: LegendUI | null = null;
     viewsUI: ViewsUI;
 
@@ -77,6 +78,7 @@ export class GraphEventsDispatcher extends Component {
     onGraphReady(): void {
         this.updateOpacityLayerColor();
         this.bindStageEvents();
+        this.observeOrphanSettings();
         this.changeView(this.viewsUI.currentViewID);
     }
 
@@ -95,6 +97,33 @@ export class GraphEventsDispatcher extends Component {
         //stage.addEventListener('childRemoved', this.onChildRemovedFromStage);
     }
 
+    private observeOrphanSettings(): void {
+        this.toggleOrphans = this.toggleOrphans.bind(this);
+        const graphFilterControl = this.leaf.containerEl.querySelector(".tree-item.graph-control-section.mod-filter");
+        if (graphFilterControl) {
+            // @ts-ignore
+            const orphanDesc = window.OBSIDIAN_DEFAULT_I18N.plugins.graphView.optionShowOrphansDescription;
+            const listenToOrphanChanges = (function(treeItemChildren: HTMLElement) {
+                const cb = treeItemChildren.querySelector(`.setting-item.mod-toggle:has([aria-label="${orphanDesc}"]) .checkbox-container`);
+                cb?.addEventListener("click", this.toggleOrphans)
+            }).bind(this);
+            this.observerOrphans = new MutationObserver((mutations) => {
+                if (mutations[0].addedNodes.length > 0) {
+                    const treeItemChildren = mutations[0].addedNodes[0];
+                    listenToOrphanChanges(treeItemChildren as HTMLElement);
+                }
+                else {
+                    const treeItemChildren = mutations[0].removedNodes[0];
+                    const cb = (treeItemChildren as HTMLElement).querySelector(`.setting-item.mod-toggle:has([aria-label="${orphanDesc}"]) .checkbox-container`);
+                    cb?.removeEventListener("click", this.toggleOrphans)
+                }
+            })
+            this.observerOrphans.observe(graphFilterControl, {childList: true});
+            const treeItemChildren = graphFilterControl.querySelector(".tree-item-children");
+            (treeItemChildren) && listenToOrphanChanges(treeItemChildren as HTMLElement);
+        }
+    }
+
     // =============================== UNLOADING ===============================
 
     /**
@@ -102,6 +131,7 @@ export class GraphEventsDispatcher extends Component {
      */
     onunload(): void {
         this.unbindStageEvents();
+        this.observerOrphans.disconnect();
         this.graphsManager.onPluginUnloaded(this.leaf);
     }
 
@@ -135,12 +165,12 @@ export class GraphEventsDispatcher extends Component {
 
     private disableDisconnectedLinks(): void {
         if (this.graph.linksSet.disconnectedLinks) {
-            let linksToDisable = new Set<string>();
+            const linksToDisable = new Set<string>();
             for (const [cause, set] of Object.entries(this.graph.linksSet.disconnectedLinks)) {
                 for (const id of set) {
-                    let l = this.graph.linksSet.linksMap.get(id);
-                    if (!l) continue;
-                    if (this.graph.renderer.links.find(link => l?.link.source.id === link.source.id && l?.link.target.id === link.target.id)) {
+                    const L = this.graph.linksSet.linksMap.get(id);
+                    if (!L) continue;
+                    if (this.graph.renderer.links.find(link => L?.link.source.id === link.source.id && L?.link.target.id === link.target.id)) {
                         linksToDisable.add(id);
                     }
                 }
@@ -148,6 +178,21 @@ export class GraphEventsDispatcher extends Component {
                     this.graph.linksSet.disableLinks(linksToDisable, cause);
                     this.graph.updateWorker();
                 }
+            }
+        }
+    }
+
+    // ============================ SETTINGS EVENTS ============================
+
+    toggleOrphans(ev: Event) {
+        if (this.graph.engine.options.showOrphans) {
+            if (this.graph.enableOrphans()) {
+                this.graph.updateWorker();
+            }
+        }
+        else {
+            if (this.graph.disableOrphans()) {
+                this.graph.updateWorker();
             }
         }
     }

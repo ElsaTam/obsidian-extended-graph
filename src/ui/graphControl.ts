@@ -32,11 +32,11 @@ export class GraphControlsUI extends Component {
 
         this.root = this.graphControls.createDiv("tree-item graph-control-section mod-extended-graph");
 
-        let collapsible = this.root.createDiv("tree-item-self mod-collapsible");
+        const collapsible = this.root.createDiv("tree-item-self mod-collapsible");
         this.collapseIcon = collapsible.createDiv("tree-item-icon collapse-icon is-collapsed");
         setIcon(this.collapseIcon, "right-triangle");
-        let inner = collapsible.createDiv("tree-item-inner");
-        let header = inner.createEl("header", {
+        const inner = collapsible.createDiv("tree-item-inner");
+        const header = inner.createEl("header", {
             cls: "graph-control-section-header",
             text: "Extended Graph"
         });
@@ -60,10 +60,10 @@ export class GraphControlsUI extends Component {
     }
 
     createSaveForDefaultView(): Setting {
-        let setting = new Setting(this.treeItemChildren)
+        const setting = new Setting(this.treeItemChildren)
             .setName("Save for default view")
             .setTooltip("Save the current settings as the default view settings");
-        let icon = setting.controlEl.createDiv("clickable-icon save-button");
+            const icon = setting.controlEl.createDiv("clickable-icon save-button");
         setIcon(icon, "arrow-up-to-line");
         icon.addEventListener('click', e => {
             this.saveForDefaultView();
@@ -72,10 +72,10 @@ export class GraphControlsUI extends Component {
     }
 
     createSaveForNormalView(): Setting {
-        let setting = new Setting(this.treeItemChildren)
+        const setting = new Setting(this.treeItemChildren)
             .setName("Save for normal view")
             .setTooltip("Save the current settings as the normal view settings (no plugin enabled)");
-        let icon = setting.controlEl.createDiv("clickable-icon save-button");
+        const icon = setting.controlEl.createDiv("clickable-icon save-button");
         setIcon(icon, "arrow-down-to-line");
         icon.addEventListener('click', e => {
             this.saveForNormalView();
@@ -84,7 +84,7 @@ export class GraphControlsUI extends Component {
     }
 
     createGlobalFilter(): Setting {
-        let filterHeader = new Setting(this.treeItemChildren).setName("Global filter");
+        const filterHeader = new Setting(this.treeItemChildren).setName("Global filter");
         this.onlyWhenPluginEnabled.push(filterHeader.settingEl);
 
         return new Setting(this.treeItemChildren)
@@ -151,19 +151,19 @@ export class GraphControlsUI extends Component {
     }
 
     saveForDefaultView() {
-        let viewData = this.graphsManager.plugin.settings.views.find(v => v.id === DEFAULT_VIEW_ID);
+        const viewData = this.graphsManager.plugin.settings.views.find(v => v.id === DEFAULT_VIEW_ID);
         if (!viewData) return;
-        let engine = getEngine(this.leaf);
+        const engine = getEngine(this.leaf);
         viewData.engineOptions = new EngineOptions(engine.getOptions());
         this.graphsManager.onViewNeedsSaving(viewData);
     }
 
     saveForNormalView() {
-        let globalFilter = this.graphsManager.plugin.settings.globalFilter;
+        const globalFilter = this.graphsManager.plugin.settings.globalFilter;
         this.graphsManager.plugin.settings.globalFilter = "";
-        let instance: GraphCorePluginInstance = ((this.leaf.app.internalPlugins.getPluginById("graph") as GraphPlugin).instance as GraphCorePluginInstance);
+        const instance: GraphCorePluginInstance = ((this.leaf.app.internalPlugins.getPluginById("graph") as GraphPlugin).instance as GraphCorePluginInstance);
         
-        let engine = getEngine(this.leaf);
+        const engine = getEngine(this.leaf);
         instance.options = engine.getOptions();
         instance.saveOptions();
         this.graphsManager.plugin.settings.globalFilter = globalFilter;

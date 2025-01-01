@@ -39,7 +39,7 @@ export abstract class LinkWrapper extends ElementWrapper {
 
     updateLink(): void {
         if (!this.link.line) {
-            let newLink = this.link.renderer.links.find(l => l.source.id === this.link.source.id && l.target.id === this.link.target.id);
+            const newLink = this.link.renderer.links.find(l => l.source.id === this.link.source.id && l.target.id === this.link.target.id);
             if (newLink && this.link !== newLink) {
                 this.disconnect();
                 this.link = newLink;
@@ -78,7 +78,7 @@ export class LineLinkWrapper extends LinkWrapper {
     }
 
     updateGraphics(): void {
-        let type = this.getActiveType();
+        const type = this.getActiveType();
         if (!type) return;
 
         this.clear();

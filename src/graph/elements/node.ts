@@ -83,7 +83,7 @@ export class NodeWrapper extends Container {
 
     private createArcWrapper(manager: InteractiveManager, types: Set<string>, layer: number) {
         if (types.size > 0 && !types.has(this.settings.noneType[manager.name])) {
-            let arcsWrapper = new ArcsWrapper(this, types, manager, layer);
+            const arcsWrapper = new ArcsWrapper(this, types, manager, layer);
             this.arcsWrappers.set(manager.name, arcsWrapper);
             this.addChild(arcsWrapper);
         }
@@ -93,7 +93,7 @@ export class NodeWrapper extends Container {
 
     updateNode(): void {
         if (!this.node.circle) {
-            let newNode = this.node.renderer.nodes.find(n => n.id === this.node.id);
+            const newNode = this.node.renderer.nodes.find(n => n.id === this.node.id);
             if (newNode && this.node !== newNode) {
                 this.node.clearGraphics();
                 this.disconnect();

@@ -69,7 +69,7 @@ export class LinksSet {
             const sourceFile = getFile(this.graph.dispatcher.graphsManager.plugin.app, link.source.id);
             if (!sourceFile) continue;
 
-            let linkTypes = dv ? this.getLinkTypesWithDataview(dv, link): this.getLinkTypesWithFrontmatter(link, sourceFile);
+            const linkTypes = dv ? this.getLinkTypesWithDataview(dv, link): this.getLinkTypesWithFrontmatter(link, sourceFile);
 
             if (linkTypes.size === 0) {
                 this.addTypeToMap(this.graph.staticSettings.noneType[LINK_KEY], getLinkID(link), missingTypes);
@@ -136,7 +136,7 @@ export class LinksSet {
     }
 
     private addMissingLinks(): Set<string> {
-        let missingLinks = new Set<string>();
+        const missingLinks = new Set<string>();
         for (const link of this.graph.renderer.links) {
             const linkID = getLinkID(link);
             
@@ -218,7 +218,7 @@ export class LinksSet {
      */
     getActiveType(id: string): string {
         if (!this.linkTypesMap) return "";
-        let firstActiveType = [...this.linkTypesMap.keys()].find(type => this.linksManager?.isActive(type) && this.linkTypesMap?.get(type)?.has(id));
+        const firstActiveType = [...this.linkTypesMap.keys()].find(type => this.linksManager?.isActive(type) && this.linkTypesMap?.get(type)?.has(id));
         return firstActiveType ? firstActiveType : this.graph.staticSettings.noneType[LINK_KEY];
     }
 

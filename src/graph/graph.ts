@@ -87,7 +87,7 @@ export class Graph extends Component {
     private overrideSearchGetValue(): void {
         this.searchGetValueOriginal = this.engine.filterOptions.search.getValue;
         this.engine.filterOptions.search.getValue = (() => {
-            let prepend = this.dynamicSettings.globalFilter + " ";
+            const prepend = this.dynamicSettings.globalFilter + " ";
             return prepend + this.engine.filterOptions.search.inputEl.value;
         }).bind(this);
     }
@@ -191,9 +191,9 @@ export class Graph extends Component {
             return new Set<string>();
         }
         
-        let nodesToDisable = new Set<string>();
+        const nodesToDisable = new Set<string>();
         for (const id of ids) {
-            let link = this.linksSet.linksMap.get(id)?.link;
+            const link = this.linksSet.linksMap.get(id)?.link;
             if (!link) continue;
             if (this.staticSettings.removeSource && this.nodesSet.connectedNodes.has(link.source.id)) {
                 nodesToDisable.add(link.source.id);
@@ -222,9 +222,9 @@ export class Graph extends Component {
             return new Set<string>();
         }
         
-        let nodesToEnable = new Set<string>();
+        const nodesToEnable = new Set<string>();
         for (const id of ids) {
-            let link = this.linksSet.linksMap.get(id)?.link;
+            const link = this.linksSet.linksMap.get(id)?.link;
             if (!link) continue;
             if (this.staticSettings.removeSource && this.nodesSet.disconnectedNodes[DisconnectionCause.LINK_CASCADE].has(link.source.id)) {
                 nodesToEnable.add(link.source.id);
@@ -328,28 +328,30 @@ export class Graph extends Component {
 
     disableOrphans() : boolean {
         if (this.engine.options.showOrphans) return false;
-        let newOrphans = [...this.nodesSet.connectedNodes].filter(id =>
+        const newOrphans = [...this.nodesSet.connectedNodes].filter(id =>
             this.nodesSet.nodesMap.get(id)?.node.renderer && this.nodeIsOrphan(id)
         );
         if (newOrphans.length === 0) return false;
-        this.nodesSet.disableNodes(newOrphans, DisconnectionCause.ORPHAN);
-        return true;
+        const nodesDisabled = this.nodesSet.disableNodes(newOrphans, DisconnectionCause.ORPHAN);
+        return nodesDisabled.size > 0;
     }
 
     enableOrphans() : boolean {
+        const oldOrphans = this.nodesSet.disconnectedNodes[DisconnectionCause.ORPHAN];
+        if (oldOrphans.size === 0) return false;
+
+        // Show all orphans
         if (this.engine.options.showOrphans) {
-            let oldOrphans = this.nodesSet.disconnectedNodes[DisconnectionCause.ORPHAN];
-            if (oldOrphans.size === 0) return false;
-            this.nodesSet.enableNodes([...oldOrphans], DisconnectionCause.ORPHAN);
-            return true;
+            const nodesEnabled = this.nodesSet.enableNodes([...oldOrphans], DisconnectionCause.ORPHAN);
+            return nodesEnabled.size > 0;
         }
+        // Show nodes that are not orphans anymore
         else {
-            let oldOrphans = this.nodesSet.disconnectedNodes[DisconnectionCause.ORPHAN];
-            let nonOrphans = [...oldOrphans].filter(id => !this.nodeIsOrphan(id));
+            const nonOrphans = [...oldOrphans].filter(id => !this.nodeIsOrphan(id));
             if (nonOrphans.length === 0) return false;
             
-            this.nodesSet.enableNodes(nonOrphans, DisconnectionCause.ORPHAN);
-            return true;
+            const nodesEnabled = this.nodesSet.enableNodes(nonOrphans, DisconnectionCause.ORPHAN);
+            return nodesEnabled.size > 0;
         }
     }
     

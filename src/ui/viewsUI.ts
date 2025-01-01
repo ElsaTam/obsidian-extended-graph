@@ -31,7 +31,7 @@ export class ViewsUI extends Component {
         this.root.addClass("graph-views-container");
         
         // TOGGLE BUTTON
-        let graphControls = this.viewContent.querySelector(".graph-controls") as HTMLDivElement;
+        const graphControls = this.viewContent.querySelector(".graph-controls") as HTMLDivElement;
         this.toggleDiv = graphControls.createDiv("clickable-icon graph-controls-button mod-views");
         this.toggleDiv.ariaLabel = "Open views settings";
         setIcon(this.toggleDiv, "eye");
@@ -45,7 +45,7 @@ export class ViewsUI extends Component {
         });
 
         // TITLE
-        let title = this.root.createSpan();
+        const title = this.root.createSpan();
         title.innerHTML = "views";
         title.addClass("graph-views-title");
 
@@ -60,7 +60,7 @@ export class ViewsUI extends Component {
         // ADD BUTTON
         this.addButton = this.root.createEl("button");
         setIcon(this.addButton, "plus");
-        let addText = this.addButton.createSpan();
+        const addText = this.addButton.createSpan();
         addText.innerText = "Add view";
 
         this.addButton.addEventListener('click', event => {
@@ -99,7 +99,7 @@ export class ViewsUI extends Component {
     }
 
     private openModalToAddView() {
-        let modal = new NewNameModal(
+        const modal = new NewNameModal(
             this.plugin.app,
             "New view name",
             this.newView.bind(this)

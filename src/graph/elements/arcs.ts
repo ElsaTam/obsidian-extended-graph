@@ -48,7 +48,7 @@ export class ArcsWrapper extends ElementWrapper {
 
         for (const type of this.types) {
             const index = allTypes.findIndex(t => t === type);
-            let arc = new Graphics();
+            const arc = new Graphics();
             arc.name = this.getArcName(type);
             this.graphics.set(type, {index: index, graphic: arc});
             this.addChild(arc);
@@ -70,7 +70,7 @@ export class ArcsWrapper extends ElementWrapper {
      * @param color The color of the arc
      */
     redrawArc(type: string, color?: Uint8Array) {
-        let arc = this.graphics.get(type);
+        const arc = this.graphics.get(type);
         if (!arc) return;
 
         if (!color) color = this.manager.getColor(type);
@@ -94,7 +94,7 @@ export class ArcsWrapper extends ElementWrapper {
      * @param enable Whether to enable the arc
      */
     toggleType(type: string, enable: boolean): void {
-        let arc = this.graphics.get(type);
+        const arc = this.graphics.get(type);
         if (arc) arc.graphic.alpha = enable ? 1 : 0.1;
     }
 

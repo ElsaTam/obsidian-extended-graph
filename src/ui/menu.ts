@@ -12,9 +12,9 @@ export class MenuUI extends Component {
         super();
         this.leaf = leaf;
         this.viewContent = this.leaf.containerEl.getElementsByClassName("view-content")[0] as HTMLElement;
-        let graphControls = this.viewContent.querySelector(".graph-controls") as HTMLDivElement;
+        const graphControls = this.viewContent.querySelector(".graph-controls") as HTMLDivElement;
 
-        let hr = graphControls.createEl("hr");
+        const hr = graphControls.createEl("hr");
         hr.addClass("separator-exended-graph");
         this.createEnableButton(graphControls);
         this.createResetButton(graphControls);

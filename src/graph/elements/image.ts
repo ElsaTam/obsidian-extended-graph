@@ -16,7 +16,7 @@ export class NodeImage extends Sprite {
         this.anchor.set(0.5);
         
         // Mask
-        let mask = new Graphics()
+        const mask = new Graphics()
             .beginFill(0xFFFFFF)
             .drawCircle(0, 0, this.circleRadius)
             .endFill();

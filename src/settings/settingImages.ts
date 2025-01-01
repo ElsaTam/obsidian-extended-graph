@@ -11,7 +11,7 @@ export class SettingImages {
     }
 
     display() {
-        let containerEl = this.settingTab.containerEl;
+        const containerEl = this.settingTab.containerEl;
         this.allTopElements.push(
             new Setting(containerEl)
                 .setName("Images")

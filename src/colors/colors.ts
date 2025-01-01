@@ -57,15 +57,15 @@ export function componentToHex(c: number): string {
 }
 
 export function plot_colormap(canvas_id: string, name: string, reverse: boolean) {
-    let canvas = <HTMLCanvasElement> document.getElementById(canvas_id);
+    const canvas = <HTMLCanvasElement> document.getElementById(canvas_id);
     if (!canvas) return;
-    let ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
     for (let x = 0; x <= 256; x++) {
-        let color = evaluate_cmap(x / 256, name, reverse);
-        let r = color[0];
-        let g = color[1];
-        let b = color[2];
+        const color = evaluate_cmap(x / 256, name, reverse);
+        const r = color[0];
+        const g = color[1];
+        const b = color[2];
         ctx.fillStyle = 'rgb(' + r + ',' + g + ',' + b + ')';
         ctx.fillRect(x * canvas.width / 256, 0, canvas.width / 256, canvas.height);
     }

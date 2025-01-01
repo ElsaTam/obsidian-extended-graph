@@ -9,7 +9,7 @@ export class SettingFeatures {
     }
 
     display() {
-        let containerEl = this.settingTab.containerEl;
+        const containerEl = this.settingTab.containerEl;
         new Setting(containerEl)
             .setName("Features")
             .setHeading()
