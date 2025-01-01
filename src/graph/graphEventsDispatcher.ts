@@ -245,12 +245,7 @@ export class GraphEventsDispatcher extends Component {
     }
 
     private disableNodeInteractiveTypes(key: string, types: string[]) {
-        let nodesToDisable: string[] = [];
-        for (const type of types) {
-            nodesToDisable = nodesToDisable.concat(this.graph.nodesSet.disableInteractive(key, type));
-        }
-        if (!this.graph.staticSettings.fadeOnDisable && nodesToDisable.length > 0) {
-            this.graph.disableNodes(nodesToDisable);
+        if (this.graph.disableNodeInteractiveTypes(key, types)) {
             this.graph.updateWorker();
         }
         else {
@@ -259,12 +254,7 @@ export class GraphEventsDispatcher extends Component {
     }
 
     private enableNodeInteractiveTypes(key: string, types: string[]) {
-        let nodesToEnable: string[] = [];
-        for (const type of types) {
-            nodesToEnable = nodesToEnable.concat(this.graph.nodesSet.enableInteractive(key, type));
-        }
-        if (!this.graph.staticSettings.fadeOnDisable && nodesToEnable.length > 0) {
-            this.graph.enableNodes(nodesToEnable);
+        if (this.graph.enableNodeInteractiveTypes(key, types)) {
             this.graph.updateWorker();
         }
         else {

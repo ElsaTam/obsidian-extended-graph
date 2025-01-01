@@ -65,11 +65,7 @@ export abstract class LinkWrapper extends ElementWrapper {
 
     // ============================ ENABLE/DISABLE =============================
 
-    enableType(type: string): void {
-        this.updateGraphics();
-    }
-
-    disableType(type: string): void {
+    toggleType(type: string, enable: boolean): void {
         this.updateGraphics();
     }
 }

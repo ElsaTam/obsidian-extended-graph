@@ -252,32 +252,29 @@ export class LinksSet {
      * @param ids - A set of link IDs to disable.
      * @param cause - The cause for the disconnection.
      */
-    disableLinks(ids: Set<string>, cause: string): void {
-        for (const id of ids) {
-            this.disableLink(id, cause);
-        }
+    disableLinks(ids: Set<string>, cause: string): Set<string> {
+        return new Set<string>([...ids].filter(id => this.disableLink(id, cause)));
     }
 
-    private disableLink(id: string, cause: string) {
-        if (this.connectedLinks.has(id)) {
-            this.connectedLinks.delete(id);
-            this.disconnectedLinks[cause].add(id);
-        }
-        const l = this.linksMap.get(id);
-        if (l) {
-            if (!this.graph.renderer.links.includes(l.link)) {
-                if (l.wrapper) {
-                    l.wrapper.updateLink();
-                    l.link = l.wrapper.link;
-                }
-                else {
-                    const newLink = this.findNewLink(l.link);
-                    if (newLink) l.link = newLink;
-                }
+    private disableLink(id: string, cause: string): boolean {
+        const L = this.linksMap.get(id);
+        this.disconnectedLinks[cause].add(id);
+        if (!this.connectedLinks.has(id) || !L) return false;
+
+        this.connectedLinks.delete(id);
+        if (!this.graph.renderer.links.includes(L.link)) {
+            if (L.wrapper) {
+                L.wrapper.updateLink();
+                L.link = L.wrapper.link;
             }
-            l.link.clearGraphics();
-            this.graph.renderer.links.remove(l.link);
+            else {
+                const newLink = this.findNewLink(L.link);
+                if (newLink) L.link = newLink;
+            }
         }
+        L.link.clearGraphics();
+        this.graph.renderer.links.remove(L.link);
+        return true;
     }
 
     /**
@@ -285,44 +282,48 @@ export class LinksSet {
      * @param ids - A set of link IDs to enable.
      * @param cause - The cause for the reconnection.
      */
-    enableLinks(ids: Set<string>, cause: string): void {
-        for (const id of ids) {
-            this.enableLink(id, cause);
-        }
+    enableLinks(ids: Set<string>, cause: string): Set<string> {
+        return new Set<string>([...ids].filter(id => this.enableLink(id, cause)));
     }
 
-    enableLink(id: string, cause: string): void {
-        if (this.disconnectedLinks[cause].has(id)) {
-            this.connectedLinks.add(id);
-            this.disconnectedLinks[cause].delete(id);
-        }
+    private enableLink(id: string, cause: string): boolean {
         const L = this.linksMap.get(id);
-        if (L) {
-            if (!this.graph.renderer.links.includes(L.link)) {
-                L.link.initGraphics();
-                this.graph.renderer.links.push(L.link);
-            }
-            if (L.wrapper) {
-                L.wrapper.updateLink();
-                L.wrapper.connect();
-                L.wrapper.updateGraphics();
-            }
+        this.disconnectedLinks[cause].delete(id);
+        if (this.isDisconnected(id) || !L) return false;
+
+        this.connectedLinks.add(id);
+        if (!this.graph.renderer.links.includes(L.link)) {
+            L.link.initGraphics();
+            this.graph.renderer.links.push(L.link);
         }
+        if (L.wrapper) {
+            L.wrapper.updateLink();
+            L.wrapper.connect();
+            L.wrapper.updateGraphics();
+        }
+        return true;
+    }
+
+    private isDisconnected(id: string): boolean {
+        for (const cause of Object.values(DisconnectionCause)) {
+            if (this.disconnectedLinks[cause].has(id)) return true;
+        }
+        return false;
     }
 
     /**
      * Connects all link wrappers in the set to their Obsidian link
      */
     connectLinks(): void {
-        for (const [id, l] of this.linksMap) {
-            if (l.wrapper) {
-                l.wrapper.updateLink();
-                l.link = l.wrapper.link;
-                l.wrapper.connect();
+        for (const [id, L] of this.linksMap) {
+            if (L.wrapper) {
+                L.wrapper.updateLink();
+                L.link = L.wrapper.link;
+                L.wrapper.connect();
             }
             else {
-                const newLink = this.findNewLink(l.link);
-                if (newLink) l.link = newLink;
+                const newLink = this.findNewLink(L.link);
+                if (newLink) L.link = newLink;
             }
         }
     }

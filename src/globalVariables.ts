@@ -9,5 +9,7 @@ INVALID_KEYS[LINK_KEY] = ["tags", "file"];
 
 export const DisconnectionCause = Object.freeze({
     USER: "user",
-    NODE_CASCADE: "node_cascade"
+    NODE_CASCADE: "node_cascade",
+    ORPHAN: "orphan",
+    LINK_CASCADE: "link_cascade",
 });

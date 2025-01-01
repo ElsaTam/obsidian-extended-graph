@@ -89,21 +89,13 @@ export class ArcsWrapper extends ElementWrapper {
     }
 
     /**
-     * Enables the arc of a given type.
+     * Toggles the arc of a given type.
      * @param type The type of the arc
+     * @param enable Whether to enable the arc
      */
-    enableType(type: string): void {
+    toggleType(type: string, enable: boolean): void {
         let arc = this.graphics.get(type);
-        if (arc) arc.graphic.alpha = 1;
-    }
-
-    /**
-     * Disables the arc of a given type.
-     * @param type The type of the arc
-     */
-    disableType(type: string): void {
-        let arc = this.graphics.get(type);
-        if (arc) arc.graphic.alpha = 0.1;
+        if (arc) arc.graphic.alpha = enable ? 1 : 0.1;
     }
 
     /**

@@ -43,11 +43,11 @@ export class NodeWrapper extends Container {
     app: App;
     settings: ExtendedGraphSettings;
     
-    isActive: boolean = true;
     nodeImage: NodeImage;
     arcsWrappers = new Map<string, ArcsWrapper>();
     background: Graphics;
     scaleFactor: number = 1;
+    isActive: boolean = true;
 
     // ============================== CONSTRUCTOR ==============================
 
@@ -156,21 +156,15 @@ export class NodeWrapper extends Container {
     // ============================== FADE IN/OUT ==============================
 
     fadeIn() {
-        const isDisabled = [...this.arcsWrappers.values()].some((arcWrapper: ArcsWrapper) => arcWrapper.isFullyDisabled());
-        if (isDisabled && this.arcsWrappers.size > 0) return;
-        this.isActive = true;
-        if (this.settings.fadeOnDisable) {
-            this.nodeImage?.fadeIn();
-        }
+        this.nodeImage?.fadeIn();
     }
 
     fadeOut() {
-        const isDisabled = [...this.arcsWrappers.values()].some((arcWrapper: ArcsWrapper) => arcWrapper.isFullyDisabled());
-        if (!isDisabled && this.arcsWrappers.size > 0) return;
-        this.isActive = false;
-        if (this.settings.fadeOnDisable) {
-            this.nodeImage?.fadeOut();
-        }
+        this.nodeImage?.fadeOut();
+    }
+
+    isAnyArcWrapperDisabled(): boolean {
+        return [...this.arcsWrappers.values()].some((arcWrapper: ArcsWrapper) => arcWrapper.isFullyDisabled());
     }
 
     // ============================== EMPHASIZE ================================

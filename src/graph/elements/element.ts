@@ -29,8 +29,7 @@ export abstract class ElementWrapper extends Graphics {
         return this.types ? this.types.has(type): false;
     }
 
-    abstract enableType(type: string): void
-    abstract disableType(type: string): void
+    abstract toggleType(type: string, enable: boolean): void
     abstract initGraphics(): void;
     abstract clearGraphics(): void;
     abstract updateGraphics(): void;

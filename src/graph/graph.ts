@@ -181,6 +181,29 @@ export class Graph extends Component {
      */
     private disableLinks(ids: Set<string>) {
         this.linksSet.disableLinks(ids, DisconnectionCause.USER);
+        const disabledNodes = this.disableNodesByCascadingLinks(ids);
+        this.linksSet.disableLinks(this.findLinksFromNodes(disabledNodes, false), DisconnectionCause.LINK_CASCADE);
+        this.disableOrphans();
+    }
+
+    private disableNodesByCascadingLinks(ids: Set<string>) : Set<string> {
+        if (!this.staticSettings.removeSource && !this.staticSettings.removeTarget) {
+            return new Set<string>();
+        }
+        
+        let nodesToDisable = new Set<string>();
+        for (const id of ids) {
+            let link = this.linksSet.linksMap.get(id)?.link;
+            if (!link) continue;
+            if (this.staticSettings.removeSource && this.nodesSet.connectedNodes.has(link.source.id)) {
+                nodesToDisable.add(link.source.id);
+            }
+            if (this.staticSettings.removeTarget && this.nodesSet.connectedNodes.has(link.target.id)) {
+                nodesToDisable.add(link.target.id);
+            }
+        }
+        this.nodesSet.disableNodes([...nodesToDisable], DisconnectionCause.LINK_CASCADE);
+        return nodesToDisable;
     }
 
     /**
@@ -189,6 +212,30 @@ export class Graph extends Component {
      */
     private enableLinks(ids: Set<string>) {
         this.linksSet.enableLinks(ids, DisconnectionCause.USER);
+        const enableNodes = this.enableNodesByCascadingLinks(ids);
+        this.linksSet.enableLinks(this.findLinksFromNodes(enableNodes, true), DisconnectionCause.LINK_CASCADE);
+        this.enableOrphans();
+    }
+
+    private enableNodesByCascadingLinks(ids: Set<string>) : Set<string> {
+        if (!this.staticSettings.removeSource && !this.staticSettings.removeTarget) {
+            return new Set<string>();
+        }
+        
+        let nodesToEnable = new Set<string>();
+        for (const id of ids) {
+            let link = this.linksSet.linksMap.get(id)?.link;
+            if (!link) continue;
+            if (this.staticSettings.removeSource && this.nodesSet.disconnectedNodes[DisconnectionCause.LINK_CASCADE].has(link.source.id)) {
+                nodesToEnable.add(link.source.id);
+            }
+            if (this.staticSettings.removeTarget && this.nodesSet.disconnectedNodes[DisconnectionCause.LINK_CASCADE].has(link.target.id)) {
+                nodesToEnable.add(link.target.id);
+            }
+        }
+        this.nodesSet.enableNodes([...nodesToEnable], DisconnectionCause.LINK_CASCADE);
+
+        return nodesToEnable;
     }
 
     /**
@@ -196,68 +243,123 @@ export class Graph extends Component {
      * @param nodeIds - Set of disabled node IDs.
      * @returns Set<string> - Set of link IDs to disable.
      */
-    private findLinksToDisable(nodeIds: Set<string>): Set<string> {
-        const linksToDisable = new Set<string>();
+    private findLinksFromNodes(nodeIds: Set<string>, shouldBeConnected: boolean): Set<string> {
+        const isConnected = (function(linkID: string) : boolean {
+            if (this.nodesSet.connectedNodes.has(linkID)) return true;
+            let isOrphanOnly = this.nodesSet.disconnectedNodes[DisconnectionCause.ORPHAN].has(linkID);
+            for (let i = 0; i < Object.values(DisconnectionCause).length && isOrphanOnly; i++) {
+                const cause = Object.values(DisconnectionCause)[i];
+                if (cause === DisconnectionCause.ORPHAN) continue;
+                isOrphanOnly = !this.nodesSet.disconnectedNodes[cause].has(linkID);
+            }
+            return isOrphanOnly;
+        }).bind(this);
+
+        const links = new Set<string>();
         for (const id of nodeIds) {
+            if (shouldBeConnected && !this.nodesSet.connectedNodes.has(id)) continue;
             const node = this.nodesSet.nodesMap.get(id)?.node;
             if (!node) continue;
             for (const forward in node.forward) {
+                if (shouldBeConnected && !isConnected(forward)) continue;
                 const linkID = getLinkID({source: {id: id}, target: {id: forward}});
-                if (this.linksSet.connectedLinks.has(linkID)) linksToDisable.add(linkID);
+                links.add(linkID);
             }
             for (const reverse in node.reverse) {
+                if (shouldBeConnected && !isConnected(reverse)) continue;
                 const linkID = getLinkID({source: {id: reverse}, target: {id: id}});
-                if (this.linksSet.connectedLinks.has(linkID)) linksToDisable.add(linkID);
+                links.add(linkID);
             }
         }
-        return linksToDisable;
-    }
-
-    /**
-     * Finds links to enable based on the provided enabled node IDs and cause.
-     * @param nodeIds - Set of enabled node IDs.
-     * @param cause - The cause for the disconnection.
-     * @returns Set<string> - Set of link IDs to enable.
-     */
-    private findLinksToEnable(nodeIds: Set<string>, cause: string): Set<string> {
-        let linksToEnable = new Set<string>();
-        for (const id of nodeIds) {
-            let node = this.nodesSet.nodesMap.get(id)?.node;
-            if (!node) continue;
-            for (const forward in node.forward) {
-                const linkID = getLinkID({source: {id: id}, target: {id: forward}});
-                if (this.linksSet.disconnectedLinks[cause].has(linkID)) linksToEnable.add(linkID);
-            }
-            for (const reverse in node.reverse) {
-                const linkID = getLinkID({source: {id: reverse}, target: {id: id}});
-                if (this.linksSet.disconnectedLinks[cause].has(linkID)) linksToEnable.add(linkID);
-            }
-        }
-        return linksToEnable;
+        return links;
     }
 
     // ============================ UPDATING NODES =============================
+
+    disableNodeInteractiveTypes(key: string, types: string[]): boolean {
+        let nodesToDisable: string[] = [];
+        for (const type of types) {
+            nodesToDisable = nodesToDisable.concat(this.nodesSet.disableInteractive(key, type));
+        }
+        if (!this.staticSettings.fadeOnDisable && nodesToDisable.length > 0) {
+            return this.disableNodes(nodesToDisable);
+        }
+        return false;
+    }
+
+    enableNodeInteractiveTypes(key: string, types: string[]): boolean {
+        let nodesToEnable: string[] = [];
+        for (const type of types) {
+            nodesToEnable = nodesToEnable.concat(this.nodesSet.enableInteractive(key, type));
+        }
+        if (!this.staticSettings.fadeOnDisable && nodesToEnable.length > 0) {
+            return this.enableNodes(nodesToEnable);
+        }
+        return false;
+    }
 
     /**
      * Disables nodes specified by their IDs and cascades the disconnection to related links.
      * @param ids - Array of node IDs to disable.
      */
-    disableNodes(ids: string[]) {
-        this.nodesSet.disableNodes(ids, DisconnectionCause.USER);
+    disableNodes(ids: string[]): boolean {
+        const nodesDisabled = this.nodesSet.disableNodes(ids, DisconnectionCause.USER);
+        if (nodesDisabled.size === 0) return false;
 
-        const linksToDisable = this.findLinksToDisable(new Set<string>(ids));
+        const linksToDisable = this.findLinksFromNodes(nodesDisabled, false);
         this.linksSet.disableLinks(linksToDisable, DisconnectionCause.NODE_CASCADE);
+        this.disableOrphans();
+        return true;
     }
 
     /**
      * Enables nodes specified by their IDs and cascades the reconnection to related links.
      * @param ids - Array of node IDs to enable.
      */
-    enableNodes(ids: string[]) {
-        this.nodesSet.enableNodes(ids, DisconnectionCause.USER);
+    enableNodes(ids: string[]): boolean {
+        const nodesEnabled = this.nodesSet.enableNodes(ids, DisconnectionCause.USER);
+        if (nodesEnabled.size === 0) return false;
 
-        let linksToEnable = this.findLinksToEnable(new Set<string>(ids), DisconnectionCause.NODE_CASCADE);
+        const linksToEnable = this.findLinksFromNodes(nodesEnabled, true);
         this.linksSet.enableLinks(linksToEnable, DisconnectionCause.NODE_CASCADE);
+        this.enableOrphans();
+        return true;
+    }
+
+    disableOrphans() : boolean {
+        if (this.engine.options.showOrphans) return false;
+        let newOrphans = [...this.nodesSet.connectedNodes].filter(id =>
+            this.nodesSet.nodesMap.get(id)?.node.renderer && this.nodeIsOrphan(id)
+        );
+        if (newOrphans.length === 0) return false;
+        this.nodesSet.disableNodes(newOrphans, DisconnectionCause.ORPHAN);
+        return true;
+    }
+
+    enableOrphans() : boolean {
+        if (this.engine.options.showOrphans) {
+            let oldOrphans = this.nodesSet.disconnectedNodes[DisconnectionCause.ORPHAN];
+            if (oldOrphans.size === 0) return false;
+            this.nodesSet.enableNodes([...oldOrphans], DisconnectionCause.ORPHAN);
+            return true;
+        }
+        else {
+            let oldOrphans = this.nodesSet.disconnectedNodes[DisconnectionCause.ORPHAN];
+            let nonOrphans = [...oldOrphans].filter(id => !this.nodeIsOrphan(id));
+            if (nonOrphans.length === 0) return false;
+            
+            this.nodesSet.enableNodes(nonOrphans, DisconnectionCause.ORPHAN);
+            return true;
+        }
+    }
+    
+    private nodeIsOrphan(id: string) : boolean {
+        for (const linkID of this.linksSet.connectedLinks) {
+            const link = this.linksSet.linksMap.get(linkID)?.link;
+            if (!link) continue;
+            if (link.source.id === id || link.target.id === id) return false;
+        }
+        return true;
     }
     
     // ============================ UPDATING WORKER ============================
@@ -267,7 +369,7 @@ export class Graph extends Component {
      */
     updateWorker(): void {
         const nodes = this.getNodesForWorker();
-        const links= this.getLinksForWorker();
+        const links = this.getLinksForWorker();
 
         this.renderer.worker.postMessage({
             nodes: nodes,

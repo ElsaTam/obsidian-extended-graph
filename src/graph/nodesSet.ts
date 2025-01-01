@@ -258,25 +258,21 @@ export class NodesSet {
     private toggleInteractive(key: string, type: string, enable: boolean): string[] {
         const nodesToUpdate: string[] = [];
         for (const [id, wrapper] of this.nodesMap) {
+            // If the node does not have arcs for this interactive, and the type is NONE, toggle the node
             if (!wrapper.arcsWrappers.has(key) && type === this.graph.staticSettings.noneType[key]) {
-                enable ? wrapper.fadeIn(): wrapper.fadeOut();
                 nodesToUpdate.push(id);
                 continue;
             }
+            // If the node does not have arcs for this interactive, or the type is not present, skip
             if (!wrapper.arcsWrappers.has(key) || !wrapper.arcsWrappers.get(key)?.hasType(type)) {
                 continue;
             }
             
-            const wasActive = wrapper.isActive;
-            if (enable) {
-                wrapper.arcsWrappers.get(key)?.enableType(type);
-                wrapper.fadeIn();
-            }
-            else {
-                wrapper.arcsWrappers.get(key)?.disableType(type);
-                wrapper.fadeOut();
-            }
-            if(wrapper.isActive !== wasActive) {
+            const wasDisabled = !wrapper.isActive;
+            wrapper.arcsWrappers.get(key)?.toggleType(type, enable);
+            // If the node was disabled and is now enabled (or inverse), add it to the list of nodes to update
+            if (wasDisabled !== wrapper.isAnyArcWrapperDisabled()) {
+                wrapper.isActive = wasDisabled;
                 nodesToUpdate.push(id);
             }
         }
@@ -307,23 +303,22 @@ export class NodesSet {
      * @param ids - Array of node IDs to disable.
      * @param cause - The cause for the disconnection.
      */
-    disableNodes(ids: string[], cause: string): void {
-        for (const id of ids) {
-            this.disableNode(id, cause);
-        }
+    disableNodes(ids: string[], cause: string): Set<string> {
+        return new Set(ids.filter(id => this.disableNode(id, cause)));
     }
 
-    private disableNode(id: string, cause: string) {
-        if (this.connectedNodes.has(id)) {
-            this.connectedNodes.delete(id);
-            this.disconnectedNodes[cause].add(id);
-        }
+    private disableNode(id: string, cause: string): boolean {
         const nodeWrapper = this.nodesMap.get(id);
-        if (nodeWrapper) {
-            nodeWrapper.updateNode();
-            nodeWrapper.node.clearGraphics();
-            this.graph.renderer.nodes.remove(nodeWrapper.node);
-        }
+        this.disconnectedNodes[cause].add(id);
+
+        if (!this.connectedNodes.has(id) || !nodeWrapper) return false;
+        
+        this.connectedNodes.delete(id);
+        nodeWrapper.fadeOut();
+        nodeWrapper.updateNode();
+        nodeWrapper.node.clearGraphics();
+        this.graph.renderer.nodes.remove(nodeWrapper.node);
+        return true;
     }
 
     /**
@@ -331,24 +326,22 @@ export class NodesSet {
      * @param ids - Array of node IDs to enable.
      * @param cause - The cause for the reconnection.
      */
-    enableNodes(ids: string[], cause: string): void {
-        for (const id of ids) {
-            this.enableNode(id, cause);
-        }
+    enableNodes(ids: string[], cause: string): Set<string> {
+        return new Set(ids.filter(id => this.enableNode(id, cause)));
     }
 
-    private enableNode(id: string, cause: string) {
-        if (this.disconnectedNodes[cause].has(id)) {
-            this.connectedNodes.add(id);
-            this.disconnectedNodes[cause].delete(id);
-        }
+    private enableNode(id: string, cause: string): boolean {
         const nodeWrapper = this.nodesMap.get(id);
-        if (nodeWrapper) {
-            nodeWrapper.node.initGraphics();
-            this.graph.renderer.nodes.push(nodeWrapper.node);
-            nodeWrapper.updateNode();
-            nodeWrapper.connect();
-        }
+        this.disconnectedNodes[cause].delete(id);
+        if (this.isDisconnected(id) || !nodeWrapper) return false;
+        
+        this.connectedNodes.add(id);
+        nodeWrapper.fadeIn();
+        nodeWrapper.node.initGraphics();
+        this.graph.renderer.nodes.push(nodeWrapper.node);
+        nodeWrapper.updateNode();
+        nodeWrapper.connect();
+        return true;
     }
 
     /**
@@ -359,6 +352,13 @@ export class NodesSet {
             nodeWrapper.updateNode();
             nodeWrapper.connect();
         }
+    }
+
+    private isDisconnected(id: string): boolean {
+        for (const cause of Object.values(DisconnectionCause)) {
+            if (this.disconnectedNodes[cause].has(id)) return true;
+        }
+        return false;
     }
 
     // ================================ COLORS =================================
