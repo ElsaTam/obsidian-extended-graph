@@ -12,6 +12,8 @@
 	"author": "",
 	"license": "GPL-3.0-only",
 	"devDependencies": {
+		"@types/d3": "^7.4.3",
+		"@types/lodash": "^4.17.15",
 		"@types/node": "^18.17.0 || >=20.1.0",
 		"@types/parsimmon": "^1.10.9",
 		"@typescript-eslint/eslint-plugin": "5.29.0",
@@ -25,11 +27,14 @@
 		"typescript": "^5.7.3"
 	},
 	"dependencies": {
+		"d3": "^7.9.0",
+		"d3-dtree": "^2.4.1",
 		"emoji-regex": "^10.4.0",
 		"graphology": "^0.25.4",
 		"graphology-metrics": "^2.3.1",
 		"graphology-traversal": "^0.3.1",
 		"graphology-types": "^0.24.8",
+		"lodash": "^4.17.21",
 		"markdown-link-extractor": "^3.1.0",
 		"mathjs": "^14.0.1",
 		"parsimmon": "^1.18.1"

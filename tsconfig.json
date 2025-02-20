@@ -26,7 +26,7 @@
     "strictNullChecks": true,
     "target": "ES2021",
     "types": [
-      "obsidian-typings"
+      "obsidian-typings",
     ]
   },
   "include": [

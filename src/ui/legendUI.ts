@@ -97,7 +97,7 @@ class LegendRow extends Setting {
         if (!interactive) return;
 
         if (interactive.isActive) {
-            this.disable(type);
+            this.disableUI(type);
             this.manager.disable([type]);
             const allAreDisabled = !this.manager.getTypes().some(t => this.manager.isActive(t));
             if (allAreDisabled) {
@@ -106,7 +106,7 @@ class LegendRow extends Setting {
             }
         }
         else {
-            this.enable(type);
+            this.enableUI(type);
             this.manager.enable([type]);
             const allAreEnabled = !this.manager.getTypes().some(t => !this.manager.isActive(t));
             if (allAreEnabled) {
@@ -116,19 +116,19 @@ class LegendRow extends Setting {
         }
     }
 
-    disable(type: string) {
+    disableUI(type: string) {
         const button = this.controlEl.getElementsByClassName(this.getClassName(type))[0];
         if (button) button.addClass("is-hidden");
     }
 
-    enable(type: string) {
+    enableUI(type: string) {
         const button = this.controlEl.getElementsByClassName(this.getClassName(type))[0];
         if (button) button.removeClass("is-hidden");
     }
 
     disableAll() {
         for(const type of this.manager.getTypes()) {
-            this.disable(type);
+            this.disableUI(type);
         }
         this.manager.disable(this.manager.getTypes());
         this.disableAllButton.extraSettingsEl.style.display = "none";
@@ -137,7 +137,7 @@ class LegendRow extends Setting {
 
     enableAll() {
         for(const type of this.manager.getTypes()) {
-            this.enable(type);
+            this.enableUI(type);
         }
         this.manager.enable(this.manager.getTypes());
         this.disableAllButton.extraSettingsEl.style.display = "";
@@ -216,22 +216,22 @@ export class LegendUI extends Component implements InteractiveUI {
     }
 
     disableUI(row: string, type: string) {
-        this.legendRows.get(row)?.disable(type);
+        this.legendRows.get(row)?.disableUI(type);
     }
 
     enableUI(row: string, type: string) {
-        this.legendRows.get(row)?.enable(type);
+        this.legendRows.get(row)?.enableUI(type);
     }
 
     enableAllUI(row: string) {
         this.legendRows.get(row)?.manager.getTypes().forEach(type => {
-            this.legendRows.get(row)?.enable(type);
+            this.legendRows.get(row)?.enableUI(type);
         })
     }
 
     disableAllUI(row: string) {
         this.legendRows.get(row)?.manager.getTypes().forEach(type => {
-            this.legendRows.get(row)?.disable(type);
+            this.legendRows.get(row)?.disableUI(type);
         })
     }
 

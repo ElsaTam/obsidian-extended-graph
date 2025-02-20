@@ -1,4 +1,9 @@
 
+import * as d3 from 'd3';
+import _ from 'lodash';
+window.d3 = d3;
+window._ = _;
+
 export * from "./pluginInstances";
 
 export * from "./graphsManager";
@@ -39,8 +44,10 @@ export * from "./graph/graphicElements/nodes/arcsCircle";
 export * from "./graph/graphicElements/nodes/image";
 export * from "./graph/graphicElements/nodes/shapes";
 
+export * from "./graph/pin/familyTree";
 export * from "./graph/pin/pinner";
 export * from "./graph/pin/pinShapes";
+export * from "./graph/pin/dSeeder";
 
 export * from "./graph/interfaces/interactiveUI";
 export * from "./graph/interfaces/managerGraphics";
@@ -90,6 +97,7 @@ export * from "./suggester/PropertiesSuggester";
 
 export * from "./svg/exportToSVG";
 
+export * from "./types/BCAPI";
 export * from "./types/restrictedStrings";
 export * from "./types/workspace";
 

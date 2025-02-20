@@ -1,6 +1,7 @@
 
 import { Component } from 'obsidian';
-import { DisconnectionCause, FOLDER_KEY, FoldersSet, getLinkID, GraphInstances, InteractiveManager, LINK_KEY, LinksSet, NodesSet, TAG_KEY } from 'src/internal';
+import { DisconnectionCause, FamilyTree, FOLDER_KEY, FoldersSet, getLinkID, GraphInstances, InteractiveManager, LINK_KEY, LinksSet, NodesSet, TAG_KEY } from 'src/internal';
+
 
 export class Graph extends Component {
     instances: GraphInstances;
@@ -94,6 +95,7 @@ export class Graph extends Component {
         this.instances.nodesSet.load();
         this.instances.linksSet.load();
         this.instances.foldersSet?.load();
+        this.buildFamilyTree();
     }
 
     private delay(ms: number): Promise<void> {
@@ -565,5 +567,12 @@ export class Graph extends Component {
             links.push([link.source.id, link.target.id]);
         }
         return links;
+    }
+
+    // ============================ UPDATING WORKER ============================
+
+    private async buildFamilyTree() {
+        const familyTree = new FamilyTree(this.instances);
+        familyTree.create();
     }
 }

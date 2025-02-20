@@ -47,6 +47,11 @@ export default class STRINGS {
 		borderUnresolvedDesc: "If greater than 0, unresolved nodes will only show an outside circle border instead of a full disk",
 		disableNodes: "Disable nodes",
 		disableNodesDesc: "When all arcs are disabled on the node, remove it from the graph",
+		familyTree: {
+			noUpKey: "No property for the up key is enabled in this graph",
+			noDownKey: "No property for the down key is enabled in this graph",
+			impossibleToBuild: "Impossible to create a family tree view.",
+		},
 		focus: "Focus",
 		focusDesc: "Scale up the node corresponding to the active note",
 		focusScale: "Scale factor",
