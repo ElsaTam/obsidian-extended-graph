@@ -91,6 +91,10 @@ export class ExtendedGraphSettingTab extends PluginSettingTab {
             .addText(cb => cb
                 .setValue(PluginInstances.settings.borderUnresolved.toString())
                 .onChange(async (value) => {
+                    if (value === '') {
+                        PluginInstances.settings.borderUnresolved = '';
+                        await PluginInstances.plugin.saveSettings();
+                    }
                     const intValue = parseFloat(value);
                     if (!isNaN(intValue)) {
                         PluginInstances.settings.borderUnresolved = Math.clamp(intValue, 0, 1);

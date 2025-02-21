@@ -292,9 +292,9 @@ export class ExportExtendedGraphToSVG extends ExportGraphToSVG {
                 const endAngle   = arcs.arcSize * (arc.index + 1) - ArcsCircle.gap * 0.5;
                 const thickness  = size * ArcsCircle.thickness * 2 * NodeShape.getSizeFactor(arcs.shape);
                 
-                var start = polar2Cartesian(cx, cy, radius, endAngle);
-                var end = polar2Cartesian(cx, cy, radius, startAngle);
-                var largeArcFlag = endAngle - startAngle <= Math.PI ? "0" : "1";
+                const start = polar2Cartesian(cx, cy, radius, endAngle);
+                const end = polar2Cartesian(cx, cy, radius, startAngle);
+                const largeArcFlag = endAngle - startAngle <= Math.PI ? "0" : "1";
 
                 const path = `M ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`;
                 const arcSVG = getSVGNode('path', {

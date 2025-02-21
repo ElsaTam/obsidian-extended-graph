@@ -141,7 +141,8 @@ export abstract class NodeGraphicsWrapper implements GraphicsWrapper<GraphNode> 
             head.setAttribute("stroke", stroke);
             tail.setAttribute("stroke", PluginInstances.app.getAccentColor());
 
-            const svgDataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg.outerHTML)}`
+            const s = new XMLSerializer();
+            const svgDataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(s.serializeToString(svg))}`
             Assets.load(svgDataUrl).then(texture => {
                 const icon = new Sprite(texture);
                 icon.name = "pin";

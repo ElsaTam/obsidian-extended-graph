@@ -298,7 +298,7 @@ export class GraphStateModal extends Modal {
 
     private mountPagination(key: string) {
         const pagination = this.sortableTables[key].pagination;
-        pagination.innerHTML = "";
+        pagination.replaceChildren();
         if (this.sortableTables[key].rows.length < this.sortableTables[key].maxRows) return;
         const nShow = 3;
 
@@ -411,7 +411,7 @@ export class GraphStateModal extends Modal {
     }
 
     private showPageRows(key: string) {
-        this.sortableTables[key].table.tBodies[0].innerHTML = "";
+        this.sortableTables[key].table.tBodies[0].replaceChildren();
         const page = this.sortableTables[key].page;
         for (let i = 0, n = this.sortableTables[key].rows.length; i < this.sortableTables[key].maxRows && page * this.sortableTables[key].maxRows + i < n; ++i) {
             this.sortableTables[key].table.tBodies[0].appendChild(this.sortableTables[key].rows[page * this.sortableTables[key].maxRows + i]);

@@ -224,7 +224,7 @@ export class NodeShape extends Graphics {
     static getSVG(shape: ShapeEnum): SVGElement {
         const type = NodeShape.getType(shape);
         
-        var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
         svg.setAttributeNS(null, 'fill', 'currentColor');
         svg.setAttributeNS(null, 'stroke-width', '0');
         svg.appendChild(NodeShape.getInnerSVG(shape));

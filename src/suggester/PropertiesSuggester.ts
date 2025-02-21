@@ -16,19 +16,26 @@ export class PropertiesSuggester extends AbstractInputSuggest<HTMLElement> {
         let sortedValues = new Set(filteredValues.sort());
         return [...sortedValues].map(value => {
             const split = value.split(query);
-            let innerHTML = "";
-            for (let i = 0; i < split.length - 1; ++i) {
-                innerHTML += split[i] + "<strong>" + query + "</strong>";
-            }
-            innerHTML += split.last();
             const el = createDiv();
-            el.innerHTML = innerHTML;
+            if (query === "") {
+                el.setText(value);
+                return el;
+            }
+            for (let i = 0; i < split.length - 1; ++i) {
+                el.appendText(split[i]);
+                const strong = createEl("strong");
+                strong.setText(query);
+                el.appendChild(strong);
+            }
+            el.appendText(split.last() ?? '');
             return el;
         });
     }
 
     renderSuggestion(value: HTMLElement, el: HTMLElement): void {
-        el.innerHTML = value.innerHTML;
+        value.childNodes.forEach((childNode) => {
+            el.appendChild(childNode.cloneNode(true));
+        });
     }
 
     selectSuggestion(value: HTMLElement, evt: MouseEvent | KeyboardEvent): void {

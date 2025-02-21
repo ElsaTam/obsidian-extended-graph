@@ -889,7 +889,7 @@ export class GraphsManager extends Component {
         let zoomCenterY = renderer.zoomCenterY;
 
         if (0 === zoomCenterX && 0 === zoomCenterY) {
-            var s = window.devicePixelRatio;
+            const s = window.devicePixelRatio;
             zoomCenterX = renderer.width / 2 * s;
             zoomCenterY = renderer.height / 2 * s;
         }

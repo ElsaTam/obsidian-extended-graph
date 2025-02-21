@@ -44,7 +44,7 @@ export default class STRINGS {
 		autoEnable: "Auto enable",
 		autoEnableDesc: "Auto enable the plugin in graph views",
 		borderUnresolved: "Border of unresolved nodes",
-		borderUnresolvedDesc: "If greater than 0, unresolved nodes will only show an outside circle border instead of a full disk",
+		borderUnresolvedDesc: "If between 0 and 1 (excluded), unresolved nodes will only show an outside circle border instead of a full disk",
 		disableNodes: "Disable nodes",
 		disableNodesDesc: "When all arcs are disabled on the node, remove it from the graph",
 		familyTree: {
@@ -69,7 +69,7 @@ export default class STRINGS {
 		imagesFromProperty: "From a property",
 		imagesFromPropertyDesc: "Display image from a property in the frontmatter",
 		imagesFromEmbeds: "From embeds",
-		imagesFromEmbedsDesc: "Display an image if one is found among the embeds in the note. The image from a property is taken first when possible.",
+		imagesFromEmbedsDesc: "Display an image if one is found among the embeds in the note. The setting \"From a property\" has priority.",
 		imagesForAttachments: "For attachments",
 		imagesForAttachmentsDesc: "Display image for attachment nodes",
 		imageProperty: "Image property",
@@ -118,7 +118,7 @@ export default class STRINGS {
 		pinMultipleGap: "Gap between nodes",
 		pinMultipleCenter: "Center",
 		pinMultipleGridSize: "Number of columns",
-		pinMultipleGridSizeDesc: "Values can be 'N' (single row), 'auto' (square grid) or a positive number",
+		pinMultipleGridSizeDesc: "Values can be 'N' (single row), 'auto' (square grid) or a positive integer",
 		size: "Size",
 		elementsStats: "Nodes and links statistics",
 		elementsStatsDesc: "Choose how nodes and links sizes/colors must be computed",
@@ -178,20 +178,20 @@ export default class STRINGS {
 		svgScreenshotVisibleArea: "Export only visible area",
 		zoomOnNode: "Zoom on node",
 		zoomScale: "Zoom scale",
-		zoomScaleDesc: "When zooming on a note, set the used scale",
+		zoomScaleDesc: "When zooming on a node, set the used scale",
 	};
 
 	static notices = {
 		disabled: "disabled",
-		graphAnalysisPluginRequired: "Graph Analysis plugin must be enabled to use this function",
+		graphAnalysisPluginRequired: "Graph Analysis community plugin must be enabled to use this function",
 		invalidCharacter: "Invalid character",
-		nlpPluginRequired: "NLP plugin must be enabled to use this function",
+		nlpPluginRequired: "NLP community plugin must be enabled to use this function",
 		nodeLimiteExceeded: "Try to handle too many nodes",
 		nodeLimiteIs: "The limite is",
 		stateDeleted: "State has been removed",
 		stateSaved: "State has been saved",
 		svgCopied: "SVG copied to clipboard",
-	}
+	};
 
 	static query = {
 		AND: "AND",

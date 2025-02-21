@@ -35,7 +35,7 @@ class LegendRow extends Setting {
                         this.enableAll();
                     })
                     .then(cb => {
-                        cb.extraSettingsEl.style.display = "none";
+                        this.enableAllButton.extraSettingsEl.remove();
                     });
             })
             .setClass(`graph-legend-${name}s-row`);
@@ -101,8 +101,8 @@ class LegendRow extends Setting {
             this.manager.disable([type]);
             const allAreDisabled = !this.manager.getTypes().some(t => this.manager.isActive(t));
             if (allAreDisabled) {
-                this.disableAllButton.extraSettingsEl.style.display = "none";
-                this.enableAllButton.extraSettingsEl.style.display = "";
+                this.disableAllButton.extraSettingsEl.remove();
+                this.controlEl.insertAdjacentElement('afterbegin', this.enableAllButton.extraSettingsEl);
             }
         }
         else {
@@ -110,8 +110,8 @@ class LegendRow extends Setting {
             this.manager.enable([type]);
             const allAreEnabled = !this.manager.getTypes().some(t => !this.manager.isActive(t));
             if (allAreEnabled) {
-                this.disableAllButton.extraSettingsEl.style.display = "";
-                this.enableAllButton.extraSettingsEl.style.display = "none";
+                this.controlEl.insertAdjacentElement('afterbegin', this.disableAllButton.extraSettingsEl);
+                this.enableAllButton.extraSettingsEl.remove();
             }
         }
     }
@@ -131,8 +131,8 @@ class LegendRow extends Setting {
             this.disableUI(type);
         }
         this.manager.disable(this.manager.getTypes());
-        this.disableAllButton.extraSettingsEl.style.display = "none";
-        this.enableAllButton.extraSettingsEl.style.display = "";
+        this.disableAllButton.extraSettingsEl.remove();
+        this.controlEl.insertAdjacentElement('afterbegin', this.enableAllButton.extraSettingsEl);
     }
 
     enableAll() {
@@ -140,8 +140,8 @@ class LegendRow extends Setting {
             this.enableUI(type);
         }
         this.manager.enable(this.manager.getTypes());
-        this.disableAllButton.extraSettingsEl.style.display = "";
-        this.enableAllButton.extraSettingsEl.style.display = "none";
+        this.controlEl.insertAdjacentElement('afterbegin', this.disableAllButton.extraSettingsEl);
+        this.enableAllButton.extraSettingsEl.remove();
     }
 }
 

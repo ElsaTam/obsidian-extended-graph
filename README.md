@@ -8,9 +8,6 @@ This plugin enables you to:
 - Remove links based on relationship types.
 - Configure multiple views and switch between them seamlessly.
 
-> [!IMPORTANT]
-> This project is a work in progress. Before testing the plugin, please refer to the ![](#issues) to review potential bugs and risks..
-
 ![](doc/images/overview.webp)
 
 # Installation
@@ -29,7 +26,7 @@ Have a look at the [wiki](https://github.com/ElsaTam/obsidian-extended-graph/wik
 
 # Issues
 
-I am currently seeking beta testers willing to try the plugin and report issues. Since the core graph plugin lacks an API and documentation, many features are experimental, and feedback is critical to identify and resolve bugs.
+Since the core graph plugin lacks an API and documentation, many features are experimental, and feedback is critical to identify and resolve bugs.
 
 **Expected risks**:
 - **Graph settings loss**: If the app does not close properly, graph settings could be lost. It *should* not happened, I haven't seen this bug in a long time, but I'm waiting for more testing before removing it from this list. If you want to be extra careful, make a copy of the file `.obsidian/graph.json` before enabling the plugin.
@@ -49,7 +46,9 @@ The plugin is completely free to test and will always stay that way, and open so
 
 - [obsidian-typings](https://github.com/Fevol/obsidian-typings) (MIT License)
 - [graph-analysis](https://github.com/SkepticMystic/graph-analysis) (GNU General Public License v3.0)
+- [breadcrumbs](https://github.com/SkepticMystic/breadcrumbs) (MIT License)
 - [js-colormaps](https://github.com/timothygebhard/js-colormaps) (MIT License)
+- [dTree-Seed](https://github.com/JMHeartley/dTree-Seed) (MIT License)
 
 # Features ideas
 

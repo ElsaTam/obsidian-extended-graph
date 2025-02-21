@@ -1,4 +1,4 @@
-import { EngineOptions, FOLDER_KEY, Graph, GraphInstances, GraphStateData, LINK_KEY, PluginInstances, TAG_KEY } from "src/internal";
+import { EngineOptions, FOLDER_KEY, GraphInstances, GraphStateData, LINK_KEY, PluginInstances, TAG_KEY } from "src/internal";
 
 export class GraphState {
     data = new GraphStateData();
@@ -78,11 +78,16 @@ export class GraphState {
 
         for (const key in this.data) {
             if (!this.isValidProperty(key)) {
-                delete (this.data as any)[key];
+                this.data = this.excludeKey(this.data, key) as GraphStateData;
                 hasChanged = true;
             }
         }
 
         return hasChanged;
+    }
+
+    excludeKey<T extends object, U extends keyof any>(obj: T, key: U) {
+        const { [key]: _, ...newObj } = obj;
+        return newObj;
     }
 }

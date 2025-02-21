@@ -98,14 +98,14 @@ function getOutlinkTypesWithDataview(settings: ExtendedGraphSettings, dv: Datavi
         if (value === null || value === undefined || value === '') continue;
 
         if ((typeof value === "object") && ("path" in value)) {
-            const targetID = (value as any).path;
+            const targetID = (value as {path: string}).path;
             if (!linkTypes.has(targetID)) linkTypes.set(targetID, new Set<string>());
             linkTypes.get(targetID)?.add(canonicalizeVarName(key));
         }
         else if (Array.isArray(value)) {
             for (const l of value) {
                 if ((typeof l === "object") && ("path" in l)) {
-                    const targetID = (l as any).path;
+                    const targetID = (l as {path: string}).path;
                     if (!linkTypes.has(targetID)) linkTypes.set(targetID, new Set<string>());
                     linkTypes.get(targetID)?.add(canonicalizeVarName(key));
                 }

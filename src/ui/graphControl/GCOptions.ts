@@ -18,7 +18,7 @@ export class GCOptions extends GCSection {
     // ================================ DISPLAY ================================
 
     override display(enable: boolean) {
-        this.treeItemChildren.innerHTML = "";
+        this.treeItemChildren.replaceChildren();
 
         this.createSaveForDefaultState();
         if (enable) this.createSaveForNormalState();

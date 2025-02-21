@@ -88,7 +88,7 @@ export abstract class AbstractSet<T extends GraphNode | GraphLink> {
                 }
             }
             else if (file && file instanceof TFile) {
-                types = this.getTypesFromFile(key, element, (file as TFile));
+                types = this.getTypesFromFile(key, element, file);
                 if (types.size === 0) {
                     types.add(this.instances.settings.interactiveSettings[key].noneType);
                 }

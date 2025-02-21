@@ -7,6 +7,7 @@ export class MenuUI extends Component {
     viewContent: HTMLElement;
     view: GraphView | LocalGraphView;
 
+    graphControlsEl: HTMLDivElement;
     buttonEnable: ExtraButtonComponent;
     buttonReset: ExtraButtonComponent;
     enabled: boolean;
@@ -15,16 +16,16 @@ export class MenuUI extends Component {
         super();
         this.view = view;
         this.viewContent = this.view.containerEl.getElementsByClassName("view-content")[0] as HTMLElement;
-        const graphControls = this.viewContent.querySelector(".graph-controls") as HTMLDivElement;
+        this.graphControlsEl = this.viewContent.querySelector(".graph-controls") as HTMLDivElement;
 
-        const hr = graphControls.createEl("hr");
+        const hr = this.graphControlsEl.createEl("hr");
         hr.addClass("separator-exended-graph");
-        this.createEnableButton(graphControls);
-        this.createResetButton(graphControls);
+        this.createEnableButton();
+        this.createResetButton();
     }
 
-    createEnableButton(graphControls: HTMLDivElement) {
-        this.buttonEnable = new ExtraButtonComponent(graphControls)
+    createEnableButton() {
+        this.buttonEnable = new ExtraButtonComponent(this.graphControlsEl)
             .setTooltip(`${STRINGS.controls.enable} ${STRINGS.plugin.name}`, {placement: 'top'})
             //.setIcon("sparkles")
             .onClick(() => {
@@ -40,8 +41,8 @@ export class MenuUI extends Component {
             });
     }
 
-    createResetButton(graphControls: HTMLDivElement) {
-        this.buttonReset = new ExtraButtonComponent(graphControls)
+    createResetButton() {
+        this.buttonReset = new ExtraButtonComponent(this.graphControlsEl)
             .setTooltip(STRINGS.controls.resetGraph)
             .setIcon("rotate-ccw")
             .onClick(() => {
@@ -51,7 +52,7 @@ export class MenuUI extends Component {
             })
             .then(cb => {
                 cb.extraSettingsEl.addClasses(["graph-controls-button", "mod-extended-graph-reset"]);
-                cb.extraSettingsEl.style.display = "none";
+                cb.extraSettingsEl.remove();
             });
     }
 
@@ -59,13 +60,13 @@ export class MenuUI extends Component {
         this.enabled = true;
         this.buttonEnable.extraSettingsEl.addClass("is-active");
         this.buttonEnable.setTooltip(`${STRINGS.controls.disable} ${STRINGS.plugin.name}`, {placement: 'top'});
-        this.buttonReset.extraSettingsEl.style.display = "";
+        this.graphControlsEl.insertAfter(this.buttonReset.extraSettingsEl, this.buttonEnable.extraSettingsEl);
     }
 
     setDisableUIState() {
         this.enabled = false;
         this.buttonEnable.extraSettingsEl.removeClass("is-active");
         this.buttonEnable.setTooltip(`${STRINGS.controls.enable} ${STRINGS.plugin.name}`, {placement: 'top'});
-        this.buttonReset.extraSettingsEl.style.display = "none";
+        this.buttonReset.extraSettingsEl.remove();
     }
 }

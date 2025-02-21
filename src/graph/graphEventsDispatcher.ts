@@ -557,7 +557,7 @@ export class GraphEventsDispatcher extends Component {
     }
 
     preventDraggingPinnedNodes() {
-        var node = this.instances.renderer.dragNode;
+        const node = this.instances.renderer.dragNode;
         if (node && this.instances.nodesSet.isNodePinned(node.id)) {
             const pinner = new Pinner(this.instances);
             pinner.setLastDraggedPinnedNode(node.id);

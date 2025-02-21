@@ -186,11 +186,11 @@ export class SettingElementsStats extends SettingsSectionCollapsible {
     private setWarning(warningSetting: Setting, warning?: string): void {
         if (warning && warning !== "") {
             warningSetting.setDesc(warning);
-            warningSetting.settingEl.style.setProperty("display", "");
+            warningSetting.settingEl.removeClass("is-hidden");
         }
         else {
             warningSetting.setDesc("");
-            warningSetting.settingEl.style.setProperty("display", "none");
+            warningSetting.settingEl.addClass("is-hidden");
         }
     }
 

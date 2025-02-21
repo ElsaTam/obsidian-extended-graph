@@ -24,7 +24,9 @@ export class ExtendedGraphUnresolvedNode extends ExtendedGraphNode {
     }
     
     public needInnerCircle(): boolean {
-        return this.instances.settings.borderUnresolved > 0;
+        return typeof this.instances.settings.borderUnresolved === 'number'
+            && this.instances.settings.borderUnresolved > 0
+            && this.instances.settings.borderUnresolved < 1;
     }
     
     protected createGraphicsWrapper(): void {

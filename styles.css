@@ -429,15 +429,17 @@ body {
         border-top: 0;
     }
 
-    .setting-tags           { display: var(--display-settings-tags); }
-    .setting-properties     { display: var(--display-settings-properties); }
-    .setting-property-key   { display: var(--display-settings-property-key); }
-    .setting-links          { display: var(--display-settings-links); }
-    .setting-folders        { display: var(--display-settings-folders); }
-    .setting-images         { display: var(--display-settings-images); }
-    .setting-focus          { display: var(--display-settings-focus); }
-    .setting-shapes         { display: var(--display-settings-shapes); }
-    .setting-elements-stats { display: var(--display-settings-elements-stats); }
+    .setting-item-heading.setting-tags.is-collapsed ~ .setting-tags,
+    .setting-item-heading.setting-properties.is-collapsed ~ .setting-properties,
+    .setting-item-heading.setting-property-key.is-collapsed ~ .setting-property-key,
+    .setting-item-heading.setting-links.is-collapsed ~ .setting-links,
+    .setting-item-heading.setting-folders.is-collapsed ~ .setting-folders,
+    .setting-item-heading.setting-images.is-collapsed ~ .setting-images,
+    .setting-item-heading.setting-focus.is-collapsed ~ .setting-focus,
+    .setting-item-heading.setting-shapes.is-collapsed ~ .setting-shapes,
+    .setting-item-heading.setting-elements-stats.is-collapsed ~ .setting-elements-stats {
+        display: none;
+    }
 
     .settings-colors-container,
     .settings-properties-container {
@@ -460,11 +462,6 @@ body {
             border-color: color-mix(in srgb, var(--background-modifier-border), var(--interactive-color) 15%);
             background: color-mix(in srgb, var(--background-modifier-form-field), var(--interactive-color) 2%);
         }
-    }
-
-    > .setting-properties > .setting-item-info,
-    > .setting-properties > .setting-item-control {
-        display: none;
     }
 
     .settings-properties-container {
@@ -530,6 +527,10 @@ body {
         }
     
         .setting-item-control {
+            display: none;
+        }
+
+        &.is-hidden {
             display: none;
         }
     }

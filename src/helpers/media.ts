@@ -181,7 +181,7 @@ export class Media {
     private static async getMediaType(url: string): Promise<string | null> {
         let type: string | null | undefined;
         
-        var request = new XMLHttpRequest();
+        const request = new XMLHttpRequest();
         request.open('HEAD', url, false);
         request.onload = function() {
             type = request.getResponseHeader('Content-Type');

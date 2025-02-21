@@ -6,7 +6,6 @@ export abstract class SettingsSectionCollapsible extends SettingsSection {
     feature: Feature;
     interactiveKey: string;
     itemClasses: string[] = [];
-    cssDisplayProperty: string;
     toggles: Partial<Record<GraphType, HTMLDivElement>> = {};
     
     constructor(settingTab: ExtendedGraphSettingTab, feature: Feature, key: string, title: string, icon: string, description: string) {
@@ -16,12 +15,12 @@ export abstract class SettingsSectionCollapsible extends SettingsSection {
         this.interactiveKey = key;
         this.itemClasses.push(`setting-${this.feature}`);
         if (key !== '') this.itemClasses.push(`setting-${this.feature}-${key}`);
-        this.cssDisplayProperty = `--display-settings-${this.feature}`;
     }
 
     override display() {
         super.display();
 
+        this.settingHeader.settingEl.addClasses(this.itemClasses);
         this.elementsBody.forEach(el => {
             el.addClasses(this.itemClasses);
         });
@@ -62,11 +61,9 @@ export abstract class SettingsSectionCollapsible extends SettingsSection {
         if ((PluginInstances.settings.enableFeatures['graph'][this.feature]
             || PluginInstances.settings.enableFeatures['localgraph'][this.feature])
             || (this.feature === 'property-key' && enable)) {
-            this.containerEl.style.setProperty(this.cssDisplayProperty, 'flex');
             this.settingHeader.settingEl.removeClass('is-collapsed');
         }
         else {
-            this.containerEl.style.setProperty(this.cssDisplayProperty, 'none');
             this.settingHeader.settingEl.addClass('is-collapsed');
         }
     }

@@ -11,7 +11,7 @@ export class SettingFocus extends SettingsSectionCollapsible {
 
     protected override addHeader(): void {
         super.addHeader();
-        this.toggles['localgraph']?.style.setProperty("display", "none");
+        this.toggles['localgraph']?.remove();
     }
 
     protected override addBody(): void {

@@ -12,6 +12,7 @@ export class StatesUI extends Component {
     isOpen: boolean;
 
     root: HTMLDivElement;
+    statePane: Setting;
     toggleButton: ExtraButtonComponent;
     select: DropdownComponent;
     saveButton: ExtraButtonComponent;
@@ -42,8 +43,8 @@ export class StatesUI extends Component {
                 cb.extraSettingsEl.addClasses(["graph-controls-button", "mod-states"]);
             });
 
-        // TITLE
-        new Setting(this.root)
+        // STATE PANE
+        this.statePane = new Setting(this.root)
             .setName(STRINGS.states.states)
             .addDropdown(cb => {
                 this.select = cb;
@@ -148,8 +149,14 @@ export class StatesUI extends Component {
     }
 
     private displaySaveDeleteButton() {
-        this.saveButton.extraSettingsEl.style.display   = this.select.getValue() !== DEFAULT_STATE_ID ? "" : "none";
-        this.deleteButton.extraSettingsEl.style.display = this.select.getValue() !== DEFAULT_STATE_ID ? "" : "none";
+        if (this.select.getValue() !== DEFAULT_STATE_ID) {
+            this.statePane.settingEl.append(this.saveButton.extraSettingsEl);
+            this.statePane.settingEl.append(this.deleteButton.extraSettingsEl);
+        }
+        else {
+            this.saveButton.extraSettingsEl.remove();
+            this.deleteButton.extraSettingsEl.remove();
+        }
     }
 
     open() {

@@ -16,6 +16,7 @@ export class UnresolvedNodeGraphicsWrapper extends NodeGraphicsWrapper {
     }
 
     private initInnerCircle() {
+        if (typeof this.extendedElement.instances.settings.borderUnresolved !== 'number') return;
         this.innerCircle = new NodeShape(this.shape);
         this.innerCircle.alpha = 5;
         this.innerCircle.scale.set(this.innerCircle.getDrawingResolution() * (1 - this.extendedElement.instances.settings.borderUnresolved));

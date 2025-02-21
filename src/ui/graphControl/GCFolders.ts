@@ -18,7 +18,7 @@ export class GCFolders extends GCSection implements InteractiveUI {
     }
 
     override display() {
-        this.treeItemChildren.innerHTML = "";
+        this.treeItemChildren.replaceChildren();
         this.createFolders();
     }
 
