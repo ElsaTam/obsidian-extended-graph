@@ -388,7 +388,7 @@ export class Graph extends Component {
      * Enables nodes specified by their IDs and cascades the reconnection to related links.
      * @param ids - Array of node IDs to enable.
      */
-    private enableNodes(ids: string[]): boolean {
+    enableNodes(ids: string[]): boolean {
         // Get all the cascade chains and clean them in the map structure
         const cascades = this.getAndCleanCascadeNodes(new Set<string>(ids));
 

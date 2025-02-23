@@ -1,4 +1,4 @@
-import { Component, ExtraButtonComponent, Setting } from "obsidian";
+import { ButtonComponent, Component, ExtraButtonComponent, Setting } from "obsidian";
 import { FOLDER_KEY, GraphInstances, InteractiveManager, InteractiveUI, PluginInstances, TAG_KEY, textColor } from "src/internal";
 import STRINGS from "src/Strings";
 
@@ -6,9 +6,11 @@ class LegendRow extends Setting {
     name: string;
     disableAllButton: ExtraButtonComponent;
     enableAllButton: ExtraButtonComponent;
+    typeButtons: ButtonComponent[] = [];
     cssBGColorVariable: string;
     cssTextColorVariable: string;
     manager: InteractiveManager;
+    isLocked: boolean = false;
 
     constructor(name: string, manager: InteractiveManager, containerEl: HTMLElement) {
         super(containerEl);
@@ -46,6 +48,7 @@ class LegendRow extends Setting {
     }
 
     addLegend(type: string, color: Uint8Array): void {
+        if (this.isLocked) return;
         const button = this.controlEl.getElementsByClassName(this.getClassName(type))[0];
         if (button) return;
         this.addButton(cb => {
@@ -56,6 +59,7 @@ class LegendRow extends Setting {
                     this.toggle(type);
                 })
                 .then(cb => {
+                    this.typeButtons.push(cb);
                     cb.buttonEl.style.setProperty(this.cssBGColorVariable, `${color[0]}, ${color[1]}, ${color[2]}`);
                     cb.buttonEl.style.setProperty(this.cssTextColorVariable, textColor(color));
                     if (type === this.manager.instances.settings.interactiveSettings[this.name].noneType) {
@@ -75,6 +79,7 @@ class LegendRow extends Setting {
     }
 
     updateLegend(type: string, color: Uint8Array): void {
+        if (this.isLocked) return;
         const button = this.controlEl.getElementsByClassName(this.getClassName(type))[0];
         if (!button) {
             this.addLegend(type, color)
@@ -86,13 +91,18 @@ class LegendRow extends Setting {
     }
 
     removeLegend(types: Set<string> | string[]) {
-        types.forEach(type => {
-            const button = this.controlEl.getElementsByClassName(this.getClassName(type))[0];
-            button?.parentNode?.removeChild(button);
-        })
+        if (this.isLocked) return;
+        this.typeButtons.filter(cb => {
+            if ([...types].some(type => cb.buttonEl.classList.contains(this.getClassName(type)))) {
+                cb.buttonEl.remove();
+                return true;
+            }
+            return false;
+        });
     }
 
     toggle(type: string) {
+        if (this.isLocked) return;
         const interactive = this.manager.interactives.get(type);
         if (!interactive) return;
 
@@ -117,16 +127,19 @@ class LegendRow extends Setting {
     }
 
     disableUI(type: string) {
+        if (this.isLocked) return;
         const button = this.controlEl.getElementsByClassName(this.getClassName(type))[0];
         if (button) button.addClass("is-hidden");
     }
 
     enableUI(type: string) {
+        if (this.isLocked) return;
         const button = this.controlEl.getElementsByClassName(this.getClassName(type))[0];
         if (button) button.removeClass("is-hidden");
     }
 
     disableAll() {
+        if (this.isLocked) return;
         for(const type of this.manager.getTypes()) {
             this.disableUI(type);
         }
@@ -136,12 +149,31 @@ class LegendRow extends Setting {
     }
 
     enableAll() {
+        if (this.isLocked) return;
         for(const type of this.manager.getTypes()) {
             this.enableUI(type);
         }
         this.manager.enable(this.manager.getTypes());
         this.controlEl.insertAdjacentElement('afterbegin', this.disableAllButton.extraSettingsEl);
         this.enableAllButton.extraSettingsEl.remove();
+    }
+
+    lock() {
+        this.isLocked = true;
+        this.toggleUI();
+    }
+
+    unlock() {
+        this.isLocked = false;
+        this.toggleUI();
+    }
+
+    private toggleUI() {
+        this.disableAllButton.setDisabled(this.isLocked);
+        this.enableAllButton.setDisabled(this.isLocked);
+        for (const cb of this.typeButtons) {
+            cb.setDisabled(this.isLocked);
+        }
     }
 }
 
@@ -152,6 +184,7 @@ export class LegendUI extends Component implements InteractiveUI {
     legendRows: Map<string, LegendRow>;
 
     isOpen: boolean;
+    isLocked: boolean = false;
     
     root: HTMLDivElement;
     toggleButton: ExtraButtonComponent;
@@ -249,5 +282,21 @@ export class LegendUI extends Component implements InteractiveUI {
         this.isOpen = false;
         PluginInstances.settings.collapseLegend = true;
         PluginInstances.plugin.saveSettings();
+    }
+
+    lock() {
+        //this.toggleButton.setDisabled(true);
+        for (const [type, row] of this.legendRows) {
+            row.lock();
+        }
+        this.isLocked = true;
+    }
+
+    unlock() {
+        //this.toggleButton.setDisabled(false);
+        for (const [type, row] of this.legendRows) {
+            row.unlock();
+        }
+        this.isLocked = false;
     }
 }

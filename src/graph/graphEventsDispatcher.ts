@@ -76,7 +76,7 @@ export class GraphEventsDispatcher extends Component {
     }
 
     private loadCurrentState(): void {
-        const state = PluginInstances.settings.states.find(v => v.id === this.instances.statesUI.currentStateID);
+        const state = PluginInstances.settings.states.find(v => v.id === this.instances.currentStateID);
         if (state) {
             this.instances.engine.setOptions(state.engineOptions);
         }
@@ -91,7 +91,7 @@ export class GraphEventsDispatcher extends Component {
         this.observeOrphanSettings();
         this.createRenderProxy();
         this.preventDraggingPinnedNodes();
-        PluginInstances.statesManager.changeState(this.instances, this.instances.statesUI.currentStateID);
+        PluginInstances.statesManager.changeState(this.instances, this.instances.currentStateID);
     }
 
     private updateOpacityLayerColor(): void {

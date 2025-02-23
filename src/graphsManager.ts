@@ -741,7 +741,7 @@ export class GraphsManager extends Component {
 
     resetPlugin(view: GraphView | LocalGraphView): void {
         const instances = this.allInstances.get(view.leaf.id);
-        const stateID = instances?.statesUI.currentStateID;
+        const stateID = instances?.currentStateID;
         const scale = instances?.renderer.targetScale ?? false;
         this.disablePlugin(view);
         this.enablePlugin(view, stateID);

@@ -7,7 +7,6 @@ export class StatesUI extends Component {
     instances: GraphInstances;
 
     viewContent: HTMLElement;
-    currentStateID: string;
 
     isOpen: boolean;
 
@@ -49,8 +48,6 @@ export class StatesUI extends Component {
             .addDropdown(cb => {
                 this.select = cb;
                 cb.onChange(value => {
-                    this.currentStateID = value;
-                    this.displaySaveDeleteButton();
                     PluginInstances.statesManager.changeState(this.instances, value);
                 })
             })
@@ -76,9 +73,6 @@ export class StatesUI extends Component {
                     PluginInstances.statesManager.deleteState(this.select.getValue());
                 });
             });
-
-        // CURRENT STATE ID
-        this.currentStateID = this.select.getValue();
 
         if (PluginInstances.settings.collapseState) {
             this.close();
@@ -118,8 +112,7 @@ export class StatesUI extends Component {
 
     newState(name: string): boolean {
         if (name.length === 0) return false;
-        const id = PluginInstances.statesManager.newState(this.instances, name);
-        this.currentStateID = id;
+        PluginInstances.statesManager.newState(this.instances, name);
         return true;
     }
     
@@ -128,16 +121,10 @@ export class StatesUI extends Component {
         PluginInstances.settings.states.forEach(state => {
             this.addOption(state.id, state.name);
         });
-        if (PluginInstances.settings.states.find(v => v.id === this.currentStateID)) {
-            this.setValue(this.currentStateID);
-        }
-        else {
-            this.currentStateID = this.select.getValue();
-        }
+        this.setValue(this.instances.currentStateID);
     }
 
     setValue(id: string) {
-        this.currentStateID = id;
         this.select.setValue(id);
         this.displaySaveDeleteButton();
     }
@@ -148,7 +135,7 @@ export class StatesUI extends Component {
         }
     }
 
-    private displaySaveDeleteButton() {
+    displaySaveDeleteButton() {
         if (this.select.getValue() !== DEFAULT_STATE_ID) {
             this.statePane.settingEl.append(this.saveButton.extraSettingsEl);
             this.statePane.settingEl.append(this.deleteButton.extraSettingsEl);

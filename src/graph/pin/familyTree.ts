@@ -12,24 +12,26 @@ export class FamilyTree {
     }
 
     async create() {
-        await this.prepareAPI();
-
-        if (!this.checkSettings()) return;
-
-        this.filterOutNodes();
-
-        const {treeNodes, nodeMap} = this.getTreeNodes();
-        if (treeNodes.length === 0) return;
-
-        const seededData = this.getSeededData(treeNodes);
-        const pins = this.getPinData(seededData, nodeMap);
-        this.pinFamilyTree(pins);
+        setTimeout(async () => {
+            await this.prepareAPI();
+    
+            if (!this.checkSettings()) return;
+    
+            this.disableUI();
+            this.filterOutNodes();
+    
+            const {treeNodes, nodeMap} = this.getTreeNodes();
+            if (treeNodes.length === 0) return;
+    
+            const seededData = this.getSeededData(treeNodes);
+            const pins = this.getPinData(seededData, nodeMap);
+            this.pinFamilyTree(pins);
+        }, 1000);
     }
 
     private async prepareAPI() {
         // @ts-ignore
         this.bc = window.BCAPI as BCAPI;
-        console.log(this.bc);
         await this.bc.refreshIndex();
         this.bc.buildObsGraph();
     }
@@ -38,7 +40,6 @@ export class FamilyTree {
         const nodes = Object.fromEntries([...this.instances.nodesSet.extendedElementsMap.values()]
             .filter(n => n.id.includes("Family"))
             .map(node => [getFile(node.id)?.basename ?? node.id, node]));
-        console.log(nodes);
     
         const data: TreeNode[] = [];
         const map = new Map<number, string>();
@@ -158,8 +159,27 @@ export class FamilyTree {
         const hiearchy = this.bc.plugin.settings.userHiers[0];
         
         const upKey = hiearchy.up[0];
+        const upNone = this.instances.settings.interactiveSettings[upKey].noneType;
         const downKey = hiearchy.down[0];
-        this.instances.interactiveManagers.get(upKey)?.disable([this.instances.settings.interactiveSettings[upKey].noneType]);
-        this.instances.interactiveManagers.get(downKey)?.disable([this.instances.settings.interactiveSettings[downKey].noneType]);
+        const downNone = this.instances.settings.interactiveSettings[downKey].noneType;
+
+        const nodesToDisable: string[] = [];
+        const nodesToEnable: string[] = [];
+        for (const [id, node] of this.instances.nodesSet.extendedElementsMap) {
+            const upTypes = node.getTypes(upKey);
+            const downTypes = node.getTypes(downKey);
+            if (upTypes.has(upNone) && downTypes.has(downNone) && node.isActive) {
+                nodesToDisable.push(id);
+            }
+            else if ((!upTypes.has(upNone) || !downTypes.has(downNone)) && !node.isActive) {
+                nodesToEnable.push(id);
+            }
+        }
+        this.instances.graph.disableNodes(nodesToDisable);
+        this.instances.graph.enableNodes(nodesToEnable);
+    }
+
+    private disableUI() {
+        this.instances.legendUI?.lock();
     }
 }

@@ -31,6 +31,7 @@ export class GraphInstances {
     legendUI: LegendUI | null = null;
     foldersUI: GCFolders | null = null;
     statesUI: StatesUI;
+    currentStateID: string;
 
     colorGroupHaveChanged: boolean = false;
     statePinnedNodes: Record<string, {x: number; y: number; handled?: boolean}> | null = null;

@@ -19,10 +19,11 @@ export class StatesManager {
      * @param name - The name of the new state.
      * @returns string - The ID of the new state.
      */
-    newState(instance: GraphInstances, name: string): string {
+    newState(instances: GraphInstances, name: string): string {
         const state = new GraphState(name);
         state.setID();
-        state.saveGraph(instance);
+        instances.currentStateID = state.data.id;
+        state.saveGraph(instances);
         this.onStateNeedsSaving(state.data);
         return state.data.id;
     }
@@ -35,6 +36,8 @@ export class StatesManager {
 
         stateData = this.validateStateData(stateData);
         if (!stateData) return;
+        instances.currentStateID = id;
+        instances.statesUI.displaySaveDeleteButton();
         this.updateInteractiveManagers(stateData, instances).then(() => {
             if (!stateData) return;
             if (stateData.engineOptions) {
