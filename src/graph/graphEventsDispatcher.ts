@@ -1,5 +1,5 @@
 import { Component, Keymap, Menu, TFile, UserEvent } from "obsidian";
-import { GraphData, GraphLink } from "obsidian-typings";
+import { GraphColorAttributes, GraphData, GraphLink } from "obsidian-typings";
 import { Container, DisplayObject, Text } from "pixi.js";
 import {
     applyCSSStyle,
@@ -15,6 +15,7 @@ import {
     GradientMakerModal,
     Graph,
     GraphInstances,
+    hex2int,
     LegendUI,
     LINK_KEY,
     LinkText,
@@ -727,6 +728,46 @@ export class GraphEventsDispatcher extends Component {
                 }
             }
         }
+
+        // Group nodes
+        console.log(data.nodes);
+        const nodesInGroup = [];
+        const key = TAG_KEY;
+        const type = "hero";
+        const groupNode: { type: string, links: Record<string, boolean>, color: GraphColorAttributes }
+            = { type: "group", links: {}, color: { rgb: hex2int("#ff0000"), a: 1 } };
+        const groupID = `group_${key}_${type}`
+        dataNodesEntries = Object.entries(data.nodes);
+        for (const [id, node] of dataNodesEntries) {
+            const file = getFile(id);
+            if (!file) continue;
+
+            const types = getFileInteractives(key, file);
+            if (types.has(type)) {
+                nodesInGroup.push(id);
+                delete data.nodes[id];
+                for (const neighbor in node.links) {
+                    groupNode.links[neighbor] = (groupNode.links[neighbor] ?? false) || node.links[neighbor];
+                }
+            }
+        }
+        for (const [id, node] of dataNodesEntries) {
+            for (const neighbor in node.links) {
+                if (nodesInGroup.contains(neighbor)) {
+                    node.links[groupID] = (node.links[groupID] ?? false) || node.links[neighbor];
+                    delete node.links[neighbor];
+                }
+            }
+        }
+        const groupNodeNeighbor = Object.keys(groupNode.links);
+        for (const neighbor in groupNodeNeighbor) {
+            if (nodesInGroup.contains(neighbor)) {
+                delete groupNode.links[neighbor];
+            }
+        }
+
+        data.nodes[groupID] = groupNode;
+        console.log(groupID, groupNode);
 
         PluginInstances.graphsManager.updateStatusBarItem(this.instances.view.leaf, Object.keys(data.nodes).length);
 
