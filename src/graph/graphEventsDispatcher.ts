@@ -730,57 +730,62 @@ export class GraphEventsDispatcher extends Component {
         }
 
         // Group nodes
-        for (const groupID in this.instances.settings.groupQueries) {
+        if (this.instances.settings.enableFeatures[this.instances.type]['groups']) {
 
-            const nodesInGroup: string[] = [];
-            const groupNode: { type: string, links: Record<string, boolean>, color: GraphColorAttributes }
-                = { type: "group", links: {}, color: { rgb: hex2int(this.instances.settings.groupQueries[groupID].color), a: 1 } };
+            for (const groupID in this.instances.settings.groupQueries) {
 
-            dataNodesEntries = Object.entries(data.nodes);
-            const queriesMatcher = new QueryMatcher(this.instances.settings.groupQueries[groupID].query);
+                const nodesInGroup: string[] = [];
+                const groupNode: { type: string, links: Record<string, boolean>, color: GraphColorAttributes }
+                    = { type: "group", links: {}, color: { rgb: hex2int(this.instances.settings.groupQueries[groupID].color), a: 1 } };
 
-            const handleNode = (id: string, links: Record<string, boolean>): boolean => {
+                dataNodesEntries = Object.entries(data.nodes);
+                const queriesMatcher = new QueryMatcher(this.instances.settings.groupQueries[groupID].query);
 
-                // Check if the node matches the criterions for being part of the group
-                if (queriesMatcher.doesMatch(id)) {
-                    nodesInGroup.push(id);
-                    delete data.nodes[id];
+                const handleNode = (id: string, links: Record<string, boolean>): boolean => {
 
-                    for (const neighbor in links) {
-                        // Deal with the target (handleNode call), while we are iterating in the loop
-                        const neighborAlsoInGroup = (neighbor in data.nodes && handleNode(neighbor, data.nodes[neighbor].links)) || nodesInGroup.contains(neighbor);
+                    // Check if the node matches the criterions for being part of the group
+                    if (queriesMatcher.doesMatch(id)) {
+                        nodesInGroup.push(id);
+                        delete data.nodes[id];
 
-                        if (!neighborAlsoInGroup) {
-                            // Transfer every links of the node to the group
-                            groupNode.links[neighbor] = (groupNode.links[neighbor] ?? false) || links[neighbor];
+                        for (const neighbor in links) {
+                            // Deal with the target (handleNode call), while we are iterating in the loop
+                            const neighborAlsoInGroup = (neighbor in data.nodes && handleNode(neighbor, data.nodes[neighbor].links)) || nodesInGroup.contains(neighbor);
+
+                            if (!neighborAlsoInGroup) {
+                                // Transfer every links of the node to the group
+                                groupNode.links[neighbor] = (groupNode.links[neighbor] ?? false) || links[neighbor];
+                            }
                         }
+
+                        return true;
                     }
 
-                    return true;
-                }
+                    else {
+                        const linksKeys = Object.keys(links);
+                        for (const neighbor in linksKeys) {
+                            // Deal with the target (handleNode call), while we are iterating in the loop
+                            const neighborInGroup = (neighbor in data.nodes && handleNode(neighbor, data.nodes[neighbor].links)) || nodesInGroup.contains(neighbor);
 
-                else {
-                    const linksKeys = Object.keys(links);
-                    for (const neighbor in linksKeys) {
-                        // Deal with the target (handleNode call), while we are iterating in the loop
-                        const neighborInGroup = (neighbor in data.nodes && handleNode(neighbor, data.nodes[neighbor].links)) || nodesInGroup.contains(neighbor);
-
-                        // Check if any link should be redirected to the group
-                        if (!neighborInGroup && nodesInGroup.contains(neighbor)) {
-                            links[groupID] = (links[groupID] ?? false) || links[neighbor];
-                            delete links[neighbor];
+                            // Check if any link should be redirected to the group
+                            if (!neighborInGroup && nodesInGroup.contains(neighbor)) {
+                                links[groupID] = (links[groupID] ?? false) || links[neighbor];
+                                delete links[neighbor];
+                            }
                         }
+                        return false;
                     }
-                    return false;
+                }
+
+                for (const [id, node] of dataNodesEntries) {
+                    handleNode(id, node.links);
+                }
+
+                if (nodesInGroup.length > 0) {
+                    data.nodes[groupID] = groupNode;
+                    console.log(groupNode);
                 }
             }
-
-            for (const [id, node] of dataNodesEntries) {
-                handleNode(id, node.links);
-            }
-
-            data.nodes[groupID] = groupNode;
-            console.log(groupNode);
         }
 
         PluginInstances.graphsManager.updateStatusBarItem(this.instances.view.leaf, Object.keys(data.nodes).length);
