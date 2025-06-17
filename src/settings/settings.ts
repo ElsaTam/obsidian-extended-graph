@@ -151,6 +151,9 @@ export interface ExtendedGraphSettings {
     usePluginForIconColor: boolean;
     useParentIcon: boolean;
 
+    // Groups
+    groupQueries: Record<string, { query: QueryData, color: string }>;
+
     // UI
     horizontalLegend: boolean;
     useRadialMenu: boolean;
@@ -188,6 +191,7 @@ export const DEFAULT_SETTINGS: ExtendedGraphSettings = {
             'links': false,
             'linksSameColorAsNode': false,
             'folders': false,
+            'groups': false,
             'imagesFromProperty': false,
             'imagesFromEmbeds': false,
             'imagesForAttachments': false,
@@ -206,6 +210,7 @@ export const DEFAULT_SETTINGS: ExtendedGraphSettings = {
             'links': false,
             'linksSameColorAsNode': false,
             'folders': false,
+            'groups': false,
             'imagesFromProperty': false,
             'imagesFromEmbeds': false,
             'imagesForAttachments': false,
@@ -327,6 +332,9 @@ export const DEFAULT_SETTINGS: ExtendedGraphSettings = {
     usePluginForIcon: true,
     usePluginForIconColor: true,
     useParentIcon: false,
+
+    // Groups
+    groupQueries: {},
 
     // UI
     horizontalLegend: false,
@@ -516,13 +524,21 @@ export class SettingQuery {
         // Icons
         if (newFeatures['icons'] !== oldFeatures['icons'])
             return true;
-        if (newFeatures['arrows']) {
+        if (newFeatures['icons']) {
             if (['iconProperties', 'usePluginForIcon'].some(k => !equals(k)))
                 return true;
             if (oldSettings.usePluginForIcon && newSettings.usePluginForIcon) {
                 if (['usePluginForIconColor', 'useParentIcon'].some(k => !equals(k)))
                     return true;
             }
+        }
+
+        // Groups
+        if (newFeatures['groups'] !== oldFeatures['groups'])
+            return true;
+        if (newFeatures['groups']) {
+            if (['groupQueries'].some(k => !equals(k)))
+                return true;
         }
 
         // Display settings

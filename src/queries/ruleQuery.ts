@@ -1,5 +1,6 @@
 import { TFile, TFolder } from "obsidian";
-import { getFileInteractives, LINK_KEY, PluginInstances, TAG_KEY } from "src/internal";
+import path from "path";
+import { getFile, getFileInteractives, LINK_KEY, PluginInstances, TAG_KEY } from "src/internal";
 import STRINGS from "src/Strings";
 
 export type SourceKey = 'all' | 'tag' | 'link' | 'property' | 'file' | 'folder' | 'folderRec' | 'path';
@@ -52,45 +53,47 @@ export class RuleQuery {
     }
 
     getMatches(): TFile[] {
-        return PluginInstances.app.vault.getMarkdownFiles().filter(file => this.doesMatch(file));
+        return PluginInstances.app.vault.getMarkdownFiles().filter(file => this.doesMatch(file.path, file));
     }
 
-    doesMatch(file: TFile): boolean | null {
+    doesMatch(id: string, file: TFile | null = null): boolean | null {
         if (!this.isValid()) return null;
-        const folder = file.path;
         switch ((this.source as SourceKey)) {
             case 'all':
                 return true;
-            case 'tag':
-                const tags = getFileInteractives(TAG_KEY, file);
-                return this.checkLogic([...tags]);
+            case 'tag': {
+                file = getFile(id);
+                return file ? this.checkLogic([...getFileInteractives(TAG_KEY, file)]) : false;
+            }
 
-            case 'link':
-                const links = getFileInteractives(LINK_KEY, file);
-                return this.checkLogic([...links]);
+            case 'link': {
+                file = getFile(id);
+                return file ? this.checkLogic([...getFileInteractives(LINK_KEY, file)]) : false;
+            }
 
-            case 'property':
+            case 'property': {
                 if (!this.property) break;
-                const properties = getFileInteractives(this.property, file);
-                return this.checkLogic([...properties]);
+                file = getFile(id);
+                return file ? this.checkLogic([...getFileInteractives(this.property, file)]) : false;
+            }
 
             case 'file':
-                return this.checkLogic(file.basename);
+                return this.checkLogic(path.basename(id));
 
             case 'folder':
-                return this.checkLogic(folder);
+                return this.checkLogic(path.dirname(id));
 
             case 'folderRec':
                 const folders: string[] = [];
-                let currentFolder: TFolder | null = file.parent;
-                while (currentFolder) {
-                    folders.push(currentFolder.path);
-                    currentFolder = currentFolder.parent;
+                let currentFolder = path.dirname(id);
+                while (currentFolder !== "" && currentFolder !== ".") {
+                    folders.push(currentFolder);
+                    currentFolder = path.dirname(currentFolder);
                 }
                 return this.checkLogic(folders);
 
             case 'path':
-                return this.checkLogic(file.path);
+                return this.checkLogic(id);
 
             default:
                 break;

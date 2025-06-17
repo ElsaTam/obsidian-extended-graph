@@ -74,7 +74,6 @@ export class LinkText extends Container {
             fontWeight: customStyle.fontWeight,
             letterSpacing: customStyle.letterSpacing,
             fontSize: customStyle.fontSize + this.extendedLink.coreElement.source.getSize() / 4,
-            // @ts-ignore
             fill: this.getColor(),
         });
     }

@@ -227,7 +227,6 @@ export class ExportSVGOptionModal extends Modal {
                 })
             });
 
-        // @ts-ignore
         if (ClipboardItem.supports("image/svg+xml")) {
             setting.addButton(cb => {
                 cb.setButtonText(STRINGS.features.svgScreenshotCopyImage);

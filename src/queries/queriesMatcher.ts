@@ -17,17 +17,17 @@ export class QueryMatcher {
     }
 
     getMatches(): TFile[] {
-        return PluginInstances.app.vault.getMarkdownFiles().filter(file => this.doesMatch(file));
+        return PluginInstances.app.vault.getMarkdownFiles().filter(file => this.doesMatch(file.path, file));
     }
 
-    doesMatch(file: TFile): boolean {
+    doesMatch(id: string, file: TFile | null = null): boolean {
         const validRules = this.queryData.rules.filter(rule => new RuleQuery(rule).isValid());
         if (validRules.length === 0) return false;
         switch (this.queryData.combinationLogic) {
             case 'AND':
-                return validRules.every(rule => new RuleQuery(rule).doesMatch(file) ?? false);
+                return validRules.every(rule => new RuleQuery(rule).doesMatch(id, file) ?? false);
             case 'OR':
-                return validRules.some(rule => new RuleQuery(rule).doesMatch(file) ?? false);
+                return validRules.some(rule => new RuleQuery(rule).doesMatch(id, file) ?? false);
             default:
                 break;
         }

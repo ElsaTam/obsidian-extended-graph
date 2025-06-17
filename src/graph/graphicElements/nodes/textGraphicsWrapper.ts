@@ -83,7 +83,6 @@ export class TextGraphicsWrapper implements GraphicsWrapper {
         if (!this.pixiElement) return;
         this.pixiElement.tint = backgroundColor;
         if (this.textClone && this.extendedElement.coreElement.text) {
-            // @ts-ignore
             this.textClone.style.fill = this.extendedElement.coreElement.getTextStyle().fill;
         }
     }

@@ -46,9 +46,7 @@ export abstract class NodeGraphicsWrapper implements GraphicsWrapper {
         }));
         for (const shape of Object.keys(shapeQueries)) {
             const queriesMatcher = new QueryMatcher(shapeQueries[shape]);
-            const file = getFile(this.extendedElement.id);
-            if (!file) return;
-            if (queriesMatcher.doesMatch(file)) {
+            if (queriesMatcher.doesMatch(this.extendedElement.id)) {
                 this.shape = shape as ShapeEnum;
                 return;
             }
