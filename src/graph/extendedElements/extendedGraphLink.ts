@@ -509,6 +509,7 @@ export class ExtendedGraphLink extends ExtendedGraphElement<GraphLink> {
                 this.texts.push(text);
             }
 
+            text.isRendered = true;
             text.setDisplayedText(type);
             text.connect();
             text.updateFrame();
@@ -566,8 +567,8 @@ export class ExtendedGraphLink extends ExtendedGraphElement<GraphLink> {
         }
     }
 
-    updateRenderedTexts() {
-        if (!this.texts || !this.isEnabled) return;
+    hideTextsBasedOnLength() {
+        if (!this.texts || !this.isEnabled || !this.instances.settings.allowMultipleLinkTypes) return;
 
         const linkLength = lengthSegment(
             1,

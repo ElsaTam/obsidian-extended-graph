@@ -1,5 +1,17 @@
-import { CSSBridge, CSSLinkLabelStyle, ExtendedGraphLink, fadeIn, hex2int, LINK_KEY, LinkCurveGraphics, LinkCurveMultiTypesGraphics, LinkLineMultiTypesGraphics, pixiAddChild, pixiAddChildAt, textStyleFill2int } from "src/internal";
-import { ColorSource, Container, Graphics, Point, Sprite, Text, TextMetrics, TextStyle, TextStyleFill, Texture } from "pixi.js";
+import {
+    CSSBridge,
+    CSSLinkLabelStyle,
+    ExtendedGraphLink,
+    fadeIn,
+    LINK_KEY,
+    LinkCurveGraphics,
+    LinkCurveMultiTypesGraphics,
+    LinkLineMultiTypesGraphics,
+    pixiAddChild,
+    pixiAddChildAt,
+    textStyleFill2int
+} from "src/internal";
+import { ColorSource, Container, Graphics, Sprite, Text, TextMetrics, TextStyle, TextStyleFill, Texture } from "pixi.js";
 
 export abstract class LinkText extends Container {
     extendedLink: ExtendedGraphLink;
@@ -59,11 +71,15 @@ export abstract class LinkText extends Container {
     updateFrame(): boolean {
         if (this.destroyed) return false;
 
-        if (!this.isRendered || !this.extendedLink.managers.get(LINK_KEY)?.isActive(this.text.text) || !this.parent) {
+        if (!this.isRendered || !this.extendedLink.managers.get(LINK_KEY)?.isActive(this.text.text) || !this.parent || this.extendedLink.coreElement.renderer.textAlpha <= 0.001) {
             this.visible = false;
             return false;
         }
+
+        this.alpha = this.extendedLink.coreElement.renderer.textAlpha;
+
         this.visible = true;
+
 
         if (this.extendedLink.coreElement.source.circle) {
             this.scale.x = this.scale.y = this.extendedLink.coreElement.renderer.nodeScale;
@@ -254,7 +270,7 @@ abstract class LineLinkText extends LinkText {
         this.visible = this.extendedLink.coreElement.line?.visible ?? false;
         if (this.visible) {
             this.position = this.getPosition();
-            if (this.hasFaded) this.alpha = this.extendedLink.coreElement.line?.alpha ?? 0;
+            if (this.hasFaded) this.alpha = this.extendedLink.coreElement.renderer.textAlpha ?? 0;
         }
 
         return true;

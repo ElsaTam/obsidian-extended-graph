@@ -781,17 +781,23 @@ export class GraphEventsDispatcher extends Component {
         if (this.instances.foldersSet) this.instances.foldersSet.updateGraphics();
 
         // Update the graphics of the links
-        if (this.instances.settings.enableFeatures[this.instances.type]['links']
-            && (this.instances.settings.interactiveSettings[LINK_KEY].showOnGraph
-                || this.instances.settings.curvedLinks
-                || this.instances.settings.displayLinkTypeLabel
-            )
-        ) {
-            for (const id of this.instances.linksSet.connectedIDs) {
-                const link = this.instances.linksSet.extendedElementsMap.get(id);
-                if (!link) continue;
-                link.graphicsWrapper?.pixiElement.updateFrame();
-                link.updateRenderedTexts();
+        if (this.instances.settings.enableFeatures[this.instances.type]['links']) {
+            if (this.instances.settings.interactiveSettings[LINK_KEY].showOnGraph || this.instances.settings.curvedLinks) {
+                for (const id of this.instances.linksSet.connectedIDs) {
+                    this.instances.linksSet.extendedElementsMap.get(id)?.graphicsWrapper?.pixiElement.updateFrame();
+                }
+            }
+            if (this.instances.settings.displayLinkTypeLabel) {
+                if (this.instances.settings.allowMultipleLinkTypes) {
+                    for (const id of this.instances.linksSet.connectedIDs) {
+                        this.instances.linksSet.extendedElementsMap.get(id)?.hideTextsBasedOnLength();
+                    }
+                }
+                else {
+                    for (const id of this.instances.linksSet.connectedIDs) {
+                        this.instances.linksSet.extendedElementsMap.get(id)?.texts?.forEach(text => { if (text.isRendered) text.updateFrame(); });
+                    }
+                }
             }
         }
     }
