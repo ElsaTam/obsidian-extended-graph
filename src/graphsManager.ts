@@ -756,7 +756,7 @@ export class GraphsManager extends Component {
     private setGlobalUI(view: GraphView | LocalGraphView): { menu: MenuUI, control: GraphControlsUI } {
         let globalUI = this.globalUIs.get(view.leaf.id);
 
-        if (globalUI) return globalUI;
+        if (globalUI && globalUI.menu.view === view && globalUI.control.view === view) return globalUI;
 
         const menuUI = new MenuUI(view);
         view.addChild(menuUI);
