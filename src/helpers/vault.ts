@@ -9,7 +9,7 @@ export function getFile(path: string): TFile | null {
 export function getFileInteractives(interactive: string, file: TFile, settings?: ExtendedGraphSettings): Set<string> {
     if (ExtendedGraphInstances.app.metadataCache.isUserIgnored(file.path)) return new Set();
 
-    if (file.extension !== "md") return new Set<string>();
+    if (file.extension !== "md" || file.deleted) return new Set<string>();
 
     let results: Set<string>;
     switch (interactive) {
@@ -27,7 +27,7 @@ export function getFileInteractives(interactive: string, file: TFile, settings?:
 }
 
 export function getNumberOfFileInteractives(interactive: string, file: TFile, type: string, ignoreInlineLinks: boolean): number {
-    if (file.extension !== "md") return 0;
+    if (file.extension !== "md" || file.deleted) return 0;
     switch (interactive) {
         case TAG_KEY:
             return getNumberOfTags(file, type);
@@ -105,21 +105,23 @@ function getProperty(settings: ExtendedGraphSettings, key: string, file: TFile):
     // With Dataview
     if (dv) {
         const sourcePage = dv.page(file.path);
-        if (settings.canonicalizePropertiesWithDataview) {
-            const uncanonicalizedKeys = Object.keys(sourcePage).filter(k => canonicalizeVarName(k) === canonicalizeVarName(key));
-            const values = uncanonicalizedKeys.reduce((acc: any[], k: string) => {
-                if (sourcePage[k] === null || sourcePage[k] === undefined || sourcePage[k] === '') {
-                    return acc;
-                }
-                return acc.concat([sourcePage[k]]);
-            }, []);
-            if (values.length === 0) return new Set<string>();
-            recursiveGetProperties(values, types);
-        }
-        else {
-            const values = sourcePage[key];
-            if (values === null || values === undefined || values === '') return new Set<string>();
-            recursiveGetProperties(values, types);
+        if (sourcePage) {
+            if (settings.canonicalizePropertiesWithDataview) {
+                const uncanonicalizedKeys = Object.keys(sourcePage).filter(k => canonicalizeVarName(k) === canonicalizeVarName(key));
+                const values = uncanonicalizedKeys.reduce((acc: any[], k: string) => {
+                    if (sourcePage[k] === null || sourcePage[k] === undefined || sourcePage[k] === '') {
+                        return acc;
+                    }
+                    return acc.concat([sourcePage[k]]);
+                }, []);
+                if (values.length === 0) return new Set<string>();
+                recursiveGetProperties(values, types);
+            }
+            else {
+                const values = sourcePage[key];
+                if (values === null || values === undefined || values === '') return new Set<string>();
+                recursiveGetProperties(values, types);
+            }
         }
     }
 
@@ -164,19 +166,19 @@ function getNumberOfProperties(key: string, file: TFile, valueToMatch: string, i
     // With Dataview
     if (dv) {
         const sourcePage = dv.page(file.path);
-        const values = sourcePage[key];
-        if (values === null || values === undefined || values === '') return 0;
+        if (sourcePage) {
+            const values = sourcePage[key];
+            if (values === null || values === undefined || values === '') return 0;
 
-        return recursiveCountProperties(values, valueToMatch);
+            return recursiveCountProperties(values, valueToMatch);
+        }
     }
 
     // Links in the frontmatter
-    else {
-        const frontmatter = ExtendedGraphInstances.app.metadataCache.getFileCache(file)?.frontmatter;
-        if (frontmatter?.hasOwnProperty(key)) {
-            const values = frontmatter[key];
-            return recursiveCountProperties(values, valueToMatch);
-        }
+    const frontmatter = ExtendedGraphInstances.app.metadataCache.getFileCache(file)?.frontmatter;
+    if (frontmatter?.hasOwnProperty(key)) {
+        const values = frontmatter[key];
+        return recursiveCountProperties(values, valueToMatch);
     }
 
     return 1;
@@ -205,6 +207,7 @@ function getFolderPath(file: TFile): Set<string> {
 // ================================= LINKS ================================== //
 
 export function getOutlinkTypes(settings: ExtendedGraphSettings, file: TFile): Map<string, Set<string>> {
+    if (file.extension !== "md" || file.deleted) return new Map();
     const dv = getDataviewPlugin(settings.ignoreInlineLinks);
     return dv ? getOutlinkTypesWithDataview(settings, dv, file) : getOutlinkTypesWithFrontmatter(file);
 }
@@ -212,6 +215,8 @@ export function getOutlinkTypes(settings: ExtendedGraphSettings, file: TFile): M
 function getOutlinkTypesWithDataview(settings: ExtendedGraphSettings, dv: DataviewApi, file: TFile): Map<string, Set<string>> {
     const linkTypes = new Map<string, Set<string>>();
     const sourcePage = dv.page(file.path);
+    if (!sourcePage) return getOutlinkTypesWithFrontmatter(file); // Fallback to frontmatter if page not found
+
     for (const [key, value] of Object.entries(sourcePage)) {
         if (key === "file" || settings.imageProperties.contains(key)) continue;
         if (value === null || value === undefined || value === '') continue;
@@ -264,7 +269,8 @@ function getOutlinkTypesWithFrontmatter(file: TFile): Map<string, Set<string>> {
     return linkTypes;
 }
 
-export function getLinks(file: TFile) {
+export function getLinks(file: TFile): string[] {
+    if (file.extension !== "md" || file.deleted) return [];
     const cache = ExtendedGraphInstances.app.metadataCache.getFileCache(file);
     const links: string[] = [];
     if (cache) {

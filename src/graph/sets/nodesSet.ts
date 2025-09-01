@@ -2,7 +2,6 @@ import { Component, MarkdownRenderer, TFile } from "obsidian";
 import { Assets, IPointData, Rectangle, Texture } from "pixi.js";
 import { GraphNode } from "obsidian-typings";
 import {
-    AbstractSet,
     ExtendedGraphAttachmentNode,
     ExtendedGraphFileNode,
     ExtendedGraphNode,
@@ -15,10 +14,11 @@ import {
     Media,
     Pinner,
     ExtendedGraphInstances,
-    CSSBridge
+    CSSBridge,
+    AbstractSet,
+    AttachmentNodeGraphicsWrapper,
+    ExtendedGraphTagNode
 } from "src/internal";
-import { ExtendedGraphTagNode } from "../extendedElements/extendedGraphTagNode";
-import { AttachmentNodeGraphicsWrapper } from "../graphicElements/nodes/attachmentNodeGraphicsWrapper";
 import { OutlineFilter } from "@pixi/filter-outline";
 
 

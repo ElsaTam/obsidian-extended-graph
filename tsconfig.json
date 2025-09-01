@@ -17,16 +17,21 @@
     "noEmit": true,
     "noImplicitAny": true,
     "paths": {
-        "obsidian-typings/implementations": [
-            "./node_modules/obsidian-typings/dist/implementations.d.ts",
-            "./node_modules/obsidian-typings/dist/implementations.cjs"
-        ]
+      "obsidian-typings/implementations": [
+        "./node_modules/obsidian-typings/dist/implementations.d.ts",
+        "./node_modules/obsidian-typings/dist/implementations.cjs"
+      ],
+      "*": [
+        "*",
+        "./node_modules/obsidian-dataview/lib/*"
+      ]
     },
     "resolveJsonModule": true,
     "strictNullChecks": true,
     "target": "ES2021",
     "types": [
-      "obsidian-typings"
+      "obsidian-typings",
+      "obsidian-dataview"
     ]
   },
   "include": [
