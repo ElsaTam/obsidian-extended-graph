@@ -11,6 +11,7 @@ export class SettingPerformance extends SettingsSection {
         this.addDelay();
         this.addNumberOfNodes();
         this.addEnableCSS();
+        this.addUseBitmapsForLinkLabels();
     }
 
     private addDelay() {
@@ -72,6 +73,20 @@ export class SettingPerformance extends SettingsSection {
                     ExtendedGraphInstances.plugin.saveSettings();
                 })
             });
+
+        this.elementsBody.push(setting.settingEl);
+    }
+
+    private addUseBitmapsForLinkLabels() {
+        const setting = new Setting(this.settingTab.containerEl)
+            .setName(t("features.interactives.linksLabelsUseBitmaps"))
+            .setDesc(t("features.interactives.linksLabelsUseBitmapsDesc"))
+            .addToggle(cb => cb
+                .setValue(ExtendedGraphInstances.settings.useBitmapsForLinkLabels)
+                .onChange(value => {
+                    ExtendedGraphInstances.settings.useBitmapsForLinkLabels = value;
+                    ExtendedGraphInstances.plugin.saveSettings();
+                }));
 
         this.elementsBody.push(setting.settingEl);
     }

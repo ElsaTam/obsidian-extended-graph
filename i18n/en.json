@@ -242,6 +242,8 @@
             "curvedLinksDesc": "Use curved links instead of straight lines",
             "displayLinkTypeLabel": "Display label",
             "displayLinkTypeLabelDesc": "Display the type label on top of the link",
+            "linksLabelsUseBitmaps": "Use bitmap text",
+            "linksLabelsUseBitmapsDesc": "Use bitmap text for the link type labels instead of regular text. This can improve performance a lot when there are many links with labels, but the text might not support all CSS features and appear more blurry. This is still in Beta.",
             "linkTypes": "Link types",
             "linkTypesDesc": "Display and filter link types",
             "noneTypeID": "None type id",

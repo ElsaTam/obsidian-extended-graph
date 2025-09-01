@@ -242,6 +242,8 @@
 			"curvedLinksDesc": "Utilise des liens courbés au lieu de lignes droites",
 			"displayLinkTypeLabel": "Affiche le libellé",
 			"displayLinkTypeLabelDesc": "Afficher le libellé du type au-dessus du lien",
+			"linksLabelsUseBitmaps": "Utiliser du texte bitmap",
+			"linksLabelsUseBitmapsDesc": "Utilise du texte bitmap pour les étiquettes de type de lien au lieu du texte normal. Cela peut améliorer considérablement les performances lorsqu'il y a de nombreux liens avec des étiquettes, mais le texte peut ne pas prendre en charge toutes les fonctionnalités CSS et apparaître plus flou. C'est encore en version bêta.",
 			"linkTypes": "Typage des liens",
 			"linkTypesDesc": "Affiche et filtre les liens par type",
 			"noneTypeID": "ID pour les sans-type",

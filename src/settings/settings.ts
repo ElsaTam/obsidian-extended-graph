@@ -160,6 +160,7 @@ export interface ExtendedGraphSettings {
     outlineLinks: boolean;
     displayLinkTypeLabel: boolean;
     colorLinkTypeLabel: boolean;
+    useBitmapsForLinkLabels: boolean;
     noLineHighlight: boolean;
 
     // Folders
@@ -396,6 +397,7 @@ export const DEFAULT_SETTINGS: ExtendedGraphSettings = {
     outlineLinks: false,
     displayLinkTypeLabel: false,
     colorLinkTypeLabel: false,
+    useBitmapsForLinkLabels: false,
     noLineHighlight: false,
 
     // Folders
@@ -634,7 +636,7 @@ export class SettingQuery {
         if (newFeatures['links']) {
             if (['excludedSourcesFolder', 'excludedTargetsFolder', 'curvedLinks', 'curvedFactor',
                 'disableSource', 'disableTarget', 'outlineLinks', 'displayLinkTypeLabel',
-                'colorLinkTypeLabel'].some(key => !equals(key)))
+                'colorLinkTypeLabel', 'useBitmapsForLinkLabels'].some(key => !equals(key)))
                 return true;
         }
 

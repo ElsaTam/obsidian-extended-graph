@@ -113,6 +113,17 @@ export class InteractiveEventsDispatcher extends Component {
                 }
             }
         }
+        else if (key !== FOLDER_KEY && this.instances.settings.fadeOnDisable) {
+            for (const [id, extendedNode] of this.instances.nodesSet.extendedElementsMap) {
+                const shouldDisable = extendedNode.isAnyManagerDisabled();
+                if (extendedNode.isEnabled && shouldDisable) {
+                    extendedNode.graphicsWrapper?.makeFaded();
+                }
+                else if (!extendedNode.isEnabled && !shouldDisable) {
+                    extendedNode.graphicsWrapper?.makeOpaque();
+                }
+            }
+        }
     }
 
     // ================================= TAGS ==================================
