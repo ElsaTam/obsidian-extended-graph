@@ -1,6 +1,6 @@
 import { Setting } from "obsidian";
-import { ExtendedGraphSettingTab, FeatureSetting, ExtendedGraphInstances, SettingsSection, t } from "src/internal";
-import { SettingMultiPropertiesModal } from "src/ui/modals/settingPropertiesModal";
+import { ExtendedGraphSettingTab, FeatureSetting, ExtendedGraphInstances, SettingsSection, t } from "../internal";
+import { SettingMultiPropertiesModal } from "../ui/modals/settingPropertiesModal";
 
 export class SettingImages extends SettingsSection {
     constructor(settingTab: ExtendedGraphSettingTab) {

@@ -29,8 +29,8 @@ import {
     getDataviewPlugin,
     validateFilename,
     SettingLocal as SettingLocalGraph
-} from "src/internal";
-import ExtendedGraphPlugin from "src/main";
+} from "../internal";
+import ExtendedGraphPlugin from "../main";
 
 export class ExtendedGraphSettingTab extends PluginSettingTab {
     sections: SettingsSection[] = [];

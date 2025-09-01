@@ -1,5 +1,5 @@
 import { DropdownComponent, Setting } from "obsidian";
-import { cmOptions, ExtendedGraphSettingTab, GradientPickerModal, plotColorMapFromName, ExtendedGraphInstances, t } from "src/internal";
+import { cmOptions, ExtendedGraphSettingTab, GradientPickerModal, plotColorMapFromName, ExtendedGraphInstances, t } from "../../internal";
 
 export class SettingColorPalette extends Setting {
     canvasPalette: HTMLCanvasElement;

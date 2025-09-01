@@ -1,5 +1,5 @@
 import { ButtonComponent, Component, ExtraButtonComponent, setIcon, Setting } from "obsidian";
-import * as Color from 'src/colors/color-bits';
+import * as Color from '../colors/color-bits';
 import {
     CombinationLogic,
     FOLDER_KEY,
@@ -14,7 +14,7 @@ import {
     t,
     textColor,
     CSSBridge
-} from "src/internal";
+} from "../internal";
 
 class LegendRow extends Setting {
     name: string;

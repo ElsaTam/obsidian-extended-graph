@@ -1,7 +1,7 @@
 import { TFolder } from "obsidian";
 import { GraphNode } from "obsidian-typings";
 import { Container, Graphics, Point, Text, TextStyle } from "pixi.js";
-import * as Color from 'src/colors/color-bits';
+import * as Color from '../../colors/color-bits';
 import {
     CSSFolderStyle,
     FOLDER_KEY,
@@ -18,7 +18,7 @@ import {
     pathParse,
     hex2int,
     textStyleFill2int
-} from "src/internal";
+} from "../../internal";
 
 export class FolderBlob {
     readonly path: string;

@@ -1,6 +1,6 @@
 import { IDestroyOptions, Graphics } from "pixi.js";
-import * as Color from 'src/colors/color-bits';
-import { ExtendedGraphLink, InteractiveManager, lengthQuadratic, LinkArrow, ManagerGraphics, pixiAddChild, pixiColor2int, quadratic } from "src/internal";
+import * as Color from '../../../colors/color-bits';
+import { ExtendedGraphLink, InteractiveManager, lengthQuadratic, LinkArrow, ManagerGraphics, pixiAddChild, pixiColor2int, quadratic } from "../../../internal";
 
 
 export abstract class LinkCurveGraphics extends Graphics implements ManagerGraphics {

@@ -5,9 +5,9 @@
     Modified to better fit in this project.
 */
 
-import { ExtendedGraphSettings, rgb2int } from "src/internal";
-import { ExtendedGraphInstances } from "src/pluginInstances";
-import * as Color from 'src/colors/color-bits';
+import { ExtendedGraphSettings, rgb2int } from "../internal";
+import { ExtendedGraphInstances } from "../pluginInstances";
+import * as Color from './color-bits';
 
 export const cmOptions = {
     "Perceptually Uniform Sequential": [

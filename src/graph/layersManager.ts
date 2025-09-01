@@ -1,8 +1,8 @@
 import { getLanguage, TFile } from "obsidian";
 import { GraphLink, GraphNode } from "obsidian-typings";
 import { Container, DisplayObject } from "pixi.js";
-import { ExtendedGraphSettings, findClosestIndex, getFile, getFileInteractives, getLinkID, pixiAddChild, pixiAddChildAt, strCompare } from "src/internal";
-import { GraphInstances, ExtendedGraphInstances } from "src/pluginInstances";
+import { ExtendedGraphSettings, findClosestIndex, getFile, getFileInteractives, getLinkID, pixiAddChild, pixiAddChildAt, strCompare } from "../internal";
+import { GraphInstances, ExtendedGraphInstances } from "../pluginInstances";
 
 export interface Layer {
     id: string;

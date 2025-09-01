@@ -1,5 +1,5 @@
 import { TFolder } from "obsidian";
-import { AbstractFormattingSuggester, ExtendedGraphInstances } from "src/internal";
+import { AbstractFormattingSuggester, ExtendedGraphInstances } from "../internal";
 
 export class FoldersSuggester extends AbstractFormattingSuggester {
     callback: (value: string) => void;

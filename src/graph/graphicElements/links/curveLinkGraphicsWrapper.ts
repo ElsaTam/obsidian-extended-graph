@@ -1,4 +1,4 @@
-import { ExtendedGraphLink, GraphicsWrapper, InteractiveManager, LinkCurveSingleTypeGraphics, LinkCurveMultiTypesGraphics, LinkCurveGraphics, fadeIn, getIndexInHanger, pixiAddChildAt } from "src/internal";
+import { ExtendedGraphLink, GraphicsWrapper, InteractiveManager, LinkCurveSingleTypeGraphics, LinkCurveMultiTypesGraphics, LinkCurveGraphics, fadeIn, getIndexInHanger, pixiAddChildAt } from "../../../internal";
 
 
 export class CurveLinkGraphicsWrapper implements GraphicsWrapper {

@@ -1,5 +1,5 @@
 import { Container, Graphics } from "pixi.js";
-import { ExtendedGraphLink, ExtendedGraphNode, ExtendedGraphText, ManagerGraphics } from "src/internal";
+import { ExtendedGraphLink, ExtendedGraphNode, ExtendedGraphText, ManagerGraphics } from "../../internal";
 
 export interface GraphicsWrapper {
     name: string;

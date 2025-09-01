@@ -1,6 +1,6 @@
 import { Graphics } from "pixi.js";
-import * as Color from 'src/colors/color-bits';
-import { ExtendedGraphNode, getFile, getNumberOfFileInteractives, InteractiveManager, ManagerGraphics, NodeShape, pixiAddChild, ShapeEnum } from "src/internal";
+import * as Color from '../../../colors/color-bits';
+import { ExtendedGraphNode, getFile, getNumberOfFileInteractives, InteractiveManager, ManagerGraphics, NodeShape, pixiAddChild, ShapeEnum } from "../../../internal";
 
 export class Arc {
     type: string;

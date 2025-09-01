@@ -1,4 +1,4 @@
-import { ExtendedGraphTagNode, NodeGraphicsWrapper } from "src/internal";
+import { ExtendedGraphTagNode, NodeGraphicsWrapper } from "../../../internal";
 
 
 export class TagNodeGraphicsWrapper extends NodeGraphicsWrapper {

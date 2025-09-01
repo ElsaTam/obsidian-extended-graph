@@ -9,7 +9,7 @@ import {
     ExtendedGraphInstances,
     t,
     NodesSelectionMode
-} from "src/internal";
+} from "../../internal";
 
 export class GCOptions extends GCSection {
     suggester: RendererNodeNamesSuggester;

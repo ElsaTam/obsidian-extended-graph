@@ -1,5 +1,5 @@
 import { ButtonComponent, ExtraButtonComponent, Modal, SearchComponent, Setting, TFile } from "obsidian";
-import { ExtendedElementsSuggester, getFile, GraphInstances, GraphState, NodeShape, ExtendedGraphInstances, strCompare, t, CSSBridge } from "src/internal";
+import { ExtendedElementsSuggester, getFile, GraphInstances, GraphState, NodeShape, ExtendedGraphInstances, strCompare, t, CSSBridge } from "../../internal";
 
 type TableType = 'nodes' | 'links' | 'pinned';
 

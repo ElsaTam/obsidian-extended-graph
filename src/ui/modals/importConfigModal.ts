@@ -1,5 +1,5 @@
 import { DropdownComponent, Modal, Setting } from "obsidian";
-import { getAllConfigFiles, ExtendedGraphInstances, t, pathParse } from "src/internal";
+import { getAllConfigFiles, ExtendedGraphInstances, t, pathParse } from "../../internal";
 
 export class ImportConfigModal extends Modal {
     callback: (filepath: string) => void;

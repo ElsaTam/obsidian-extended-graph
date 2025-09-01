@@ -1,5 +1,5 @@
 import { TFile } from "obsidian";
-import { ExtendedGraphSettings, ExtendedGraphInstances, RuleQuery, t } from "src/internal";
+import { ExtendedGraphSettings, ExtendedGraphInstances, RuleQuery, t } from "../internal";
 
 export type CombinationLogic = 'AND' | 'OR';
 export type QueryData = {

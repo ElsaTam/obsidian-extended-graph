@@ -27,7 +27,7 @@ import {
     t,
     InteractiveEventsDispatcher,
     CSSBridge
-} from "src/internal";
+} from "../internal";
 import { GraphFilter } from "./graphFilter";
 
 interface LastFilteringAction {

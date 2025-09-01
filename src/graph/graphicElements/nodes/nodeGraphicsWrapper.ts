@@ -1,5 +1,4 @@
 import { Assets, ColorSource, Container, Sprite, Text, Texture } from 'pixi.js';
-import { determineCrossOrigin } from '@pixi/utils'
 import { GraphColorAttributes } from 'obsidian-typings';
 import {
     ExtendedGraphNode,
@@ -15,7 +14,7 @@ import {
     ShapeEnum,
     CSSBridge,
     rgb2hex
-} from 'src/internal';
+} from '../../../internal';
 
 const NODE_CIRCLE_X: number = 100;
 const NODE_CIRCLE_Y: number = 100;

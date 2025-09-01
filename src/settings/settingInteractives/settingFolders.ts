@@ -1,5 +1,5 @@
 import { Setting, TFile } from "obsidian";
-import { ExtendedGraphSettingTab, FOLDER_KEY, ExtendedGraphInstances, SettingInteractives, t } from "src/internal";
+import { ExtendedGraphSettingTab, FOLDER_KEY, ExtendedGraphInstances, SettingInteractives, t } from "../../internal";
 
 export class SettingFolders extends SettingInteractives {
 

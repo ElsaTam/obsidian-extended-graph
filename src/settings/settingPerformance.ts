@@ -1,5 +1,5 @@
 import { Setting } from "obsidian";
-import { CSSSnippetsSuggester, ExtendedGraphSettingTab, ExtendedGraphInstances, SettingsSection, t } from "src/internal";
+import { CSSSnippetsSuggester, ExtendedGraphSettingTab, ExtendedGraphInstances, SettingsSection, t } from "../internal";
 
 export class SettingPerformance extends SettingsSection {
 

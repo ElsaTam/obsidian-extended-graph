@@ -16,7 +16,7 @@ import {
     strCompare,
     t,
     UIElements
-} from "src/internal";
+} from "../../internal";
 
 export class NodesQueryModal extends Modal {
     callback: (queryData: QueryData) => void;

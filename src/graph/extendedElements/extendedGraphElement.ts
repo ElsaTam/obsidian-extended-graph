@@ -1,6 +1,6 @@
 import { GraphLink, GraphNode } from "obsidian-typings";
 import { Container } from "pixi.js";
-import { GraphicsWrapper, GraphInstances, InteractiveManager } from "src/internal";
+import { GraphicsWrapper, GraphInstances, InteractiveManager } from "../../internal";
 
 export abstract class ExtendedGraphElement<T extends GraphNode | GraphLink> {
     instances: GraphInstances;

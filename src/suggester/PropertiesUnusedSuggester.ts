@@ -1,5 +1,5 @@
-import { PropertiesSuggester } from "src/internal";
-import { ExtendedGraphInstances } from "src/pluginInstances";
+import { PropertiesSuggester } from "../internal";
+import { ExtendedGraphInstances } from "../pluginInstances";
 
 export class PropertiesUnusedSuggester extends PropertiesSuggester {
     protected getStringSuggestions(query: string): string[] {

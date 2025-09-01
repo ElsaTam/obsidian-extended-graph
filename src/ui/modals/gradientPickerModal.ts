@@ -1,6 +1,6 @@
 import { ButtonComponent, ExtraButtonComponent, Modal, setIcon, Setting } from "obsidian";
-import * as Color from 'src/colors/color-bits';
-import { cmOptions, GradientMakerModal, plotColorMap, plotColorMapFromName, ExtendedGraphInstances, t, UIElements } from "src/internal";
+import * as Color from '../../colors/color-bits';
+import { cmOptions, GradientMakerModal, plotColorMap, plotColorMapFromName, ExtendedGraphInstances, t, UIElements } from "../../internal";
 
 export class GradientPickerModal extends Modal {
     callback: (palette: string) => void;

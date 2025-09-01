@@ -2,8 +2,8 @@ import Graphology from 'graphology';
 import { undirectedSingleSourceLength } from 'graphology-shortest-path/unweighted';
 import { TFile } from "obsidian";
 import { GraphColorAttributes, GraphData, GraphNode, LocalGraphView } from "obsidian-typings";
-import { getFile, getFileInteractives, getOutlinkTypes, regExpFromString, TAG_KEY } from "src/internal";
-import { GraphInstances, ExtendedGraphInstances } from "src/pluginInstances";
+import { getFile, getFileInteractives, getOutlinkTypes, regExpFromString, TAG_KEY } from "../internal";
+import { GraphInstances, ExtendedGraphInstances } from "../pluginInstances";
 
 interface GraphNodeData {
     type: string;

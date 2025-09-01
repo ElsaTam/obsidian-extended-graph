@@ -16,8 +16,8 @@ import {
     t,
     TAG_KEY,
     UIElements
-} from "src/internal";
-import ExtendedGraphPlugin from "src/main";
+} from "../../internal";
+import ExtendedGraphPlugin from "../../main";
 
 export abstract class SettingInteractives extends SettingsSectionPerGraphType {
     noneType: string = "";

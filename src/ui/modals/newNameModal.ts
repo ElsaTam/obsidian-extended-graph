@@ -1,5 +1,5 @@
 import { Modal, Setting, TextComponent } from "obsidian";
-import { ExtendedGraphInstances, UIElements } from "src/internal";
+import { ExtendedGraphInstances, UIElements } from "../../internal";
 
 export class NewNameModal extends Modal {
     callback: (name: string) => boolean;

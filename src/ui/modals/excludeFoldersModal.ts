@@ -1,5 +1,5 @@
 import { ButtonComponent, ExtraButtonComponent, Modal, SearchComponent, Setting } from "obsidian";
-import { FoldersSuggester, isRegex, ExtendedGraphInstances, t, UIElements } from "src/internal";
+import { FoldersSuggester, isRegex, ExtendedGraphInstances, t, UIElements } from "../../internal";
 
 export class ExcludeFoldersModal extends Modal {
     initialFolders: string[];

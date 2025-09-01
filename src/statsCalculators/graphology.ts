@@ -1,6 +1,6 @@
 import Graphology from 'graphology';
 import { dfsFromNode } from "graphology-traversal/dfs";
-import { GraphInstances, ExtendedGraphInstances, GraphStatsDirection } from 'src/internal';
+import { GraphInstances, ExtendedGraphInstances, GraphStatsDirection } from '../internal';
 import { reverse, toUndirected } from 'graphology-operators';
 import { undirectedSingleSourceLength } from 'graphology-shortest-path/unweighted';
 import { LocalGraphView } from 'obsidian-typings';

@@ -1,7 +1,7 @@
 import { WorkspaceLeaf } from "obsidian";
 import { GraphEngine, GraphView, LocalGraphView } from "obsidian-typings";
 import { Container, DisplayObject, Text } from 'pixi.js';
-import { ExtendedGraphInstances } from "src/pluginInstances";
+import { ExtendedGraphInstances } from "../pluginInstances";
 
 export function getGraphView(leaf: WorkspaceLeaf): GraphView | LocalGraphView | undefined {
     if (leaf.view.getViewType() === "graph") {

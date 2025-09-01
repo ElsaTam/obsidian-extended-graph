@@ -1,5 +1,5 @@
 import { Graphics } from "pixi.js";
-import { ExtendedGraphLink, ExtendedGraphInstances, quadratic } from "src/internal";
+import { ExtendedGraphLink, ExtendedGraphInstances, quadratic } from "../../../internal";
 
 export class AnimatedDotOnCurve extends Graphics {
     extendedLink: ExtendedGraphLink;

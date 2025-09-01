@@ -1,6 +1,6 @@
 import P from "parsimmon";
 import emojiRegex from "emoji-regex";
-import { ExtendedGraphInstances, t, tObsidian } from "src/internal";
+import { ExtendedGraphInstances, t, tObsidian } from "../internal";
 import { getLanguage, Notice, Platform } from "obsidian";
 
 export function capitalizeFirstLetter(val: string) {
@@ -152,7 +152,7 @@ export function cleanFilename(name: string): string {
 
 
 // Code from the Dataview plugin, under MIT License
-// https://github.com/blacksmithgu/obsidian-dataview/blob/master/src/util/normalize.ts
+// https://github.com/blacksmithgu/obsidian-dataview/blob/master/../util/normalize.ts
 const VAR_NAME_CANONICALIZER: P.Parser<string> = P.alt(
     P.regex(new RegExp(emojiRegex(), "")),
     P.regex(/[0-9\p{Letter}_-]+/u).map((str: string) => str.toLocaleLowerCase()),

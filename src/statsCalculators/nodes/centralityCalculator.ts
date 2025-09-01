@@ -4,7 +4,7 @@ import eigenvectorCentrality from "graphology-metrics/centrality/eigenvector";
 import closenessCentrality from "graphology-metrics/centrality/closeness";
 import betweennessCentrality from "graphology-metrics/centrality/betweenness";
 import hits from "graphology-metrics/centrality/hits";
-import { GraphologyGraph, NodeStat, NodeStatCalculator, NodeStatFunction, ExtendedGraphInstances, GraphStatsDirection } from "src/internal";
+import { GraphologyGraph, NodeStat, NodeStatCalculator, NodeStatFunction, ExtendedGraphInstances, GraphStatsDirection } from "../../internal";
 import { reverse } from "graphology-operators";
 
 type CentralityMapping = Record<string, number>;

@@ -1,6 +1,6 @@
 import { ButtonComponent, Modal, TFile } from "obsidian";
-import { t } from "src/internal";
-import { ExtendedGraphInstances } from "src/pluginInstances";
+import { t } from "../../internal";
+import { ExtendedGraphInstances } from "../../pluginInstances";
 
 export class OpenExternalLinkModal extends Modal {
     items: { display: string, file: TFile }[] = [];

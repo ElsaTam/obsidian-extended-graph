@@ -1,5 +1,5 @@
-import { AbstractFormattingSuggester } from "src/internal";
-import { ExtendedGraphInstances } from "src/pluginInstances";
+import { AbstractFormattingSuggester } from "../internal";
+import { ExtendedGraphInstances } from "../pluginInstances";
 
 export class CSSSnippetsSuggester extends AbstractFormattingSuggester {
     callback: (value: string) => void;

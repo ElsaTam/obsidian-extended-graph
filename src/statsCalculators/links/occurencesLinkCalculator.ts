@@ -1,4 +1,4 @@
-import { GraphologyGraph, LinkStat, LinkStatCalculator } from "src/internal";
+import { GraphologyGraph, LinkStat, LinkStatCalculator } from "../../internal";
 import { Attributes, EdgeEntry } from "graphology-types";
 
 export class OccurencesLinkCalculator extends LinkStatCalculator {

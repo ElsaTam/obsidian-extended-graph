@@ -1,5 +1,5 @@
 import { Setting } from "obsidian";
-import { Feature, graphTypeLabels, ExtendedGraphInstances } from "src/internal";
+import { Feature, graphTypeLabels, ExtendedGraphInstances } from "../../internal";
 
 export class FeatureSetting extends Setting {
     constructor(containerEl: HTMLElement, name: string, desc: string, feature: Feature) {

@@ -22,7 +22,7 @@ import {
     ShapeEnum,
     t,
     TAG_KEY
-} from "src/internal";
+} from "../internal";
 
 export type ExternalLinkOption = 'none' | 'domain' | 'href' | 'domain_and_href';
 export type ExternalLinkOpenMode = 'web' | 'note' | 'choice';

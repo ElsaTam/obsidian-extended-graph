@@ -5,7 +5,7 @@
  * Released under the GNU General Public License v3.0
  */
 
-import { getNLPPlugin, GraphologyGraph, GraphStatsDirection, NodeStat, NodeStatCalculator } from "src/internal";
+import { getNLPPlugin, GraphologyGraph, GraphStatsDirection, NodeStat, NodeStatCalculator } from "../../internal";
 
 export class SentimentCalculator extends NodeStatCalculator {
     cache: { [source: string]: { [target: string]: number } } = {};

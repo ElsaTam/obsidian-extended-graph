@@ -1,7 +1,7 @@
 
 import { GraphNode } from "obsidian-typings";
 import { Point, TextMetrics, TextStyle } from "pixi.js";
-import { CSSBridge, getFile, getFileInteractives, GraphInstances, hex2int, rgb2int, textStyleFill2int } from "src/internal";
+import { CSSBridge, getFile, getFileInteractives, GraphInstances, hex2int, rgb2int, textStyleFill2int } from "../../internal";
 
 export class ExtendedGraphText {
     coreElement: GraphNode;

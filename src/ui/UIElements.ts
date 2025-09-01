@@ -1,5 +1,5 @@
 import { ButtonComponent, ExtraButtonComponent } from "obsidian";
-import { t } from "src/internal";
+import { t } from "../internal";
 
 const BUTTON_DELETE_CLASS: string = "extended-graph-delete-button";
 const BUTTON_ADD_CLASS: string = "extended-graph-add-button";

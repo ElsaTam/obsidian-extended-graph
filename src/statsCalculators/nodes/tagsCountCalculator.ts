@@ -1,4 +1,4 @@
-import { getFile, getFileInteractives, GraphologyGraph, GraphStatsDirection, NodeStat, NodeStatCalculator, TAG_KEY } from "src/internal";
+import { getFile, getFileInteractives, GraphologyGraph, GraphStatsDirection, NodeStat, NodeStatCalculator, TAG_KEY } from "../../internal";
 
 export class TagsCountCalculator extends NodeStatCalculator {
     constructor(stat: NodeStat, graphologyGraph?: GraphologyGraph) {

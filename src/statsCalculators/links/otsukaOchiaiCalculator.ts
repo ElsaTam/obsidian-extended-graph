@@ -5,7 +5,7 @@
  * Released under the GNU General Public License v3.0
  */
 
-import { getNLPPlugin, GraphologyGraph, LinkStat, LinkStatCalculator } from "src/internal";
+import { getNLPPlugin, GraphologyGraph, LinkStat, LinkStatCalculator } from "../../internal";
 import { Attributes, EdgeEntry } from "graphology-types";
 import similarity from "wink-nlp/utilities/similarity";
 

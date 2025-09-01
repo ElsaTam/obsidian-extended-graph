@@ -1,6 +1,6 @@
 import { Setting } from "obsidian";
-import { ExtendedGraphSettingTab, ExtendedGraphInstances, SettingsSectionPerGraphType, t } from "src/internal";
-import { SettingMultiPropertiesModal } from "src/ui/modals/settingPropertiesModal";
+import { ExtendedGraphSettingTab, ExtendedGraphInstances, SettingsSectionPerGraphType, t } from "../internal";
+import { SettingMultiPropertiesModal } from "../ui/modals/settingPropertiesModal";
 
 export class SettingIcons extends SettingsSectionPerGraphType {
     colorSetting: Setting | undefined;

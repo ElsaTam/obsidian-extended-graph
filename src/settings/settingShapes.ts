@@ -1,5 +1,5 @@
 import { ExtraButtonComponent, Setting } from "obsidian";
-import { ExtendedGraphSettingTab, NodeShape, ExtendedGraphInstances, QueryData, QueryMatcher, SettingsSectionPerGraphType, ShapeEnum, ShapeQueryModal, t } from "src/internal";
+import { ExtendedGraphSettingTab, NodeShape, ExtendedGraphInstances, QueryData, QueryMatcher, SettingsSectionPerGraphType, ShapeEnum, ShapeQueryModal, t } from "../internal";
 
 export class SettingShapes extends SettingsSectionPerGraphType {
     settingsShape: SettingShape[] = [];

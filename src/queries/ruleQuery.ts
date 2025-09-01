@@ -1,5 +1,5 @@
 import { TFile, TFolder } from "obsidian";
-import { ExtendedGraphSettings, getFileInteractives, LINK_KEY, ExtendedGraphInstances, t, TAG_KEY } from "src/internal";
+import { ExtendedGraphSettings, getFileInteractives, LINK_KEY, ExtendedGraphInstances, t, TAG_KEY } from "../internal";
 
 export type SourceKey = 'all' | 'tag' | 'link' | 'property' | 'file' | 'folder' | 'folderRec' | 'path';
 export type LogicKey = 'is' | 'isNot' | 'contains' | 'containsNot' | 'matchesRegex' | 'matchesRegexNot' | 'containsRegex' | 'containsRegexNot' | 'isEmpty' | 'isEmptyNot';

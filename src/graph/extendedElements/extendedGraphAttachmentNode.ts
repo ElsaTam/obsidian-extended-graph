@@ -1,4 +1,4 @@
-import { AttachmentNodeGraphicsWrapper, ExtendedGraphNode, NodeShape } from "src/internal";
+import { AttachmentNodeGraphicsWrapper, ExtendedGraphNode, NodeShape } from "../../internal";
 
 export class ExtendedGraphAttachmentNode extends ExtendedGraphNode {
     graphicsWrapper: AttachmentNodeGraphicsWrapper;

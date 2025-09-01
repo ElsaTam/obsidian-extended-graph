@@ -2,7 +2,6 @@
   "compilerOptions": {
     "allowJs": true,
     "allowSyntheticDefaultImports": true,
-    "baseUrl": ".",
     "forceConsistentCasingInFileNames": false,
     "importHelpers": true,
     "inlineSourceMap": true,
@@ -22,7 +21,6 @@
         "./node_modules/obsidian-typings/dist/implementations.cjs"
       ],
       "*": [
-        "*",
         "./node_modules/obsidian-dataview/lib/*"
       ]
     },

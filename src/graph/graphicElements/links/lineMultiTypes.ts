@@ -1,6 +1,6 @@
 import { IDestroyOptions, Graphics } from "pixi.js";
-import * as Color from 'src/colors/color-bits';
-import { ExtendedGraphLink, hex2int, InteractiveManager, lengthSegment, LINK_KEY, LinkArrow, ManagerGraphics, pixiAddChild, pixiColor2int, smoothColorChange } from "src/internal";
+import * as Color from '../../../colors/color-bits';
+import { ExtendedGraphLink, hex2int, InteractiveManager, lengthSegment, LINK_KEY, LinkArrow, ManagerGraphics, pixiAddChild, pixiColor2int, smoothColorChange } from "../../../internal";
 
 
 export class LinkLineMultiTypesGraphics extends Graphics implements ManagerGraphics {

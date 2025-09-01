@@ -1,4 +1,4 @@
-import { evaluateCMap, GraphologyGraph, ExtendedGraphInstances, t, GraphStatsDirection } from "src/internal";
+import { evaluateCMap, GraphologyGraph, ExtendedGraphInstances, t, GraphStatsDirection } from "../../internal";
 import { Attributes, EdgeEntry } from "graphology-types";
 import { reverse } from "graphology-operators";
 

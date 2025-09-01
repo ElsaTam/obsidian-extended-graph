@@ -1,4 +1,4 @@
-import { NodeShape, NodesQueryModal, QueryData, ShapeEnum, t } from "src/internal";
+import { NodeShape, NodesQueryModal, QueryData, ShapeEnum, t } from "../../internal";
 
 export class ShapeQueryModal extends NodesQueryModal {
     saveShapeQueryCallback: (shape: ShapeEnum, queryData: QueryData) => void;

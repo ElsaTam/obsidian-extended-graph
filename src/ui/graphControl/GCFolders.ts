@@ -1,6 +1,6 @@
 import { Setting, ToggleComponent } from "obsidian";
-import * as Color from 'src/colors/color-bits';
-import { CSSBridge, FOLDER_KEY, GCSection, GraphInstances, InteractiveManager, InteractiveUI, t } from "src/internal";
+import * as Color from '../../colors/color-bits';
+import { CSSBridge, FOLDER_KEY, GCSection, GraphInstances, InteractiveManager, InteractiveUI, t } from "../../internal";
 
 export class GCFolders extends GCSection implements InteractiveUI {
     foldersManager: InteractiveManager;

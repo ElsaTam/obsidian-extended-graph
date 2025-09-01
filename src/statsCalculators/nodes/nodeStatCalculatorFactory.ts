@@ -16,7 +16,7 @@ import {
     TagsCountCalculator,
     TopologicalSortCalculator,
     TotallinkCountCalculator
-} from "src/internal";
+} from "../../internal";
 import * as centrality from "./centralityCalculator";
 
 

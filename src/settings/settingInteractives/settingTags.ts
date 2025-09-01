@@ -1,5 +1,5 @@
 import { Setting } from "obsidian";
-import { ExtendedGraphSettingTab, ExtendedGraphInstances, SettingInteractives, t, TAG_KEY } from "src/internal";
+import { ExtendedGraphSettingTab, ExtendedGraphInstances, SettingInteractives, t, TAG_KEY } from "../../internal";
 
 export class SettingTags extends SettingInteractives {
 

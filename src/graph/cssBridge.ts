@@ -1,9 +1,9 @@
 import { Component } from "obsidian";
 import { GraphColorAttributes, GraphRenderer, LocalGraphView } from "obsidian-typings";
 import { TextStyle, TextStyleFill, TextStyleFontStyle, TextStyleFontVariant, TextStyleFontWeight } from "pixi.js";
-import { ExtendedGraphInstances, GraphInstances } from "src/pluginInstances";
-import * as Color from 'src/colors/color-bits';
-import { pathParse } from "src/internal";
+import { ExtendedGraphInstances, GraphInstances } from "../pluginInstances";
+import * as Color from '../colors/color-bits';
+import { pathParse } from "../internal";
 
 interface CSSTextShadowStyle {
     alpha: number,

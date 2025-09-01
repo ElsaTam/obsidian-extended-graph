@@ -1,5 +1,5 @@
 import { Setting } from "obsidian";
-import { ExtendedGraphSettingTab, ExternalLinkOption, ExtendedGraphInstances, SettingMultiPropertiesModal, SettingsSection, t, ExternalLinkOpenMode } from "src/internal";
+import { ExtendedGraphSettingTab, ExternalLinkOption, ExtendedGraphInstances, SettingMultiPropertiesModal, SettingsSection, t, ExternalLinkOpenMode } from "../internal";
 
 export class SettingBeta extends SettingsSection {
 

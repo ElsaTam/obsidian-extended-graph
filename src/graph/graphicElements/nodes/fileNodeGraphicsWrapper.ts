@@ -1,5 +1,5 @@
-import { ColorSource, Texture } from "pixi.js";
-import { blend, Color } from "src/colors/color-bits";
+import { Texture } from "pixi.js";
+import { blend, Color } from "../../../colors/color-bits";
 import {
     ArcsCircle,
     CSSBridge,
@@ -12,7 +12,7 @@ import {
     NodeShape,
     pixiAddChild,
     pixiAddChildAt
-} from "src/internal";
+} from "../../../internal";
 
 export class FileNodeGraphicsWrapper extends NodeGraphicsWrapper {
     // Interface instance values

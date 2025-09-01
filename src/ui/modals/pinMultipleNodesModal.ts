@@ -1,5 +1,5 @@
 import { Setting } from "obsidian";
-import { ExtendedGraphSettings, NodesQueryModal, PinShapeData, PinShapeLabels, PinShapeType, ExtendedGraphInstances, QueryData, RuleQuery, t } from "src/internal";
+import { ExtendedGraphSettings, NodesQueryModal, PinShapeData, PinShapeLabels, PinShapeType, ExtendedGraphInstances, QueryData, RuleQuery, t } from "../../internal";
 
 export class PinMultipleNodesModal extends NodesQueryModal {
     pinCallback: (shapeData: PinShapeData, queryData: QueryData) => void;

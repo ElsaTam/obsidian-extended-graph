@@ -1,5 +1,5 @@
 import { arrayBufferToBase64, MarkdownRenderer, Platform, requestUrl } from "obsidian";
-import { getFile, getLinkDestination, ExtendedGraphInstances, t } from "src/internal";
+import { getFile, getLinkDestination, ExtendedGraphInstances, t } from "../internal";
 
 export class Media {
     static async getImageUriFromProperty(keyProperty: string, id: string): Promise<string | null> {

@@ -1,4 +1,4 @@
-import { getFile, GraphologyGraph, GraphStatsDirection, NodeStat, NodeStatCalculator } from "src/internal";
+import { getFile, GraphologyGraph, GraphStatsDirection, NodeStat, NodeStatCalculator } from "../../internal";
 
 export class FilenameLengthCalculator extends NodeStatCalculator {
     constructor(stat: NodeStat, graphologyGraph?: GraphologyGraph) {

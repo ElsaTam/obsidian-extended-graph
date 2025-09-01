@@ -1,6 +1,6 @@
 import { Component, setIcon } from "obsidian";
 import { GraphView, LocalGraphView } from "obsidian-typings";
-import { GraphInstances } from "src/internal";
+import { GraphInstances } from "../../internal";
 
 export abstract class GCSection extends Component {
     instances: GraphInstances | undefined;

@@ -1,4 +1,4 @@
-import { getFile, GraphologyGraph, GraphStatsDirection, NodeStat, NodeStatCalculator, t } from "src/internal";
+import { getFile, GraphologyGraph, GraphStatsDirection, NodeStat, NodeStatCalculator, t } from "../../internal";
 
 export class ModifiedTimeCalculator extends NodeStatCalculator {
     constructor(stat: NodeStat, graphologyGraph?: GraphologyGraph) {

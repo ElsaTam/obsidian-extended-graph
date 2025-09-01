@@ -1,5 +1,5 @@
-import { PinShape, PinShapeCircle, PinShapeData, PinShapeGrid, QueryData, QueryMatcher } from "src/internal";
-import { GraphInstances } from "src/pluginInstances";
+import { PinShape, PinShapeCircle, PinShapeData, PinShapeGrid, QueryData, QueryMatcher } from "../../internal";
+import { GraphInstances } from "../../pluginInstances";
 
 export class Pinner {
     instances: GraphInstances;

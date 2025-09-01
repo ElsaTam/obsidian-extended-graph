@@ -1,4 +1,4 @@
-import { ExtendedGraphInstances } from "src/pluginInstances";
+import { ExtendedGraphInstances } from "../pluginInstances";
 import { InteractivesSuggester } from "./InteractivesSuggester";
 
 export class InteractivesColorSuggester extends InteractivesSuggester {

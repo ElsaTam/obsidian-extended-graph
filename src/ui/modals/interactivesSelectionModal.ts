@@ -1,5 +1,5 @@
 import { Modal, Setting } from "obsidian";
-import { ExtendedGraphInstances, t } from "src/internal";
+import { ExtendedGraphInstances, t } from "../../internal";
 
 export class InteractivesSelectionModal extends Modal {
     key: string;

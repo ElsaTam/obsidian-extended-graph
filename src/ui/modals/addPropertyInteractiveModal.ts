@@ -1,5 +1,5 @@
 import { Modal, SearchComponent, Setting } from "obsidian";
-import { ExtendedGraphInstances, PropertiesUnusedSuggester, UIElements } from "src/internal";
+import { ExtendedGraphInstances, PropertiesUnusedSuggester, UIElements } from "../../internal";
 
 export class AddPropertyInteractiveModal extends Modal {
     callback: (name: string) => boolean;

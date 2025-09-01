@@ -1,7 +1,7 @@
 import { HexString } from 'obsidian';
 import { getSortedColorAndStopPoints, getCMapData } from './colormaps';
-import { ExtendedGraphSettings } from 'src/internal';
-import * as Color from 'src/colors/color-bits';
+import { ExtendedGraphSettings } from '../internal';
+import * as Color from './color-bits';
 import chroma from 'chroma-js';
 import { Color as PixiColor, TextStyleFill, ColorSource } from "pixi.js";
 

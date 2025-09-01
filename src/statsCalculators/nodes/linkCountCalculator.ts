@@ -1,5 +1,5 @@
 import { Attributes } from "graphology-types";
-import { getFile, GraphologyGraph, NodeStat, NodeStatCalculator, ExtendedGraphInstances, GraphStatsDirection } from "src/internal";
+import { getFile, GraphologyGraph, NodeStat, NodeStatCalculator, ExtendedGraphInstances, GraphStatsDirection } from "../../internal";
 
 export class BacklinkCountCalculator extends NodeStatCalculator {
     countDuplicates: boolean;

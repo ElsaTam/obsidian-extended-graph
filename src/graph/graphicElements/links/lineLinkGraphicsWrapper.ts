@@ -1,4 +1,4 @@
-import { ExtendedGraphLink, fadeIn, getIndexInHanger, GraphicsWrapper, InteractiveManager, LinkLineMultiTypesGraphics, pixiAddChildAt } from "src/internal";
+import { ExtendedGraphLink, fadeIn, getIndexInHanger, GraphicsWrapper, InteractiveManager, LinkLineMultiTypesGraphics, pixiAddChildAt } from "../../../internal";
 
 
 export class LineLinkGraphicsWrapper implements GraphicsWrapper {

@@ -1,6 +1,6 @@
 import { Component, ExtraButtonComponent } from "obsidian";
-import { LayerGroup } from "src/internal";
-import { GraphInstances } from "src/pluginInstances";
+import { LayerGroup } from "../internal";
+import { GraphInstances } from "../pluginInstances";
 
 export class LayersUI extends Component {
     instances: GraphInstances;

@@ -1,8 +1,6 @@
 import { getIcon } from "obsidian";
 import { GraphColorAttributes, GraphNode, LocalGraphView } from "obsidian-typings";
 import { Graphics } from "pixi.js";
-import { blend } from "src/colors/color-bits";
-import { getFile, getFileInteractives } from "src/helpers/vault";
 import {
     colorizeSVG,
     DEFAULT_SETTINGS,
@@ -22,9 +20,11 @@ import {
     ShapeEnum,
     CSSBridge,
     getEmojiColor,
-    int2hex
-} from "src/internal";
-import * as Color from 'src/colors/color-bits';
+    int2hex,
+    getFile,
+    getFileInteractives
+} from "../../internal";
+import * as Color from '../../colors/color-bits';
 
 export abstract class ExtendedGraphNode extends ExtendedGraphElement<GraphNode> {
     graphicsWrapper?: NodeGraphicsWrapper;
@@ -283,7 +283,7 @@ export abstract class ExtendedGraphNode extends ExtendedGraphElement<GraphNode> 
                 const needBlend = !this.graphicsWrapper ||
                     (!("background" in this.graphicsWrapper) || !this.graphicsWrapper.background);
                 this.coreElement.circle.tint = needBlend
-                    ? blend(CSSBridge.backgroundColor, this.coreElement.getFillColor().rgb, this.instances.settings.backgroundOpacityWithIcon)
+                    ? Color.blend(CSSBridge.backgroundColor, this.coreElement.getFillColor().rgb, this.instances.settings.backgroundOpacityWithIcon)
                     : CSSBridge.backgroundColor;
                 this.coreElement.circle.alpha = 1;
             }

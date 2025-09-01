@@ -1,4 +1,4 @@
-import { AbstractFormattingSuggester, getAllVaultProperties, ExtendedGraphInstances } from "src/internal";
+import { AbstractFormattingSuggester, getAllVaultProperties, ExtendedGraphInstances } from "../internal";
 
 export class PropertiesSuggester extends AbstractFormattingSuggester {
     callback: (value: string) => void;

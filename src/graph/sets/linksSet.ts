@@ -1,7 +1,7 @@
 import { TFile } from "obsidian";
 import { GraphLink } from "obsidian-typings";
-import * as Color from 'src/colors/color-bits';
-import { AbstractSet, ExtendedGraphLink, getFile, getLinkID, getOutlinkTypes, GraphInstances, InteractiveManager } from "src/internal";
+import * as Color from '../../colors/color-bits';
+import { AbstractSet, ExtendedGraphLink, getFile, getLinkID, getOutlinkTypes, GraphInstances, InteractiveManager } from "../../internal";
 
 export class LinksSet extends AbstractSet<GraphLink> {
     extendedElementsMap: Map<string, ExtendedGraphLink>;

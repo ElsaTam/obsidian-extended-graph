@@ -1,7 +1,7 @@
 import { OutlineFilter } from "@pixi/filter-outline";
 import { GraphLink } from "obsidian-typings";
 import { Container } from "pixi.js";
-import * as Color from 'src/colors/color-bits';
+import * as Color from '../../colors/color-bits';
 import {
     AnimatedDotOnCurve,
     AnimatedDotOnLine,
@@ -23,7 +23,7 @@ import {
     LinkTextLineSingleType,
     lengthSegment,
     pixiAddChild
-} from "src/internal";
+} from "../../internal";
 
 
 export class ExtendedGraphLink extends ExtendedGraphElement<GraphLink> {

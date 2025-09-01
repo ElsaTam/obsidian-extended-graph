@@ -1,7 +1,7 @@
 import { Keymap, Menu, TFile, UserEvent } from "obsidian";
 import { FederatedPointerEvent, Graphics } from "pixi.js";
-import { getFileInteractives, OpenExternalLinkModal, Pinner, pixiAddChild, RadialMenuManager, t } from "src/internal";
-import { GraphInstances, ExtendedGraphInstances } from "src/pluginInstances";
+import { getFileInteractives, OpenExternalLinkModal, Pinner, pixiAddChild, RadialMenuManager, t } from "../internal";
+import { GraphInstances, ExtendedGraphInstances } from "../pluginInstances";
 
 export class InputsManager {
     instances: GraphInstances;

@@ -1,7 +1,7 @@
 import { getIcon, Plugin } from "obsidian";
 import { GraphView, LocalGraphView } from "obsidian-typings";
 import { DataviewApi, getAPI as getDataviewAPI } from "obsidian-dataview";
-import { canonicalizeVarName, GraphBannerPlugin, IconicPlugin, IconizePlugin, isEmoji, NLPPlugin, ExtendedGraphInstances } from "src/internal";
+import { canonicalizeVarName, GraphBannerPlugin, IconicPlugin, IconizePlugin, isEmoji, NLPPlugin, ExtendedGraphInstances } from "../internal";
 
 
 // ======================== Iconic

@@ -1,6 +1,6 @@
 import { getAllTags, getLinkpath, TagCache, TFile } from "obsidian";
 import { DataviewApi } from "obsidian-dataview";
-import { canonicalizeVarName, ExtendedGraphSettings, FOLDER_KEY, getDataviewPageProperties, getDataviewPlugin, ExtendedGraphInstances, TAG_KEY, pathParse, SettingQuery } from "src/internal";
+import { canonicalizeVarName, ExtendedGraphSettings, FOLDER_KEY, getDataviewPageProperties, getDataviewPlugin, ExtendedGraphInstances, TAG_KEY, pathParse, SettingQuery } from "../internal";
 
 export function getFile(path: string): TFile | null {
     return ExtendedGraphInstances.app.vault.getFileByPath(path);

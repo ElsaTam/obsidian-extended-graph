@@ -18,7 +18,7 @@ import {
     AbstractSet,
     AttachmentNodeGraphicsWrapper,
     ExtendedGraphTagNode
-} from "src/internal";
+} from "../../internal";
 import { OutlineFilter } from "@pixi/filter-outline";
 
 

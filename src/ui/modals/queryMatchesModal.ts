@@ -1,5 +1,5 @@
 import { Modal, Setting, TFile } from "obsidian";
-import { ExtendedGraphInstances, QueryData, QueryMatcher, t } from "src/internal";
+import { ExtendedGraphInstances, QueryData, QueryMatcher, t } from "../../internal";
 
 export class QueryMatchesModal extends Modal {
     matcher: QueryMatcher;

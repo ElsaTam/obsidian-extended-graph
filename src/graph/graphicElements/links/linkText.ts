@@ -10,8 +10,8 @@ import {
     pixiAddChild,
     pixiAddChildAt,
     textStyleFill2int
-} from "src/internal";
-import { ColorSource, Container, Graphics, Sprite, Text, TextMetrics, TextStyle, TextStyleFill, Texture } from "pixi.js";
+} from "../../../internal";
+import { BitmapFont, BitmapText, ColorSource, Container, Graphics, IBitmapTextStyle, Sprite, Text, TextMetrics, TextStyle, TextStyleFill, Texture } from "pixi.js";
 
 export abstract class LinkText extends Container {
     extendedLink: ExtendedGraphLink;

@@ -1,6 +1,6 @@
 import { AbstractInputSuggest } from "obsidian";
 import { GraphRenderer } from "obsidian-typings";
-import { ExtendedGraphInstances } from "src/pluginInstances";
+import { ExtendedGraphInstances } from "../pluginInstances";
 
 export class RendererNodeNamesSuggester extends AbstractInputSuggest<string> {
     renderer: GraphRenderer;

@@ -1,4 +1,4 @@
-import { GraphologyGraph, GraphStatsDirection, NodeStat, NodeStatCalculator } from "src/internal";
+import { GraphologyGraph, GraphStatsDirection, NodeStat, NodeStatCalculator } from "../../internal";
 
 export class ConstantCalculator extends NodeStatCalculator {
     constructor(stat: NodeStat, graphologyGraph?: GraphologyGraph) {

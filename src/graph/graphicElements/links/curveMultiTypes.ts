@@ -1,6 +1,6 @@
 import { IDestroyOptions } from "pixi.js";
-import * as Color from 'src/colors/color-bits';
-import { hex2int, smoothColorChange, lengthSegment, LINK_KEY, LinkCurveGraphics, ManagerGraphics, pixiColor2int, quadratic, tangentQuadratic } from "src/internal";
+import * as Color from '../../../colors/color-bits';
+import { hex2int, smoothColorChange, lengthSegment, LINK_KEY, LinkCurveGraphics, ManagerGraphics, pixiColor2int, quadratic, tangentQuadratic } from "../../../internal";
 
 
 export class LinkCurveMultiTypesGraphics extends LinkCurveGraphics implements ManagerGraphics {

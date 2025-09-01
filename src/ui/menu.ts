@@ -1,6 +1,6 @@
 import { Component, ExtraButtonComponent, setIcon } from "obsidian";
 import { GraphView, LocalGraphView } from "obsidian-typings";
-import { ExtendedGraphInstances, t } from "src/internal";
+import { ExtendedGraphInstances, t } from "../internal";
 
 export class MenuUI extends Component {
     view: GraphView | LocalGraphView;

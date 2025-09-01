@@ -1,5 +1,5 @@
 import eccentricity from "graphology-metrics/node/eccentricity";
-import { GraphologyGraph, GraphStatsDirection, NodeStat, NodeStatCalculator } from "src/internal";
+import { GraphologyGraph, GraphStatsDirection, NodeStat, NodeStatCalculator } from "../../internal";
 
 export class EccentricityCalculator extends NodeStatCalculator {
     constructor(stat: NodeStat, graphologyGraph?: GraphologyGraph) {

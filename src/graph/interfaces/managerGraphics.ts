@@ -1,4 +1,4 @@
-import { InteractiveManager } from "src/internal";
+import { InteractiveManager } from "../../internal";
 
 
 export interface ManagerGraphics {

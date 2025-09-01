@@ -1,5 +1,5 @@
 import { GraphNode } from "obsidian-typings";
-import { ExtendedGraphNode, UnresolvedNodeGraphicsWrapper, NodeShape, GraphInstances } from "src/internal";
+import { ExtendedGraphNode, UnresolvedNodeGraphicsWrapper, NodeShape, GraphInstances } from "../../internal";
 
 export class ExtendedGraphUnresolvedNode extends ExtendedGraphNode {
     graphicsWrapper: UnresolvedNodeGraphicsWrapper;

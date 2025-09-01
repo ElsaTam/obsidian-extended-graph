@@ -1,6 +1,6 @@
 import { AbstractInputSuggest } from "obsidian";
-import { ExtendedGraphNode, FOLDER_KEY } from "src/internal";
-import { GraphInstances, ExtendedGraphInstances } from "src/pluginInstances";
+import { ExtendedGraphNode, FOLDER_KEY } from "../internal";
+import { GraphInstances, ExtendedGraphInstances } from "../pluginInstances";
 
 type SetType = 'nodes' | 'pinned' | 'folders';
 

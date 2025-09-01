@@ -1,5 +1,5 @@
 import { ButtonComponent, ExtraButtonComponent, Modal, SearchComponent, TextComponent } from "obsidian";
-import { isPropertyKeyValid, ExtendedGraphInstances, PropertiesSuggester, t, UIElements } from "src/internal";
+import { isPropertyKeyValid, ExtendedGraphInstances, PropertiesSuggester, t, UIElements } from "../../internal";
 
 export class SettingMultiPropertiesModal extends Modal {
     inputs: TextComponent[] = [];

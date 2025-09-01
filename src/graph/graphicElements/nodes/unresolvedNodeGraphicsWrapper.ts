@@ -1,5 +1,5 @@
-import { ColorSource } from "node_modules/@pixi/color/lib/Color";
-import { ExtendedGraphUnresolvedNode, NodeGraphicsWrapper, NodeShape, pixiAddChildAt } from "src/internal";
+import { ColorSource } from "pixi.js";
+import { ExtendedGraphUnresolvedNode, NodeGraphicsWrapper, NodeShape, pixiAddChildAt } from "../../../internal";
 
 export class UnresolvedNodeGraphicsWrapper extends NodeGraphicsWrapper {
     // Interface instance values

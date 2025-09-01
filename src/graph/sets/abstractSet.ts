@@ -1,7 +1,7 @@
 import { TAbstractFile, TFile } from "obsidian";
 import { GraphLink, GraphNode } from "obsidian-typings";
-import * as Color from 'src/colors/color-bits';
-import { ExtendedGraphElement, ExtendedGraphLink, ExtendedGraphNode, GraphInstances, InteractiveManager, SettingQuery, TAG_KEY } from "src/internal";
+import * as Color from '../../colors/color-bits';
+import { ExtendedGraphElement, ExtendedGraphLink, ExtendedGraphNode, GraphInstances, InteractiveManager, SettingQuery, TAG_KEY } from "../../internal";
 
 
 export abstract class AbstractSet<T extends GraphNode | GraphLink> {

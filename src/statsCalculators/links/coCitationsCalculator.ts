@@ -5,7 +5,7 @@
  * Released under the GNU General Public License v3.0
  */
 
-import { GraphologyGraph, LinkStat, LinkStatCalculator, ExtendedGraphInstances } from "src/internal";
+import { GraphologyGraph, LinkStat, LinkStatCalculator, ExtendedGraphInstances } from "../../internal";
 import { Attributes, EdgeEntry } from "graphology-types";
 import { CacheItem, getAllTags, getLinkpath, HeadingCache, ListItemCache, ReferenceCache, TagCache } from "obsidian";
 import tokenizer from "sbd";

@@ -1,5 +1,5 @@
 import { ExtraButtonComponent, Setting } from "obsidian";
-import { ExtendedGraphSettingTab, getCMapData, NodeShape, ExtendedGraphInstances, SettingColorPalette, SettingsSection, ShapeEnum, t } from "src/internal";
+import { ExtendedGraphSettingTab, getCMapData, NodeShape, ExtendedGraphInstances, SettingColorPalette, SettingsSection, ShapeEnum, t } from "../internal";
 
 export class SettingLocal extends SettingsSection {
     depthColormapSetting: SettingColorPalette;

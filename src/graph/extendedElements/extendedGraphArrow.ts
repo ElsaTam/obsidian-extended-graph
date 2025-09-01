@@ -1,5 +1,5 @@
 import { ColorSource, Graphics } from "pixi.js"
-import { ExtendedGraphLink, GraphInstances, LINK_KEY, ExtendedGraphInstances, SettingQuery } from "src/internal";
+import { ExtendedGraphLink, GraphInstances, LINK_KEY, ExtendedGraphInstances, SettingQuery } from "../../internal";
 
 export class ExtendedGraphArrow {
     extendedLink: ExtendedGraphLink;

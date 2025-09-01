@@ -1,4 +1,4 @@
-import * as Color from 'src/colors/color-bits';
+import * as Color from '../colors/color-bits';
 import { GraphEngine, GraphLink, GraphNode, GraphRenderer } from "obsidian-typings";
 import {
     CurveLinkGraphicsWrapper,
@@ -21,7 +21,7 @@ import {
     t,
     textColor,
     CSSBridge
-} from "src/internal";
+} from "../internal";
 import { Notice } from 'obsidian';
 
 export abstract class ExportGraphToSVG {

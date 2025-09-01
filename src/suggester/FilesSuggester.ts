@@ -1,5 +1,5 @@
 import { TAbstractFile } from "obsidian";
-import { AbstractFormattingSuggester, ExtendedGraphInstances } from "src/internal";
+import { AbstractFormattingSuggester, ExtendedGraphInstances } from "../internal";
 
 export class FilesSuggester extends AbstractFormattingSuggester {
     callback: (value: string) => void;

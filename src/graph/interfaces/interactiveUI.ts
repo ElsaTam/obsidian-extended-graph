@@ -1,4 +1,4 @@
-import * as Color from 'src/colors/color-bits';
+import * as Color from '../../colors/color-bits';
 
 export interface InteractiveUI {
     update: (key: string, type: string, color: Color.Color) => void;

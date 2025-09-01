@@ -6,7 +6,7 @@ import {
     LINK_KEY,
     ExtendedGraphInstances,
     TAG_KEY
-} from "src/internal";
+} from "../internal";
 
 export class GraphState {
     data = new GraphStateData();

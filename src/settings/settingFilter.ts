@@ -1,5 +1,5 @@
 import { Setting } from "obsidian";
-import { ExtendedGraphSettingTab, FilesSuggester, ExtendedGraphInstances, SettingsSection, t, UIElements } from "src/internal";
+import { ExtendedGraphSettingTab, FilesSuggester, ExtendedGraphInstances, SettingsSection, t, UIElements } from "../internal";
 
 export class SettingFilter extends SettingsSection {
     constructor(settingTab: ExtendedGraphSettingTab) {

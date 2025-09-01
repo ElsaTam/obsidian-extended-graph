@@ -1,7 +1,7 @@
 import { ButtonComponent, ColorComponent, KeymapContext, Modal, setIcon, Setting } from "obsidian";
-import * as Color from 'src/colors/color-bits';
-import { plotColorMap, rgb2int, t } from "src/internal";
-import { ExtendedGraphInstances } from "src/pluginInstances";
+import * as Color from '../../colors/color-bits';
+import { plotColorMap, rgb2int, t } from "../../internal";
+import { ExtendedGraphInstances } from "../../pluginInstances";
 
 export class GradientMakerModal extends Modal {
     canvasContainer: HTMLDivElement;

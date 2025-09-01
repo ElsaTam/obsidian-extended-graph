@@ -15,8 +15,8 @@ import {
     SettingsSectionPerGraphType,
     t,
     GraphStatsDirection
-} from "src/internal";
-import { SettingMultiPropertiesModal } from "src/ui/modals/settingPropertiesModal";
+} from "../internal";
+import { SettingMultiPropertiesModal } from "../ui/modals/settingPropertiesModal";
 
 export class SettingElementsStats extends SettingsSectionPerGraphType {
     warningNodeSizeSetting: Setting;

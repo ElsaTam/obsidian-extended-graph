@@ -1,5 +1,5 @@
 import { Texture } from "pixi.js";
-import { ExtendedGraphAttachmentNode, fadeIn, NodeGraphicsWrapper, NodeImage, pixiAddChild, pixiAddChildAt } from "src/internal";
+import { ExtendedGraphAttachmentNode, fadeIn, NodeGraphicsWrapper, NodeImage, pixiAddChild, pixiAddChildAt } from "../../../internal";
 
 export class AttachmentNodeGraphicsWrapper extends NodeGraphicsWrapper {
     // Interface instance values

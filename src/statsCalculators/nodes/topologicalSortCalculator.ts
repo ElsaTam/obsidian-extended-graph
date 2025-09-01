@@ -1,5 +1,5 @@
 import { GraphologyGraph } from "../graphology";
-import { NodeStat, NodeStatCalculator, GraphStatsDirection } from "src/internal";
+import { NodeStat, NodeStatCalculator, GraphStatsDirection } from "../../internal";
 import { stronglyConnectedComponents } from "graphology-components";
 import { DirectedGraph } from "graphology";
 import { topologicalSort } from "graphology-dag";

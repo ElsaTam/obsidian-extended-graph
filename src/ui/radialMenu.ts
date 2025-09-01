@@ -1,5 +1,5 @@
 import { Menu, MenuPositionDef } from "obsidian";
-import { CSSBridge, FOLDER_KEY, FolderBlob, GraphInstances, GraphStateModal, LINK_KEY, TAG_KEY, textColor } from "src/internal";
+import { CSSBridge, FOLDER_KEY, FolderBlob, GraphInstances, GraphStateModal, LINK_KEY, TAG_KEY, textColor } from "../internal";
 
 interface RadialMenuItem {
     id: string;

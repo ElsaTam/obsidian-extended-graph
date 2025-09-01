@@ -1,6 +1,6 @@
 
 import { Component } from 'obsidian';
-import { FOLDER_KEY, FoldersSet, GraphInstances, InteractiveManager, LayersManager, LayersUI, LINK_KEY, LinksSet, NodesSet, TAG_KEY } from 'src/internal';
+import { FOLDER_KEY, FoldersSet, GraphInstances, InteractiveManager, LayersManager, LayersUI, LINK_KEY, LinksSet, NodesSet, TAG_KEY } from '../internal';
 
 export class Graph extends Component {
     instances: GraphInstances;

@@ -1,5 +1,5 @@
 import { Modal, Setting } from "obsidian";
-import { GraphInstances, ExtendedGraphInstances, t } from "src/internal";
+import { GraphInstances, ExtendedGraphInstances, t } from "../../internal";
 
 export class ExportSVGOptionModal extends Modal {
     instances?: GraphInstances;

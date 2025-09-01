@@ -11,7 +11,7 @@ import {
     OtsukaOchiaiCalculator,
     OverlapCalculator,
     ExtendedGraphInstances
-} from "src/internal";
+} from "../../internal";
 
 
 export class LinksStatCalculatorFactory {

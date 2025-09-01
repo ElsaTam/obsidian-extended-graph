@@ -12,7 +12,7 @@ import {
     TAG_KEY,
     UIElements,
     getDataviewPlugin
-} from "src/internal";
+} from "../../internal";
 
 export class SettingPropertiesArray extends SettingsSectionPerGraphType {
     settingInteractives: SettingInteractives[] = [];

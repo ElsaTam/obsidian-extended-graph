@@ -1,6 +1,6 @@
 import { Component } from "obsidian";
 import { GraphView, LocalGraphView } from "obsidian-typings";
-import { GCOptions, GraphInstances } from "src/internal";
+import { GCOptions, GraphInstances } from "../../internal";
 
 export class GraphControlsUI extends Component {
     instances: GraphInstances | null;

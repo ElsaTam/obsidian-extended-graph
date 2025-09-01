@@ -10,7 +10,7 @@ import {
     ExtendedGraphInstances,
     SettingInteractives,
     t
-} from "src/internal";
+} from "../../internal";
 
 
 export class SettingLinks extends SettingInteractives {

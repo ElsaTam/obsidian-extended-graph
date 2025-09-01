@@ -1,5 +1,5 @@
 import { Graphics } from "pixi.js";
-import { ExtendedGraphLink, ExtendedGraphInstances } from "src/internal";
+import { ExtendedGraphLink, ExtendedGraphInstances } from "../../../internal";
 
 export class AnimatedDotOnLine extends Graphics {
     extendedLink: ExtendedGraphLink;

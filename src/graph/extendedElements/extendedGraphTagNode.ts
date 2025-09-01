@@ -1,5 +1,5 @@
 import { GraphColorAttributes, } from "obsidian-typings";
-import { ExtendedGraphNode, NodeShape, SettingQuery, TAG_KEY, TagNodeGraphicsWrapper } from "src/internal";
+import { ExtendedGraphNode, NodeShape, SettingQuery, TAG_KEY, TagNodeGraphicsWrapper } from "../../internal";
 
 export class ExtendedGraphTagNode extends ExtendedGraphNode {
     graphicsWrapper: TagNodeGraphicsWrapper;

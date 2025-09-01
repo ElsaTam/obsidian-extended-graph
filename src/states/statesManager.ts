@@ -18,7 +18,7 @@ import {
     SettingQuery,
     t,
     validateFilename
-} from "src/internal";
+} from "../internal";
 
 
 

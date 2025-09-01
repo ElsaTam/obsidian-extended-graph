@@ -1,4 +1,4 @@
-import { ExtendedGraphNode, GraphInstances, Pinner, t } from "src/internal";
+import { ExtendedGraphNode, GraphInstances, Pinner, t } from "../../internal";
 
 export type PinShapeType = 'grid' | 'circle';
 

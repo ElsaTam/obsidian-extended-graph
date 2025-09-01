@@ -1,5 +1,5 @@
 import { ExtraButtonComponent, setIcon, Setting } from "obsidian";
-import { ExtendedGraphSettingTab, ExtendedGraphInstances, t } from "src/internal";
+import { ExtendedGraphSettingTab, ExtendedGraphInstances, t } from "../internal";
 
 export abstract class SettingsSection {
     settingTab: ExtendedGraphSettingTab;

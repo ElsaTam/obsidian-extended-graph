@@ -1,7 +1,7 @@
 import { Component } from "obsidian";
-import { LINK_KEY, FOLDER_KEY } from "src/globalVariables";
-import * as Color from 'src/colors/color-bits';
-import { GraphInstances } from "src/pluginInstances";
+import { LINK_KEY, FOLDER_KEY } from "../globalVariables";
+import * as Color from '../colors/color-bits';
+import { GraphInstances } from "../pluginInstances";
 
 export class InteractiveEventsDispatcher extends Component {
     instances: GraphInstances;

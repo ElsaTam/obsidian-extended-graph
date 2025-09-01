@@ -1,4 +1,4 @@
-import { AbstractFormattingSuggester, ExtendedGraphSettings, FOLDER_KEY, getFileInteractives, getOutlinkTypes, ExtendedGraphInstances, SettingLinks, SettingProperty, SettingTags, SourceKey, TAG_KEY } from "src/internal";
+import { AbstractFormattingSuggester, ExtendedGraphSettings, FOLDER_KEY, getFileInteractives, getOutlinkTypes, ExtendedGraphInstances, SettingLinks, SettingProperty, SettingTags, SourceKey, TAG_KEY } from "../internal";
 
 export class InteractivesSuggester extends AbstractFormattingSuggester {
     key: SourceKey | undefined;

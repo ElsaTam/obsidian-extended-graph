@@ -1,5 +1,5 @@
 import { GraphColorAttributes } from "obsidian-typings";
-import { evaluateCMap, ExtendedGraphNode, FileNodeGraphicsWrapper, NodeShape, ExtendedGraphInstances, ShapeEnum } from "src/internal";
+import { evaluateCMap, ExtendedGraphNode, FileNodeGraphicsWrapper, NodeShape, ExtendedGraphInstances, ShapeEnum } from "../../internal";
 
 export class ExtendedGraphFileNode extends ExtendedGraphNode {
     graphicsWrapper: FileNodeGraphicsWrapper;

@@ -1,5 +1,5 @@
 import { Graphics, Sprite, Texture } from "pixi.js";
-import { NodeShape, pixiAddChild, ShapeEnum } from "src/internal";
+import { NodeShape, pixiAddChild, ShapeEnum } from "../../../internal";
 
 export class NodeImage extends Sprite {
     opacityLayer: Graphics;

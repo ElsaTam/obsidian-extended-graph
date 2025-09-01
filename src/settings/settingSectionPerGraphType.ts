@@ -1,5 +1,5 @@
 import { ToggleComponent } from "obsidian";
-import { ExtendedGraphSettingTab, Feature, GraphType, graphTypeLabels, makeCompatibleForClass, ExtendedGraphInstances, SettingsSection } from "src/internal";
+import { ExtendedGraphSettingTab, Feature, GraphType, graphTypeLabels, makeCompatibleForClass, ExtendedGraphInstances, SettingsSection } from "../internal";
 
 
 export abstract class SettingsSectionPerGraphType extends SettingsSection {
