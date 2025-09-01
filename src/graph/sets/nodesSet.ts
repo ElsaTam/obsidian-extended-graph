@@ -80,7 +80,7 @@ export class NodesSet extends AbstractSet<GraphNode> {
                 if (ExtendedGraphInstances.graphsManager.openNodes.contains(extendedNode.id)) extendedNode.toggleOpenInTab(true);
             }
             if (this.instances.settings.highlightSearchResults) {
-                if (ExtendedGraphInstances.graphsManager.getSearchResults().contains(extendedNode.id)) extendedNode.toggleIsSearchResult(true);
+                extendedNode.toggleIsSearchResult(ExtendedGraphInstances.graphsManager.isSearchResult(extendedNode.id));
             }
         }
     }

@@ -690,6 +690,7 @@ export class GraphsManager extends Component {
 
     private computeSearchNodes(view: View): void {
         if (view.getViewType() !== "search") return;
+        if (view.leaf.isDeferred) return;
 
         const entry = this.observedSearched.get(view);
         if (!entry) return;
@@ -739,7 +740,7 @@ export class GraphsManager extends Component {
 
     isSearchResult(path: string): boolean {
         for (const entry of this.observedSearched.values()) {
-            if (path in entry.results) return true;
+            if (entry.results.contains(path)) return true;
         }
         return false;
     }
