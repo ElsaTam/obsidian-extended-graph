@@ -593,7 +593,7 @@ export class GraphEventsDispatcher extends Component {
             }
             const extendedNode = this.instances.nodesSet.extendedElementsMap.get(node.id);
             if (!extendedNode) {
-                this.instances.nodesSet.load();
+                this.instances.nodesSet.load(node.id);
             }
             else {
                 extendedNode.setCoreElement(node);
