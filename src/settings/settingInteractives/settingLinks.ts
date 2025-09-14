@@ -193,7 +193,7 @@ export class SettingLinks extends SettingInteractives {
     static getAllTypes() {
         let allTypes = new Set<string>();
 
-        const dv = getDataviewPlugin(false);
+        const dv = getDataviewPlugin();
         if (dv) {
             for (const page of dv.pages()) {
                 for (const [key, value] of Object.entries(page)) {

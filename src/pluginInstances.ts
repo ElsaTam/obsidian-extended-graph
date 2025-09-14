@@ -26,6 +26,7 @@ import {
     LayersUI,
     InteractiveEventsDispatcher,
     CSSBridge,
+    getDataviewPlugin,
 } from "./internal";
 import ExtendedGraphPlugin from "./main";
 import { GraphEngine, GraphRenderer, GraphView, LocalGraphView } from "obsidian-typings";
@@ -97,7 +98,7 @@ export class GraphInstances {
     }
 
     private canonicalizeProperties() {
-        if (!this.settings.canonicalizePropertiesWithDataview) return;
+        if (!this.settings.canonicalizePropertiesWithDataview || !getDataviewPlugin()) return;
         for (const property in this.settings.additionalProperties) {
             const canonicalizedProperty = canonicalizeVarName(property);
             if (canonicalizedProperty === property) continue;

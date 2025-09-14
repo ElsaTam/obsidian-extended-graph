@@ -89,7 +89,7 @@ export class ArcsCircle extends Graphics implements ManagerGraphics {
                 ) {
                     const file = getFile(this.extendedNode.id);
                     if (file) {
-                        arc.weight = getNumberOfFileInteractives(this.manager.name, file, type, this.extendedNode.instances.settings.ignoreInlineLinks);
+                        arc.weight = getNumberOfFileInteractives(this.manager.name, file, type);
                     }
                 }
                 this.graphics.set(type, arc);

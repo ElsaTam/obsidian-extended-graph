@@ -26,7 +26,7 @@ export function getFileInteractives(interactive: string, file: TFile, settings?:
     return new Set([...results].filter(type => !SettingQuery.excludeType(settings ?? ExtendedGraphInstances.settings, interactive, type)));
 }
 
-export function getNumberOfFileInteractives(interactive: string, file: TFile, type: string, ignoreInlineLinks: boolean): number {
+export function getNumberOfFileInteractives(interactive: string, file: TFile, type: string): number {
     if (file.extension !== "md" || file.deleted) return 0;
     switch (interactive) {
         case TAG_KEY:
@@ -34,7 +34,7 @@ export function getNumberOfFileInteractives(interactive: string, file: TFile, ty
         case FOLDER_KEY:
             return 1;
         default:
-            return getNumberOfProperties(interactive, file, type, ignoreInlineLinks);
+            return getNumberOfProperties(interactive, file, type);
     }
 }
 
@@ -99,10 +99,10 @@ function recursiveGetProperties(value: any, types: Set<string>): void {
 }
 
 function getProperty(settings: ExtendedGraphSettings, key: string, file: TFile): Set<string> {
-    const dv = getDataviewPlugin(settings.ignoreInlineLinks);
+    const dv = getDataviewPlugin();
     const types = new Set<string>();
 
-    // With Dataview
+    // With Dataview for inline properties
     if (dv) {
         const sourcePage = dv.page(file.path);
         if (sourcePage) {
@@ -160,10 +160,10 @@ function recursiveCountProperties(value: any, valueToMatch: string): number {
     return 0;
 }
 
-function getNumberOfProperties(key: string, file: TFile, valueToMatch: string, ignoreInlineLinks: boolean): number {
-    const dv = getDataviewPlugin(ignoreInlineLinks);
+function getNumberOfProperties(key: string, file: TFile, valueToMatch: string): number {
+    const dv = getDataviewPlugin();
 
-    // With Dataview
+    // With Dataview for inline properties
     if (dv) {
         const sourcePage = dv.page(file.path);
         if (sourcePage) {
@@ -185,9 +185,15 @@ function getNumberOfProperties(key: string, file: TFile, valueToMatch: string, i
 }
 
 export function getAllVaultProperties(settings: ExtendedGraphSettings): string[] {
-    const dv = getDataviewPlugin(settings.ignoreInlineLinks);
+    const dv = getDataviewPlugin();
     if (!dv) {
-        return Object.keys(ExtendedGraphInstances.app.metadataCache.getAllPropertyInfos());
+        return ExtendedGraphInstances.app.vault.getFiles().reduce((acc: string[], file: TFile) => {
+            const frontmatter = ExtendedGraphInstances.app.metadataCache.getFileCache(file)?.frontmatter;
+            if (frontmatter) {
+                return acc.concat(Object.keys(frontmatter));
+            }
+            return acc;
+        }, [])
     }
     else {
         return dv.pages().values.reduce((acc: string[], page: any) => {
@@ -208,7 +214,7 @@ function getFolderPath(file: TFile): Set<string> {
 
 export function getOutlinkTypes(settings: ExtendedGraphSettings, file: TFile): Map<string, Set<string>> {
     if (file.extension !== "md" || file.deleted) return new Map();
-    const dv = getDataviewPlugin(settings.ignoreInlineLinks);
+    const dv = settings.ignoreInlineLinks ? getDataviewPlugin() : undefined; // We need the dataview plugin only for inline properties
     return dv ? getOutlinkTypesWithDataview(settings, dv, file) : getOutlinkTypesWithFrontmatter(file);
 }
 
