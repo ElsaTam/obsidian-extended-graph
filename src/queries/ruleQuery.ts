@@ -28,20 +28,27 @@ export const logicKeyLabel: Record<LogicKey, string> = {
     'isEmptyNot': t("query.logicKey.isEmptyNot"),
 }
 
-export class RuleQuery {
-    source: string;
+export interface IRuleQuery {
+    source: SourceKey | '';
     property: string;
     value: string;
-    logic: string;
+    logic: LogicKey | '';
+}
 
-    constructor(rec: Record<string, string>) {
+export class RuleQuery implements IRuleQuery {
+    source: SourceKey | '';
+    property: string;
+    value: string;
+    logic: LogicKey | '';
+
+    constructor(rec: Partial<IRuleQuery>) {
         this.source = rec['source'] ?? '';
         this.property = rec['property'] ?? '';
         this.value = rec['value'] ?? '';
-        this.logic = rec['logic'] ?? '';
+        this.logic = rec.logic ?? '';
     }
 
-    getRecord(): Record<string, string> {
+    getRecord(): IRuleQuery {
         return {
             source: this.source,
             property: this.property,

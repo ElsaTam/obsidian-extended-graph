@@ -1,11 +1,11 @@
 import { TFile } from "obsidian";
-import { ExtendedGraphSettings, ExtendedGraphInstances, RuleQuery, t } from "../internal";
+import { ExtendedGraphSettings, ExtendedGraphInstances, RuleQuery, t, IRuleQuery } from "../internal";
 
 export type CombinationLogic = 'AND' | 'OR';
 export type QueryData = {
     combinationLogic: CombinationLogic,
     index?: number,
-    rules: Record<string, string>[]
+    rules: IRuleQuery[]
 }
 
 export class QueryMatcher {

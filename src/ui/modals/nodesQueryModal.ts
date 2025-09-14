@@ -15,7 +15,8 @@ import {
     sourceKeyLabels,
     strCompare,
     t,
-    UIElements
+    UIElements,
+    IRuleQuery
 } from "../../internal";
 
 export class NodesQueryModal extends Modal {
@@ -91,7 +92,7 @@ export class NodesQueryModal extends Modal {
             });
     }
 
-    protected addRule(queryRecord?: Record<string, string>) {
+    protected addRule(queryRecord?: IRuleQuery) {
         const ruleSetting = new RuleSetting(
             this.contentEl,
             this.settings ?? ExtendedGraphInstances.settings,
@@ -174,7 +175,7 @@ class RuleSetting extends Setting {
     valueText: SearchComponent | null;
     suggester: InteractivesSuggester | null;
 
-    constructor(containerEl: HTMLElement, settings: ExtendedGraphSettings, onRemove: (s: RuleSetting) => void, onChange: (r: RuleQuery) => void, queryRecord?: Record<string, string>) {
+    constructor(containerEl: HTMLElement, settings: ExtendedGraphSettings, onRemove: (s: RuleSetting) => void, onChange: (r: RuleQuery) => void, queryRecord?: Partial<IRuleQuery>) {
         super(containerEl);
 
         this.settings = settings;
@@ -184,21 +185,21 @@ class RuleSetting extends Setting {
         this.addRemoveButton();
 
         this.addSourceDropdown();
-        if (queryRecord && queryRecord['source']) {
-            this.sourceDropdown.setValue(queryRecord['source']);
+        if (queryRecord && queryRecord.source) {
+            this.sourceDropdown.setValue(queryRecord.source);
         }
 
         if (this.sourceDropdown.getValue() !== 'all') {
             this.addLogicDropdown();
-            if (queryRecord && queryRecord['logic']) this.logicDropdown?.setValue(queryRecord['logic']);
+            if (queryRecord && queryRecord.logic) this.logicDropdown?.setValue(queryRecord.logic);
 
             if (this.sourceDropdown.getValue() === 'property') {
                 this.addPropertyDropdown();
-                if (queryRecord && queryRecord['property']) this.propertyDropdown?.setValue(queryRecord['property']);
+                if (queryRecord && queryRecord.property) this.propertyDropdown?.setValue(queryRecord.property);
             }
 
             this.addValueText();
-            if (queryRecord && queryRecord['value']) this.valueText?.setValue(queryRecord['value']);
+            if (queryRecord && queryRecord.value) this.valueText?.setValue(queryRecord.value);
         }
 
         this.onChangeCallback = onChange;
@@ -319,10 +320,10 @@ class RuleSetting extends Setting {
 
     getRuleQuery(): RuleQuery {
         return new RuleQuery({
-            source: this.sourceDropdown.getValue(),
+            source: this.sourceDropdown.getValue() as SourceKey,
             property: this.propertyDropdown?.getValue() ?? '',
             value: this.valueText?.getValue() ?? '',
-            logic: this.logicDropdown?.getValue() ?? '',
+            logic: this.logicDropdown?.getValue() as LogicKey ?? '',
         });
     }
 }

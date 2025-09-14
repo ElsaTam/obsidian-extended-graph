@@ -31,7 +31,7 @@ export class PinMultipleNodesModal extends NodesQueryModal {
             .setIcon('check');
 
         if (this.rulesSettings.length === 0) {
-            this.addRule({ source: 'all' });
+            this.addRule({ source: 'all', logic: '', property: '', value: '' });
             this.onChange();
         }
     }

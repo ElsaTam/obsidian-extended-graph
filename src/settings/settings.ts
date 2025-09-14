@@ -120,7 +120,7 @@ export interface ExtendedGraphSettings {
     cssSnippetFilename: string;
 
     // Shapes
-    shapeQueries: Record<string, QueryData>;
+    shapeQueries: Record<ShapeEnum, QueryData>;
 
     // Export SVG
     exportSVGOptions: ExportSVGOptions;
