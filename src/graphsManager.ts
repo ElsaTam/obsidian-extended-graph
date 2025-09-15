@@ -62,6 +62,12 @@ import {
 } from "./internal";
 
 
+declare module "obsidian" {
+    interface Workspace {
+        on(name: "extended-graph:enabled-in-view", callback: (view: GraphView | LocalGraphView) => any): EventRef;
+        on(name: "extended-graph:disabled-in-view", callback: (view: GraphView | LocalGraphView) => any): EventRef;
+    }
+}
 
 export class GraphsManager extends Component {
     globalUIs: Map<string, { menu: MenuUI, control: GraphControlsUI }> = new Map();
@@ -915,6 +921,8 @@ export class GraphsManager extends Component {
     onPluginLoaded(view: GraphView | LocalGraphView): void {
         this.isResetting.set(view.leaf.id, false);
         this.globalUIs.get(view.leaf.id)?.menu.enableUI();
+
+        ExtendedGraphInstances.app.workspace.trigger('extended-graph:enabled-in-view', view);
     }
 
 
@@ -965,6 +973,8 @@ export class GraphsManager extends Component {
         }
 
         this.updateStatusBarItem(view.leaf);
+
+        ExtendedGraphInstances.app.workspace.trigger('extended-graph:disabled-in-view', view);
     }
 
     // ============================= RESET PLUGIN ==============================

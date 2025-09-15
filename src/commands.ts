@@ -3,7 +3,7 @@ import { Pinner, ExtendedGraphInstances, t } from "./internal";
 import ExtendedGraphPlugin from "./main";
 import { ItemView } from "obsidian";
 
-function getActiveGraphView(plugin: ExtendedGraphPlugin): GraphView | LocalGraphView | undefined {
+export function getActiveGraphView(plugin: ExtendedGraphPlugin): GraphView | LocalGraphView | undefined {
     const itemView = plugin.app.workspace.getActiveViewOfType(ItemView);
     if (itemView
         && (itemView.getViewType() === "graph" || itemView.getViewType() === "localgraph")) {

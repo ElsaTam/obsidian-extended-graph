@@ -348,7 +348,7 @@ export default class ExtendedGraphPlugin extends Plugin {
         };
     }
 
-    private loadSettingsRec(defaultSettings: any, userSettings: any) {
+    loadSettingsRec(defaultSettings: any, userSettings: any) {
         if (!defaultSettings || typeof defaultSettings !== 'object' || Array.isArray(defaultSettings)) {
             return;
         }
