@@ -872,6 +872,4 @@ export class GraphEventsDispatcher extends Component {
         this.setLastFilteringActionAsStateChange(stateID);
         ExtendedGraphInstances.statesManager.changeState(this.instances, stateID);
     }
-
-    // ================================= FOCUS =================================
 }
