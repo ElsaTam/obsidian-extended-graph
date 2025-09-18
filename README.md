@@ -91,6 +91,7 @@ If you don't need every features from this plugin and are looking for something 
 - [Persistent Graph](https://github.com/Sanqui/obsidian-persistent-graph) by _Sanqui_: adds commands to save and restore the positions of nodes on the global graph view.
 - [Sync Graph Settings](https://github.com/Xallt/sync-graph-settings) by _Xallt_: for syncing various graph settings to Local Graphs.
 - [Tags Routes](https://github.com/kctekn/obsidian-TagsRoutes) by _kctekn_: A powerful 3D graph viewer for managing and navigating notes and tags, with advanced visual effects, animations.
+- [Front Matter Title](https://github.com/snezhig/obsidian-front-matter-title) by _snezhig_: ets you define a title in frontmatter to be displayed as the filename for explorer, graph, search and etc.
 - [Node Masquerade](https://github.com/ElsaTam/obsidian-node-masquerade) by _ElsaTam_: Modify the labels of your nodes in the graph view (actually a subset of features from this plugin, but faster and lighter)
 - [New 3D Graph](https://github.com/Apoo711/obsidian-3d-graph) by _Apoo711_ (still in beta): Visualize your Vault in 3D with a powerful, highly customizable, and filterable graph.
 - [3D Graph View](http://github.com/AlexW00/obsidian-3d-graph) by _AlexW00_ and its fork [3d Graph View New](https://github.com/HananoshikaYomaru/obsidian-3d-graph) by HananoshikaYomaru: a 3D Graph for Obsidian.
@@ -100,4 +101,5 @@ If you don't need every features from this plugin and are looking for something 
 # License
 
 GNU General Public License version 3 (GPLv3) License
+
 
