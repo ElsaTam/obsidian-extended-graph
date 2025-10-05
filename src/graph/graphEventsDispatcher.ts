@@ -322,9 +322,17 @@ export class GraphEventsDispatcher extends Component {
         const updateData = this.updateData.bind(this);
         const instances = this.instances;
 
+        // The plugin Nested Tags Graph replaces the method setData of the renderer
+        // with its own method. The original method is stored in originalSetData,
+        // which is called after setData. Therefore, if the method originalSetData
+        // exists, we need to register the proxy on it instead of setData.
+        // Otherwise, we would work with data not yet update by the plugin.
+        // See https://github.com/drPilman/obsidian-graph-nested-tags/blob/master/src/main.ts#L36
+        const hasOriginalSetData = (instances.renderer as any).originalSetData && typeof (instances.renderer as any).originalSetData === 'function';
+
         ExtendedGraphInstances.proxysManager.registerProxy<typeof this.instances.renderer.setData>(
             this.instances.renderer,
-            "setData",
+            hasOriginalSetData ? "originalSetData" : "setData",
             {
                 apply(target, thisArg, args) {
                     const data = updateData(args[0] as GraphData);
