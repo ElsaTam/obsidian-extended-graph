@@ -128,7 +128,7 @@ export class GraphEventsDispatcher extends Component {
     private initializeFoldersUI(): void {
         if (!this.instances.settings.enableFeatures[this.instances.type]['folders']) return;
 
-        const graphControls = ExtendedGraphInstances.graphsManager.globalUIs.get(this.instances.view.leaf.id)?.control;
+        const graphControls = ExtendedGraphInstances.graphsManager.graphLeavesManager.globalUIs.get(this.instances.view.leaf.id)?.control;
         if (!graphControls) return;
 
         const foldersManager = this.instances.foldersSet?.managers.get(FOLDER_KEY);
@@ -157,6 +157,16 @@ export class GraphEventsDispatcher extends Component {
         this.loadCurrentStateEngineOptions();
         this.initGraphologyStats();
         this.createSetDataProxy();
+
+        const anyNode = this.instances.renderer.nodes[0];
+        const GraphNodeConstructor = anyNode.constructor;
+        const originalGetDisplayText = GraphNodeConstructor.prototype.getDisplayText;
+        GraphNodeConstructor.prototype.getDisplayText = function () {
+            return this.id;
+        };
+        this.instances.renderer.nodes.forEach(node => {
+            if (node.text) node.text.text = node.getDisplayText();
+        })
     }
 
     private loadCurrentStateEngineOptions(): void {
@@ -210,7 +220,7 @@ export class GraphEventsDispatcher extends Component {
                 }
             }
 
-            ExtendedGraphInstances.graphsManager.onPluginLoaded(this.instances.view);
+            ExtendedGraphInstances.graphsManager.lifecycleManager.onPluginLoaded(this.instances.view);
 
             // Make sure to render multiple frames to let the elements fade in
             if (this.instances.settings.fadeInElements) {
@@ -229,7 +239,7 @@ export class GraphEventsDispatcher extends Component {
             } else if (error instanceof Error) {
                 console.error(error.message);
             }
-            ExtendedGraphInstances.graphsManager.disablePluginFromLeafID(this.instances.view.leaf.id);
+            ExtendedGraphInstances.graphsManager.lifecycleManager.disablePluginFromLeafID(this.instances.view.leaf.id);
             return;
         }
     }
@@ -537,7 +547,7 @@ export class GraphEventsDispatcher extends Component {
         ExtendedGraphInstances.proxysManager.unregisterProxy(this.instances.renderer.initGraphics);
         this.instances.foldersUI?.destroy();
         this.inputsManager.unload();
-        ExtendedGraphInstances.graphsManager.onPluginUnloaded(this.instances.view);
+        ExtendedGraphInstances.graphsManager.lifecycleManager.onPluginUnloaded(this.instances.view);
         this.restoreArrowAlpha();
         this.restoreLineHighlight();
         this.unregisterEventsForLastFilteringAction();
@@ -584,10 +594,10 @@ export class GraphEventsDispatcher extends Component {
 
         const node = this.instances.renderer.nodes.find(n => n.circle === child);
         if (node) {
-            if (ExtendedGraphInstances.graphsManager.isNodeLimitExceededForView(this.instances.view)) {
+            if (ExtendedGraphInstances.graphsManager.lifecycleManager.isNodeLimitExceededForView(this.instances.view)) {
                 this.listenStage = false;
                 setTimeout(() => {
-                    ExtendedGraphInstances.graphsManager.disablePluginFromLeafID(this.instances.view.leaf.id);
+                    ExtendedGraphInstances.graphsManager.lifecycleManager.disablePluginFromLeafID(this.instances.view.leaf.id);
                 }, 200);
                 return;
             }
@@ -688,7 +698,7 @@ export class GraphEventsDispatcher extends Component {
 
         const showNotice = this.lastFilteringAction?.userChange || true;
         if (this.lastFilteringAction) this.lastFilteringAction.userChange = false;
-        if (ExtendedGraphInstances.graphsManager.isNodeLimitExceededForData(data, showNotice)) {
+        if (ExtendedGraphInstances.graphsManager.lifecycleManager.isNodeLimitExceededForData(data, showNotice)) {
             if (ExtendedGraphInstances.settings.revertAction && this.lastFilteringAction) {
                 this.revertLastFilteringAction();
                 return undefined;
@@ -696,7 +706,7 @@ export class GraphEventsDispatcher extends Component {
             else {
                 this.listenStage = false;
                 setTimeout(() => {
-                    ExtendedGraphInstances.graphsManager.disablePluginFromLeafID(this.instances.view.leaf.id);
+                    ExtendedGraphInstances.graphsManager.lifecycleManager.disablePluginFromLeafID(this.instances.view.leaf.id);
                 }, 200);
                 return undefined;
             }
@@ -754,12 +764,12 @@ export class GraphEventsDispatcher extends Component {
             this.instances.layersManager?.rebuildContainers();
             if (this.instances.settings.enableFeatures[this.instances.type].focus) {
                 if (this.instances.settings.highlightOpenNodes) {
-                    for (const id of ExtendedGraphInstances.graphsManager.openNodes) {
+                    for (const id of ExtendedGraphInstances.graphsManager.fileLeavesManager.openNodes) {
                         this.instances.nodesSet.extendedElementsMap.get(id)?.toggleOpenInTab(true);
                     }
                 }
                 if (this.instances.settings.highlightSearchResults) {
-                    for (const id of ExtendedGraphInstances.graphsManager.getSearchResults()) {
+                    for (const id of ExtendedGraphInstances.graphsManager.searchLeavesManager.getSearchResults()) {
                         this.instances.nodesSet.extendedElementsMap.get(id)?.toggleIsSearchResult(true);
                     }
                 }
@@ -808,7 +818,7 @@ export class GraphEventsDispatcher extends Component {
         // Disable the plugin if no last action was recorder (the plugin was just enabled)
         if (!this.lastFilteringAction || this.lastFilteringAction.id === undefined) {
             this.listenStage = false;
-            ExtendedGraphInstances.graphsManager.disablePluginFromLeafID(this.instances.view.leaf.id);
+            ExtendedGraphInstances.graphsManager.lifecycleManager.disablePluginFromLeafID(this.instances.view.leaf.id);
             return;
         }
 

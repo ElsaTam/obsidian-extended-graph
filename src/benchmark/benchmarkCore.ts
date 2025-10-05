@@ -605,7 +605,7 @@ export class ExtendedGraphBenchmarkRunner {
 
     private async initializePlugin(): Promise<void> {
         if (!this.view) return;
-        ExtendedGraphInstances.graphsManager.enablePlugin(this.view);
+        ExtendedGraphInstances.graphsManager.lifecycleManager.enablePlugin(this.view);
         await new Promise<void>(resolve => {
             ExtendedGraphInstances.app.workspace.on('extended-graph:enabled-in-view', (view) => {
                 console.log("Plugin enabled");
@@ -616,7 +616,7 @@ export class ExtendedGraphBenchmarkRunner {
 
     private async disablePlugin(): Promise<void> {
         if (!this.view) return;
-        ExtendedGraphInstances.graphsManager.disablePlugin(this.view);
+        ExtendedGraphInstances.graphsManager.lifecycleManager.disablePlugin(this.view);
         await new Promise<void>(resolve => {
             ExtendedGraphInstances.app.workspace.on('extended-graph:disabled-in-view', (view) => {
                 console.log("Plugin enabled");

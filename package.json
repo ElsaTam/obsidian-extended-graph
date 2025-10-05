@@ -9,7 +9,7 @@
 		"version": "node version-bump.mjs && git add manifest.json versions.json"
 	},
 	"keywords": [],
-	"author": "",
+	"author": "ElsaTam",
 	"license": "GPL-3.0-only",
 	"devDependencies": {
 		"@types/node": "^18.17.0 || >=20.1.0",

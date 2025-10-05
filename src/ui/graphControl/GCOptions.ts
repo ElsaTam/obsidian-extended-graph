@@ -53,7 +53,7 @@ export class GCOptions extends GCSection {
                             return;
                         }
                         ExtendedGraphInstances.plugin.importSettings(filepath).then(() => {
-                            ExtendedGraphInstances.graphsManager.resetPlugin(this.view, false);
+                            ExtendedGraphInstances.graphsManager.lifecycleManager.resetPlugin(this.view, false);
                         });
                     });
                     modal.open();

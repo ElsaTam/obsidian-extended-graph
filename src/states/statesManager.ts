@@ -60,9 +60,9 @@ export class StatesManager {
 
         // If the config has changed, we need to reset the plugin in order to restart with all the correct settings
         const config = this.getConfig(id);
-        if (ExtendedGraphInstances.settings.saveConfigsWithState && !ExtendedGraphInstances.graphsManager.isResetting.get(instances.view.leaf.id) && config) {
+        if (ExtendedGraphInstances.settings.saveConfigsWithState && !ExtendedGraphInstances.graphsManager.lifecycleManager.isResetting.get(instances.view.leaf.id) && config) {
             if (SettingQuery.needReload(instances.settings, config, instances.type)) {
-                ExtendedGraphInstances.graphsManager.resetPlugin(instances.view, true, id);
+                ExtendedGraphInstances.graphsManager.lifecycleManager.resetPlugin(instances.view, true, id);
                 return;
             }
             else {

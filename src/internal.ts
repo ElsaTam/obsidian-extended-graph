@@ -174,3 +174,10 @@ export * from "./helpers/plugins";
 export * from "./helpers/strings";
 export * from "./helpers/svg";
 export * from "./helpers/vault";
+
+export * from "./system/fileLeavesManager";
+export * from "./system/graphLeavesManager";
+export * from "./system/pluginLifecycleManager";
+export * from "./system/searchLeavesManager";
+export * from "./system/vaultStatsManager";
+export * from "./system/leavesManager";

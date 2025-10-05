@@ -179,7 +179,7 @@ export class ExtendedGraphLink extends ExtendedGraphElement<GraphLink> {
             || ExtendedGraphInstances.settings.linksSizeFunction === "default"
         ) return 1;
 
-        const calculator = this.instances.linksSizeCalculator ?? ExtendedGraphInstances.graphsManager.linksSizeCalculator;
+        const calculator = this.instances.linksSizeCalculator ?? ExtendedGraphInstances.graphsManager.vaultStatsManager.linksSizeCalculator;
         if (!calculator) return 1;
         if (!(this.coreElement.source.id in calculator.linksStats)) return 1;
         if (!(this.coreElement.target.id in calculator.linksStats[this.coreElement.source.id])) return 1;
@@ -298,7 +298,7 @@ export class ExtendedGraphLink extends ExtendedGraphElement<GraphLink> {
         if (ExtendedGraphInstances.settings.enableFeatures[this.instances.type]['elements-stats']
             && ExtendedGraphInstances.settings.linksColorFunction !== "default"
         ) {
-            const calculator = this.instances.linksColorCalculator ?? ExtendedGraphInstances.graphsManager.linksColorCalculator;
+            const calculator = this.instances.linksColorCalculator ?? ExtendedGraphInstances.graphsManager.vaultStatsManager.linksColorCalculator;
             if (calculator) {
                 if (this.coreElement.source.id in calculator.linksStats
                     && this.coreElement.target.id in calculator.linksStats[this.coreElement.source.id]

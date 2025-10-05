@@ -225,8 +225,8 @@ export class SettingElementsStats extends SettingsSectionPerGraphType {
         this.nodesPaletteSetting.onPaletteChange((palette: string) => {
             ExtendedGraphInstances.settings.nodesColorColormap = palette;
             ExtendedGraphInstances.plugin.saveSettings();
-            ExtendedGraphInstances.graphsManager.nodesColorCalculator?.mapStat();
-            ExtendedGraphInstances.graphsManager.updatePaletteForNodesStat();
+            ExtendedGraphInstances.graphsManager.vaultStatsManager.nodesColorCalculator?.mapStat();
+            ExtendedGraphInstances.graphsManager.vaultStatsManager.updatePaletteForNodesStat();
         });
 
         // Push to body list
@@ -292,8 +292,8 @@ export class SettingElementsStats extends SettingsSectionPerGraphType {
         this.linksPaletteSetting.onPaletteChange((palette: string) => {
             ExtendedGraphInstances.settings.linksColorColormap = palette;
             ExtendedGraphInstances.plugin.saveSettings();
-            ExtendedGraphInstances.graphsManager.linksColorCalculator?.mapStat();
-            ExtendedGraphInstances.graphsManager.updatePaletteForLinksStat();
+            ExtendedGraphInstances.graphsManager.vaultStatsManager.linksColorCalculator?.mapStat();
+            ExtendedGraphInstances.graphsManager.vaultStatsManager.updatePaletteForLinksStat();
         });
 
         // Push to body list

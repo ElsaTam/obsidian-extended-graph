@@ -338,7 +338,7 @@ export abstract class ExtendedGraphNode extends ExtendedGraphElement<GraphNode> 
         const node = this.coreElement;
         if (this.instances.settings.enableFeatures[this.instances.type]['elements-stats'] && this.instances.settings.nodesSizeFunction !== 'default') {
             const originalSize = node.renderer.fNodeSizeMult * 8;
-            const customFunctionFactor = (this.instances.nodesSizeCalculator ?? ExtendedGraphInstances.graphsManager.nodesSizeCalculator)?.filesStats.get(this.id)?.value;
+            const customFunctionFactor = (this.instances.nodesSizeCalculator ?? ExtendedGraphInstances.graphsManager.vaultStatsManager.nodesSizeCalculator)?.filesStats.get(this.id)?.value;
             return originalSize * customRadiusFactor * (customFunctionFactor ?? 1);
         }
         else {

@@ -70,7 +70,7 @@ export class ExtendedGraphFileNode extends ExtendedGraphNode {
 
         if ((this.instances.settings.enableFeatures[this.instances.type]["elements-stats"]
             && ExtendedGraphInstances.settings.nodesColorFunction !== "default")) {
-            const rgb = (this.instances.nodesColorCalculator ?? ExtendedGraphInstances.graphsManager.nodesColorCalculator)?.filesStats.get(this.id);
+            const rgb = (this.instances.nodesColorCalculator ?? ExtendedGraphInstances.graphsManager.vaultStatsManager.nodesColorCalculator)?.filesStats.get(this.id);
             if (rgb) return { rgb: rgb.value, a: 1 }
         }
 

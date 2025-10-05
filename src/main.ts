@@ -455,9 +455,9 @@ export default class ExtendedGraphPlugin extends Plugin {
     async onLayoutChange() {
         if (!this.app.internalPlugins.getPluginById("graph")?._loaded) return;
         const leaves = this.getGraphLeaves();
-        ExtendedGraphInstances.graphsManager.syncWithLeaves(leaves);
+        ExtendedGraphInstances.graphsManager.leavesManager.syncWithLeaves(leaves);
         leaves.forEach(leaf => {
-            ExtendedGraphInstances.graphsManager.initLeaf(leaf);
+            ExtendedGraphInstances.graphsManager.graphLeavesManager.initLeaf(leaf);
         });
     }
 

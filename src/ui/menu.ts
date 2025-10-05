@@ -28,9 +28,9 @@ export class MenuUI extends Component {
             //.setIcon("sparkles")
             .onClick(() => {
                 if (!this.enabled) {
-                    ExtendedGraphInstances.graphsManager.enablePlugin(this.view);
+                    ExtendedGraphInstances.graphsManager.lifecycleManager.enablePlugin(this.view);
                 } else {
-                    ExtendedGraphInstances.graphsManager.disablePlugin(this.view);
+                    ExtendedGraphInstances.graphsManager.lifecycleManager.disablePlugin(this.view);
                 }
             })
             .then(cb => {
@@ -45,7 +45,7 @@ export class MenuUI extends Component {
             .setIcon("rotate-ccw")
             .onClick(() => {
                 if (this.enabled) {
-                    ExtendedGraphInstances.graphsManager.resetPlugin(this.view);
+                    ExtendedGraphInstances.graphsManager.lifecycleManager.resetPlugin(this.view);
                 }
             })
             .then(cb => {
