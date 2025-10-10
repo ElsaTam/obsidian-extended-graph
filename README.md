@@ -96,12 +96,14 @@ If you don't need every features from this plugin and are looking for something 
 - [Waypoint](https://github.com/IdreesInc/Waypoint) by _IdreesInc_: generate dynamic MOCs in your folder notes, enable folders to show up in the graph view and remove the need for messy tags.
 - [New 3D Graph](https://github.com/Apoo711/obsidian-3d-graph) by _Apoo711_ (still in beta): Visualize your Vault in 3D with a powerful, highly customizable, and filterable graph.
 - [3D Graph View](http://github.com/AlexW00/obsidian-3d-graph) by _AlexW00_ and its fork [3d Graph View New](https://github.com/HananoshikaYomaru/obsidian-3d-graph) by HananoshikaYomaru: a 3D Graph for Obsidian.
+- [Sonigraph](https://github.com/banisterious/obsidian-sonigraph) by _banisterious_: transforms the visual structure of your knowledge graph into music.
 
 (if you know more, let me know)
 
 # License
 
 GNU General Public License version 3 (GPLv3) License
+
 
 
 
