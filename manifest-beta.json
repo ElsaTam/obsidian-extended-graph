@@ -1,7 +1,7 @@
 {
 	"id": "extended-graph",
 	"name": "Extended Graph",
-	"version": "2.7.6",
+	"version": "2.7.7",
 	"minAppVersion": "1.7.0",
 	"description": "Extends the features of the core Graph view, display images, manage states, remove links, change node shapes, and more.",
 	"author": "Kapirklaa",
