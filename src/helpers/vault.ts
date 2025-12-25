@@ -6,12 +6,16 @@ export function getFile(path: string): TFile | null {
     return ExtendedGraphInstances.app.vault.getFileByPath(path);
 }
 
-export function getFileInteractives(interactive: string, file: TFile, settings?: ExtendedGraphSettings): Set<string> {
+/**
+ * Get interactive types (tags, folders, or properties) from a file.
+ * @returns Set<string> with types, empty Set if exists but empty, or null if property doesn't exist (only for properties, not tag/folder)
+ */
+export function getFileInteractives(interactive: string, file: TFile, settings?: ExtendedGraphSettings): Set<string> | null {
     if (ExtendedGraphInstances.app.metadataCache.isUserIgnored(file.path)) return new Set();
 
     if (file.extension !== "md" || file.deleted) return new Set<string>();
 
-    let results: Set<string>;
+    let results: Set<string> | null;
     switch (interactive) {
         case TAG_KEY:
             results = getTags(file);
@@ -23,6 +27,8 @@ export function getFileInteractives(interactive: string, file: TFile, settings?:
             results = getProperty(settings ?? ExtendedGraphInstances.settings, interactive, file);
             break;
     }
+    // If null (property doesn't exist), return null
+    if (results === null) return null;
     return new Set([...results].filter(type => !SettingQuery.excludeType(settings ?? ExtendedGraphInstances.settings, interactive, type)));
 }
 
@@ -98,7 +104,11 @@ function recursiveGetProperties(value: any, types: Set<string>): void {
     }
 }
 
-function getProperty(settings: ExtendedGraphSettings, key: string, file: TFile): Set<string> {
+/**
+ * Get property values from a file.
+ * @returns Set<string> with property values, empty Set if property exists but is empty, or null if property doesn't exist
+ */
+function getProperty(settings: ExtendedGraphSettings, key: string, file: TFile): Set<string> | null {
     const dv = getDataviewPlugin();
     const types = new Set<string>();
 
@@ -108,30 +118,44 @@ function getProperty(settings: ExtendedGraphSettings, key: string, file: TFile):
         if (sourcePage) {
             if (settings.canonicalizePropertiesWithDataview) {
                 const uncanonicalizedKeys = Object.keys(sourcePage).filter(k => canonicalizeVarName(k) === canonicalizeVarName(key));
+                // Check if property exists
+                if (uncanonicalizedKeys.length === 0) {
+                    return null; // Property doesn't exist
+                }
                 const values = uncanonicalizedKeys.reduce((acc: any[], k: string) => {
                     if (sourcePage[k] === null || sourcePage[k] === undefined || sourcePage[k] === '') {
                         return acc;
                     }
                     return acc.concat([sourcePage[k]]);
                 }, []);
-                if (values.length === 0) return new Set<string>();
+                if (values.length === 0) return new Set<string>(); // Property exists but is empty
                 recursiveGetProperties(values, types);
             }
             else {
+                // Check if property exists
+                if (!(key in sourcePage)) {
+                    return null; // Property doesn't exist
+                }
                 const values = sourcePage[key];
-                if (values === null || values === undefined || values === '') return new Set<string>();
+                if (values === null || values === undefined || values === '') return new Set<string>(); // Property exists but is empty
                 recursiveGetProperties(values, types);
             }
+        } else {
+            return null; // No page found, treat as property doesn't exist
         }
     }
 
     // Links in the frontmatter
     else {
         const frontmatter = ExtendedGraphInstances.app.metadataCache.getFileCache(file)?.frontmatter;
-        if (frontmatter?.hasOwnProperty(key)) {
-            const values = frontmatter[key];
-            recursiveGetProperties(values, types);
+        if (!frontmatter || !frontmatter.hasOwnProperty(key)) {
+            return null; // Property doesn't exist
         }
+        const values = frontmatter[key];
+        if (values === null || values === undefined || values === '') {
+            return new Set<string>(); // Property exists but is empty
+        }
+        recursiveGetProperties(values, types);
     }
 
     return types;

@@ -101,9 +101,14 @@ export class GraphFilter {
             const file = getFile(id);
             if (file) {
                 for (const [key, manager] of this.instances.nodesSet.managers) {
-                    const interactives = getFileInteractives(key, file, this.instances.settings);
-                    if (interactives.size === 0) {
-                        interactives.add(this.instances.settings.interactiveSettings[key].noneType);
+                    const settings = this.instances.settings.interactiveSettings[key];
+                    let interactives = getFileInteractives(key, file, this.instances.settings);
+                    if (interactives === null) {
+                        // Property doesn't exist
+                        interactives = new Set([settings.undefinedType ?? settings.noneType]);
+                    } else if (interactives.size === 0) {
+                        // Property exists but is empty
+                        interactives.add(settings.noneType);
                     }
                     if (interactives.size > 0 && !manager.isActiveBasedOnTypes([...interactives])) {
                         return true;

@@ -291,6 +291,7 @@ export class InputsManager {
         for (const file of ExtendedGraphInstances.app.vault.getMarkdownFiles()) {
             for (const property of ExtendedGraphInstances.settings.externalLinksProperties) {
                 const noteURLValues = getFileInteractives(property, file);
+                if (!noteURLValues) continue;
                 for (const noteURLValue of noteURLValues) {
                     try {
                         const noteURL = new URL(noteURLValue);

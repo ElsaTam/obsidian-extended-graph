@@ -232,6 +232,7 @@ export class FoldersSet {
                 if (this.foldersMap.has(file.path)) continue;
 
                 const interactives = getFileInteractives(FOLDER_KEY, file);
+                if (!interactives) continue;
                 this.addInteractivesToSet(key, interactives, missingFolders);
             }
 
