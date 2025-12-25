@@ -36,7 +36,8 @@ type InteractiveSettings = {
     excludeRegex: { regex: string, flags: string };
     noneType: string;
     showOnGraph: boolean;
-    enableByDefault: boolean
+    enableByDefault: boolean;
+    useForNodeColor?: boolean; // Only used for properties (not tag/link/folder)
 }
 
 export type ExportSVGOptions = {

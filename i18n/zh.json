@@ -214,6 +214,8 @@
             "linkTypesDesc": "显示和筛选链接类型",
             "noneTypeID": "无类型ID",
             "noneTypeIDDesc": "如果未找到将赋予的ID",
+            "useForNodeColor": "用于节点颜色",
+            "useForNodeColorDesc": "将此属性的颜色应用于节点背景",
             "palette": "调色板",
             "paletteDesc": "选择调色板",
             "paletteMatplotlibDesc": "这些颜色映射来自 matplotlib。您可以在此处查看更多信息：",

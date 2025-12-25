@@ -248,6 +248,8 @@
             "linkTypesDesc": "Display and filter link types",
             "noneTypeID": "None type id",
             "noneTypeIDDesc": "The id which will be given if nothing is found for ",
+            "useForNodeColor": "Use for node color",
+            "useForNodeColorDesc": "Apply this property's color to the node background",
             "palette": "Color palette",
             "paletteDesc": "Choose the color palette for ",
             "paletteMatplotlibDesc": "These colormaps come from matplotlib. You can see more about them here: ",
