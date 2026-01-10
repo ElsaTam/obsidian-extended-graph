@@ -32,7 +32,7 @@ export class ExtendedElementsSuggester extends AbstractInputSuggest<string> {
                 const manager = this.instances.foldersSet.managers.get(FOLDER_KEY);
                 if (!manager) return [];
 
-                return manager.getTypesWithoutNone()
+                return manager.getTypesWithoutSentinels()
                     .filter(id => new RegExp(query, "i").exec(id));
         }
     }

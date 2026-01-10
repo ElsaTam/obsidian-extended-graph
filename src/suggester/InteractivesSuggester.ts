@@ -29,7 +29,10 @@ export class InteractivesSuggester extends AbstractFormattingSuggester {
                 else {
                     const files = ExtendedGraphInstances.app.vault.getMarkdownFiles();
                     for (const file of files) {
-                        values = values.concat([...getFileInteractives(this.propertyKey, file, this.settings)]);
+                        const types = getFileInteractives(this.propertyKey, file, this.settings);
+                        if (types) {
+                            values = values.concat([...types]);
+                        }
                     }
                 }
                 break;

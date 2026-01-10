@@ -94,6 +94,7 @@ export class SettingPropertiesArray extends SettingsSectionPerGraphType {
             unselected: [],
             excludeRegex: { regex: "", flags: "" },
             noneType: "none",
+            undefinedType: "undefined",
             showOnGraph: true,
             enableByDefault: true,
             useForNodeColor: false,
@@ -146,7 +147,7 @@ export class SettingProperty extends SettingInteractives {
     }
 
     protected override addBody(): void {
-        super.addBody();
+        super.addBody({ alsoAddUndefined: true });
 
         // Show on graph
         this.elementsBody.push(new Setting(this.array.propertiesContainer)

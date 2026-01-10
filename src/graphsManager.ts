@@ -192,10 +192,18 @@ export class GraphsManager extends Component {
             const extendedNode = instances.nodesSet.extendedElementsMap.get(file.path) as ExtendedGraphFileNode;
             if (!extendedNode) return;
             for (const [key, manager] of instances.nodesSet.managers) {
-                let newTypes = [...getFileInteractives(key, file, instances.settings)];
-                newTypes = newTypes.filter(type => !SettingQuery.excludeType(ExtendedGraphInstances.settings, key, type));
-                if (newTypes.length === 0) {
-                    newTypes.push(instances.settings.interactiveSettings[key].noneType);
+                const settings = instances.settings.interactiveSettings[key];
+                const fileTypes = getFileInteractives(key, file, instances.settings);
+                let newTypes: string[];
+                if (fileTypes === null) {
+                    // Property doesn't exist
+                    newTypes = [settings.undefinedType ?? settings.noneType];
+                } else {
+                    newTypes = [...fileTypes].filter(type => !SettingQuery.excludeType(ExtendedGraphInstances.settings, key, type));
+                    if (newTypes.length === 0) {
+                        // Property exists but is empty
+                        newTypes.push(settings.noneType);
+                    }
                 }
                 const { typesToRemove: typesToRemoveForTheNode, typesToAdd: typesToAddForTheNode } = extendedNode.matchesTypes(key, [...newTypes]);
                 for (const type of typesToRemoveForTheNode) {

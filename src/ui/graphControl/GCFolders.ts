@@ -70,7 +70,7 @@ export class GCFolders extends GCSection implements InteractiveUI {
     }
 
     private createFolders(): void {
-        const paths = this.foldersManager?.getTypesWithoutNone();
+        const paths = this.foldersManager?.getTypesWithoutSentinels();
         if (!paths) return;
         for (const path of paths) {
             this.add(FOLDER_KEY, path, this.foldersManager.getColor(path));

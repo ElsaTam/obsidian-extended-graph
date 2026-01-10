@@ -21,6 +21,7 @@ import ExtendedGraphPlugin from "../../main";
 
 export abstract class SettingInteractives extends SettingsSectionPerGraphType {
     noneType: string = "";
+    undefinedType: string = "";
 
     settingInteractiveColor: Setting;
     settingInteractiveFilter: Setting;
@@ -34,9 +35,12 @@ export abstract class SettingInteractives extends SettingsSectionPerGraphType {
         this.canBeRecursive = canBeRecursive;
     }
 
-    protected override addBody(): void {
+    protected override addBody(options: { alsoAddUndefined?: boolean } = {}): void {
         this.colors = [];
         this.addNoneTypeSetting();
+        if (options.alsoAddUndefined) {
+            this.addUndefinedTypeSetting();
+        }
         this.addColorPaletteSetting();
         this.addSpecificColorHeaderSetting();
         for (const interactive of ExtendedGraphInstances.settings.interactiveSettings[this.interactiveKey].colors) {
@@ -62,6 +66,27 @@ export abstract class SettingInteractives extends SettingsSectionPerGraphType {
                     //INVALID_KEYS[this.interactiveKey].remove(this.noneType);
                     //INVALID_KEYS[this.interactiveKey].push(value);
                     this.noneType = value;
+                    await ExtendedGraphInstances.plugin.saveSettings();
+                }));
+        this.elementsBody.push(setting.settingEl);
+    }
+
+    protected addUndefinedTypeSetting() {
+        const settings = ExtendedGraphInstances.settings.interactiveSettings[this.interactiveKey];
+        if (settings.undefinedType === undefined) {
+            settings.undefinedType = "undefined";
+        }
+        this.undefinedType = settings.undefinedType;
+        const setting = new Setting(this.containerEl)
+            .setName(t("features.interactives.undefinedTypeID"))
+            .setDesc(t("features.interactives.undefinedTypeIDDesc") + this.interactiveKey)
+            .addText(cb => cb
+                .setValue(settings.undefinedType ?? "undefined")
+                .onChange(async (value) => {
+                    value = value.trim();
+                    if (value == this.undefinedType) return;
+                    ExtendedGraphInstances.settings.interactiveSettings[this.interactiveKey].undefinedType = value;
+                    this.undefinedType = value;
                     await ExtendedGraphInstances.plugin.saveSettings();
                 }));
         this.elementsBody.push(setting.settingEl);
@@ -118,7 +143,10 @@ export abstract class SettingInteractives extends SettingsSectionPerGraphType {
         let allTypes = new Set<string>();
         const files = ExtendedGraphInstances.app.vault.getFiles();
         for (const file of files) {
-            allTypes = new Set<string>([...allTypes, ...getFileInteractives(this.interactiveKey, file)]);
+            const types = getFileInteractives(this.interactiveKey, file);
+            if (types) {
+                allTypes = new Set<string>([...allTypes, ...types]);
+            }
         }
         return [...allTypes].sort();
     }

@@ -445,6 +445,7 @@ export class LayersManager {
     static getNodeLayer(file: TFile, settings: ExtendedGraphSettings): Layer | null {
         for (const property of settings.layerProperties.filter(p => p !== "")) {
             const values = getFileInteractives(property, file, settings);
+            if (!values) continue;
             for (const layerID of values) {
                 const parsed = LayersManager.parseLayerID(layerID);
 
