@@ -157,16 +157,6 @@ export class GraphEventsDispatcher extends Component {
         this.loadCurrentStateEngineOptions();
         this.initGraphologyStats();
         this.createSetDataProxy();
-
-        const anyNode = this.instances.renderer.nodes[0];
-        const GraphNodeConstructor = anyNode.constructor;
-        const originalGetDisplayText = GraphNodeConstructor.prototype.getDisplayText;
-        GraphNodeConstructor.prototype.getDisplayText = function () {
-            return this.id;
-        };
-        this.instances.renderer.nodes.forEach(node => {
-            if (node.text) node.text.text = node.getDisplayText();
-        })
     }
 
     private loadCurrentStateEngineOptions(): void {
