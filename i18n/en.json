@@ -247,9 +247,6 @@
             "linkTypes": "Link types",
             "linkTypesDesc": "Display and filter link types",
             "noneTypeID": "None type id",
-            "noneTypeIDDesc": "The id which will be given if nothing is found for ",
-            "useForNodeColor": "Use for node color",
-            "useForNodeColorDesc": "Apply this property's color to the node background",
             "noneTypeIDDesc": "The id which will be given if property exists but has no value",
             "undefinedTypeID": "Undefined type id",
             "undefinedTypeIDDesc": "The id which will be given if property does not exist",
@@ -271,7 +268,9 @@
             "specificColors": "Specific colors",
             "specificColorsDesc": "Choose specific colors to override the color palette",
             "tags": "Tags",
-            "tagsDesc": "Display and filter by tags"
+            "tagsDesc": "Display and filter by tags",
+            "useForNodeColor": "Use for node color",
+            "useForNodeColorDesc": "Apply this property's color to the node background"
         },
         "layers": "Layers",
         "layersDesc": "Group nodes by layers and adjust their opacity",
