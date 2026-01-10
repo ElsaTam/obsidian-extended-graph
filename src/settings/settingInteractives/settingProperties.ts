@@ -97,6 +97,7 @@ export class SettingPropertiesArray extends SettingsSectionPerGraphType {
             undefinedType: "undefined",
             showOnGraph: true,
             enableByDefault: true,
+            useForNodeColor: false,
         }
         ExtendedGraphInstances.plugin.saveSettings().then(() => {
             const setting = new SettingProperty(key, this.settingTab, this);
@@ -156,6 +157,18 @@ export class SettingProperty extends SettingInteractives {
                 cb.setValue(ExtendedGraphInstances.settings.interactiveSettings[this.interactiveKey].showOnGraph);
                 cb.onChange(value => {
                     ExtendedGraphInstances.settings.interactiveSettings[this.interactiveKey].showOnGraph = value;
+                    ExtendedGraphInstances.plugin.saveSettings();
+                })
+            }).settingEl);
+
+        // Use for node color
+        this.elementsBody.push(new Setting(this.array.propertiesContainer)
+            .setName(t("features.interactives.useForNodeColor"))
+            .setDesc(t("features.interactives.useForNodeColorDesc"))
+            .addToggle(cb => {
+                cb.setValue(ExtendedGraphInstances.settings.interactiveSettings[this.interactiveKey].useForNodeColor ?? false);
+                cb.onChange(value => {
+                    ExtendedGraphInstances.settings.interactiveSettings[this.interactiveKey].useForNodeColor = value;
                     ExtendedGraphInstances.plugin.saveSettings();
                 })
             }).settingEl);

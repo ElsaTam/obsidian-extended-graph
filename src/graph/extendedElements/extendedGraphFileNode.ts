@@ -1,5 +1,6 @@
 import { GraphColorAttributes } from "obsidian-typings";
-import { evaluateCMap, ExtendedGraphNode, FileNodeGraphicsWrapper, NodeShape, ExtendedGraphInstances, ShapeEnum } from "../../internal";
+import { blendMultiple } from "../../colors/color-bits";
+import { evaluateCMap, ExtendedGraphNode, FileNodeGraphicsWrapper, NodeShape, ExtendedGraphInstances, ShapeEnum, TAG_KEY, LINK_KEY, FOLDER_KEY } from "../../internal";
 
 export class ExtendedGraphFileNode extends ExtendedGraphNode {
     graphicsWrapper: FileNodeGraphicsWrapper;
@@ -54,7 +55,17 @@ export class ExtendedGraphFileNode extends ExtendedGraphNode {
     protected override needToChangeColor() {
         return super.needToChangeColor() ||
             (this.instances.settings.enableFeatures[this.instances.type]["elements-stats"]
-                && ExtendedGraphInstances.settings.nodesColorFunction !== "default");
+                && ExtendedGraphInstances.settings.nodesColorFunction !== "default")
+            || this.needPropertyBasedColoring();
+    }
+
+    private needPropertyBasedColoring(): boolean {
+        if (!this.instances.settings.enableFeatures[this.instances.type]['properties']) return false;
+        for (const key of this.managers.keys()) {
+            if (key === TAG_KEY || key === LINK_KEY || key === FOLDER_KEY) continue;
+            if (this.instances.settings.interactiveSettings[key]?.useForNodeColor) return true;
+        }
+        return false;
     }
 
     protected override needToUpdateGraphicsColor(): boolean {
@@ -80,6 +91,28 @@ export class ExtendedGraphFileNode extends ExtendedGraphNode {
             if (depth && depth > 0) {
                 const x = (depth - 1) / (maxDepth - 1);
                 return { rgb: evaluateCMap(x, this.instances.settings.depthColormap, this.instances.settings), a: 1 };
+            }
+        }
+
+        // Property-based coloring (priority 5)
+        if (this.instances.settings.enableFeatures[this.instances.type]['properties']) {
+            const propertyColors: number[] = [];
+            for (const [key, manager] of this.managers) {
+                if (key === TAG_KEY || key === LINK_KEY || key === FOLDER_KEY) continue;
+                if (!this.instances.settings.interactiveSettings[key]?.useForNodeColor) continue;
+
+                const types = this.types.get(key);
+                if (types && types.size > 0) {
+                    for (const type of types) {
+                        const color = manager.getColor(type);
+                        if (color) propertyColors.push(color);
+                    }
+                }
+            }
+
+            if (propertyColors.length > 0) {
+                const blendedColor = blendMultiple(propertyColors);
+                return { rgb: blendedColor, a: 1 };
             }
         }
     }

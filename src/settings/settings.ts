@@ -37,7 +37,8 @@ type InteractiveSettings = {
     noneType: string;
     undefinedType?: string; // Only used for properties (not tag/link/folder)
     showOnGraph: boolean;
-    enableByDefault: boolean
+    enableByDefault: boolean;
+    useForNodeColor?: boolean; // Only used for properties (not tag/link/folder)
 }
 
 export type ExportSVGOptions = {

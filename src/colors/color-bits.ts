@@ -385,6 +385,22 @@ export function blend(background: Color, overlay: Color, opacity: number, gamma 
 }
 
 /**
+ * Blend multiple colors together with equal weight.
+ * @param colors Array of colors to blend
+ * @returns The blended color, or 0 if the array is empty
+ */
+export function blendMultiple(colors: Color[]): Color {
+    if (colors.length === 0) return 0;
+    if (colors.length === 1) return colors[0];
+
+    let result = colors[0];
+    for (let i = 1; i < colors.length; i++) {
+        result = blend(result, colors[i], 1 / (i + 1));
+    }
+    return result;
+}
+
+/**
  * The relative brightness of any point in a color space, normalized to 0 for
  * darkest black and 1 for lightest white.
  * @returns The relative brightness of the color in the range 0 - 1, with 3 digits precision
