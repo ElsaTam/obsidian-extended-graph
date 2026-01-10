@@ -94,7 +94,7 @@ export class ExtendedGraphFileNode extends ExtendedGraphNode {
             }
         }
 
-        // Property-based coloring (priority 5)
+        // Property-based coloring
         if (this.instances.settings.enableFeatures[this.instances.type]['properties']) {
             const propertyColors: number[] = [];
             for (const [key, manager] of this.managers) {
