@@ -71,7 +71,10 @@ export class ArcsCircle extends Graphics implements ManagerGraphics {
         this.thickness = ArcsCircle.thickness * NodeShape.getSizeFactor(this.shape) * NodeShape.RADIUS * 2;
 
         for (const type of this.types) {
-            if (type === this.manager.instances.settings.interactiveSettings[this.manager.name].noneType) continue;
+            const settings = this.manager.instances.settings.interactiveSettings[this.manager.name];
+            const isSentinel = type === settings.noneType || (settings.undefinedType && type === settings.undefinedType);
+            // Skip sentinel types unless they have a user-defined color
+            if (isSentinel && !this.manager.hasSentinelColorSetting(type)) continue;
             const index = allTypes.findIndex(t => t === type);
             let arc = this.graphics.get(type);
             if (!arc) {

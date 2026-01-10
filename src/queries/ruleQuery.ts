@@ -69,16 +69,16 @@ export class RuleQuery implements IRuleQuery {
                 return true;
             case 'tag':
                 const tags = getFileInteractives(TAG_KEY, file);
-                return this.checkLogic([...tags]);
+                return this.checkLogic([...(tags ?? [])]);
 
             case 'link':
                 const links = getFileInteractives(LINK_KEY, file, settings);
-                return this.checkLogic([...links]);
+                return this.checkLogic([...(links ?? [])]);
 
             case 'property':
                 if (!this.property) break;
                 const properties = getFileInteractives(this.property, file, settings);
-                return this.checkLogic([...properties]);
+                return this.checkLogic([...(properties ?? [])]);
 
             case 'file':
                 return this.checkLogic(file.basename);

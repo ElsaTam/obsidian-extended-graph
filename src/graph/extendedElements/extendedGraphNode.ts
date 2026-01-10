@@ -215,6 +215,7 @@ export abstract class ExtendedGraphNode extends ExtendedGraphElement<GraphNode> 
                 let found = false;
                 for (const property of this.instances.settings.iconProperties) {
                     const iconList = getFileInteractives(property, file, this.instances.settings);
+                    if (!iconList) continue;
                     for (const iconString of iconList) {
                         if (isEmoji(iconString)) {
                             icon = { svg: null, color: null, emoji: iconString };
@@ -309,6 +310,7 @@ export abstract class ExtendedGraphNode extends ExtendedGraphElement<GraphNode> 
                 if (file) {
                     for (const property of properties) {
                         const values = getFileInteractives(property, file, this.instances.settings);
+                        if (!values) continue;
                         for (const value of values) {
                             if (isNumber(value)) {
                                 this.radius = parseInt(value);

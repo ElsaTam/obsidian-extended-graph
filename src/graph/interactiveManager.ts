@@ -95,9 +95,13 @@ export class InteractiveManager extends Component {
         if ([...types].length === 0) return;
 
         const colorsMaps = new Map<string, Color.Color>();
+        const settings = this.instances.settings.interactiveSettings[this.name];
         const allTypes = new Set<string>([...this.interactives.keys(), ...types].sort());
         const allTypesWithoutNone = new Set<string>(allTypes);
-        allTypesWithoutNone.delete(this.instances.settings.interactiveSettings[this.name].noneType);
+        allTypesWithoutNone.delete(settings.noneType);
+        if (settings.undefinedType) {
+            allTypesWithoutNone.delete(settings.undefinedType);
+        }
         types.forEach(type => {
             if (SettingQuery.excludeType(this.instances.settings, this.name, type)) {
                 return;
@@ -132,8 +136,25 @@ export class InteractiveManager extends Component {
 
     getTypesWithoutNone(): string[] {
         const types = this.getTypes();
-        types.remove(this.instances.settings.interactiveSettings[this.name].noneType);
+        const settings = this.instances.settings.interactiveSettings[this.name];
+        types.remove(settings.noneType);
+        if (settings.undefinedType) {
+            types.remove(settings.undefinedType);
+        }
         return types;
+    }
+
+    /**
+     * Check if a sentinel type (noneType/undefinedType) has a user-defined color setting.
+     */
+    hasSentinelColorSetting(type: string): boolean {
+        const settings = this.instances.settings.interactiveSettings[this.name];
+        const isSentinel = type === settings.noneType || (settings.undefinedType && type === settings.undefinedType);
+        if (!isSentinel) return false;
+
+        return settings.colors.some(
+            p => p.type === type || (p.recursive && type.startsWith(p.type.endsWith("/") ? p.type : (p.type + "/")))
+        );
     }
 
     update(types: Set<string>): void {
@@ -158,15 +179,16 @@ export class InteractiveManager extends Component {
 
     private tryComputeColorFromType(type: string): Color.Color | null {
         let color: Color.Color;
+        const settings = this.instances.settings.interactiveSettings[this.name];
         // Check if the type has a specific color set from the user
-        const colorSettings = this.instances.settings.interactiveSettings[this.name].colors.find(
+        const colorSettings = settings.colors.find(
             p => p.type === type || (p.recursive && type.startsWith(p.type.endsWith("/") ? p.type : (p.type + "/")))
         )?.color;
         if (colorSettings) {
             color = hex2int(colorSettings);
         }
-        // Else, check if it's the "none" type
-        else if (type === this.instances.settings.interactiveSettings[this.name].noneType) {
+        // Else, check if it's the "none" type or "undefined" type
+        else if (type === settings.noneType || (settings.undefinedType && type === settings.undefinedType)) {
             if (this.name === LINK_KEY) {
                 color = this.instances.renderer.colors.line.rgb;
             }
@@ -177,7 +199,10 @@ export class InteractiveManager extends Component {
         // Else, apply the palette
         else {
             const allTypesWithoutNone = [...this.interactives.keys()];
-            allTypesWithoutNone.remove(this.instances.settings.interactiveSettings[this.name].noneType);
+            allTypesWithoutNone.remove(settings.noneType);
+            if (settings.undefinedType) {
+                allTypesWithoutNone.remove(settings.undefinedType);
+            }
             const nColors = allTypesWithoutNone.length;
             const i = allTypesWithoutNone.indexOf(type);
             if (i < 0) {

@@ -73,17 +73,25 @@ export abstract class AbstractSet<T extends GraphNode | GraphLink> {
             isElementMissing = true;
 
             let types: Set<string> = new Set<string>();
+            const interactiveSettings = this.instances.settings.interactiveSettings[key];
             if ((element as GraphNode).type === "tag" && key === TAG_KEY) {
                 types.add((element as GraphNode).id.replace("#", ""));
             }
             else if (file && file instanceof TFile) {
-                types = this.getTypesFromFile(key, element, file);
-                if (types.size === 0) {
-                    types.add(this.instances.settings.interactiveSettings[key].noneType);
+                const fileTypes = this.getTypesFromFile(key, element, file);
+                if (fileTypes === null) {
+                    // Property doesn't exist - use undefinedType if available, otherwise noneType
+                    types.add(interactiveSettings.undefinedType ?? interactiveSettings.noneType);
+                } else if (fileTypes.size === 0) {
+                    // Property exists but is empty - use noneType
+                    types.add(interactiveSettings.noneType);
+                } else {
+                    types = fileTypes;
                 }
             }
             else {
-                types.add(this.instances.settings.interactiveSettings[key].noneType);
+                // No file found - use undefinedType if available, otherwise noneType
+                types.add(interactiveSettings.undefinedType ?? interactiveSettings.noneType);
             }
             this.addTypes(key, types, id, missingTypes);
         }
@@ -197,7 +205,7 @@ export abstract class AbstractSet<T extends GraphNode | GraphLink> {
     }
 
     protected abstract getID(coreElement: T): string;
-    protected abstract getTypesFromFile(key: string, coreElement: T, file: TFile): Set<string>;
+    protected abstract getTypesFromFile(key: string, coreElement: T, file: TFile): Set<string> | null;
     protected abstract getAbstractFile(coreElement: T): TAbstractFile | null;
 
     // ============================= TOGGLE TYPES ==============================

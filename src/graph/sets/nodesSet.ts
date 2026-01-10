@@ -230,7 +230,7 @@ export class NodesSet extends AbstractSet<GraphNode> {
         return element.id;
     }
 
-    protected override getTypesFromFile(key: string, element: GraphNode, file: TFile): Set<string> {
+    protected override getTypesFromFile(key: string, element: GraphNode, file: TFile): Set<string> | null {
         return getFileInteractives(key, file, this.instances.settings);
     }
 

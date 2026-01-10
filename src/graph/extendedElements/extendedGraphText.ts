@@ -165,6 +165,7 @@ export class ExtendedGraphText {
         if (!file) return;
         for (const property of this.instances.settings.usePropertiesForName) {
             const values = getFileInteractives(property, file, this.instances.settings);
+            if (!values) continue;
             for (const value of values) {
                 if (value !== undefined && value !== null) {
                     return value.toString();

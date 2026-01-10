@@ -7,6 +7,6 @@ export class TagsCountCalculator extends NodeStatCalculator {
 
     override async getStat(id: string, direction: GraphStatsDirection): Promise<number> {
         const file = getFile(id);
-        return file ? getFileInteractives(TAG_KEY, file).size : 0;
+        return file ? (getFileInteractives(TAG_KEY, file)?.size ?? 0) : 0;
     }
 }

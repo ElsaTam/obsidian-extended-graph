@@ -35,6 +35,7 @@ type InteractiveSettings = {
     unselected: string[];
     excludeRegex: { regex: string, flags: string };
     noneType: string;
+    undefinedType?: string; // Only used for properties (not tag/link/folder)
     showOnGraph: boolean;
     enableByDefault: boolean
 }

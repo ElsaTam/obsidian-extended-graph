@@ -621,9 +621,11 @@ export class GraphEventsDispatcher extends Component {
             const folderManager = this.instances.foldersSet?.managers.get(FOLDER_KEY);
             if (file && folderManager) {
                 const paths = getFileInteractives(FOLDER_KEY, file);
-                for (const path of paths) {
-                    if (folderManager.isActive(path)) {
-                        this.instances.foldersSet?.loadFolder(FOLDER_KEY, path);
+                if (paths) {
+                    for (const path of paths) {
+                        if (folderManager.isActive(path)) {
+                            this.instances.foldersSet?.loadFolder(FOLDER_KEY, path);
+                        }
                     }
                 }
             }
