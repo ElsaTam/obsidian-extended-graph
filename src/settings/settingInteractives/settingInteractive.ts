@@ -20,8 +20,8 @@ import {
 import ExtendedGraphPlugin from "../../main";
 
 export abstract class SettingInteractives extends SettingsSectionPerGraphType {
-    noneType = "";
-    undefinedType = "";
+    noneType: string = "";
+    undefinedType: string = "";
 
     settingInteractiveColor: Setting;
     settingInteractiveFilter: Setting;
