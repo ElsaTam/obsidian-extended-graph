@@ -35,9 +35,12 @@ export abstract class SettingInteractives extends SettingsSectionPerGraphType {
         this.canBeRecursive = canBeRecursive;
     }
 
-    protected override addBody(): void {
+    protected override addBody(options: { alsoAddUndefined?: boolean } = {}): void {
         this.colors = [];
         this.addNoneTypeSetting();
+        if (options.alsoAddUndefined) {
+            this.addUndefinedTypeSetting();
+        }
         this.addColorPaletteSetting();
         this.addSpecificColorHeaderSetting();
         for (const interactive of ExtendedGraphInstances.settings.interactiveSettings[this.interactiveKey].colors) {

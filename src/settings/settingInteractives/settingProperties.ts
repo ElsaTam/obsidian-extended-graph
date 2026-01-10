@@ -146,19 +146,7 @@ export class SettingProperty extends SettingInteractives {
     }
 
     protected override addBody(): void {
-        // Don't call super.addBody() directly - we need to insert undefinedType after noneType
-        this.colors = [];
-        this.addNoneTypeSetting();
-        this.addUndefinedTypeSetting();
-        this.addColorPaletteSetting();
-        this.addSpecificColorHeaderSetting();
-        for (const interactive of ExtendedGraphInstances.settings.interactiveSettings[this.interactiveKey].colors) {
-            if (this.canBeRecursive && interactive.recursive === undefined) {
-                interactive.recursive = false;
-            }
-            this.addColor(interactive);
-        }
-        this.addFilterTypeSetting();
+        super.addBody({ alsoAddUndefined: true });
 
         // Show on graph
         this.elementsBody.push(new Setting(this.array.propertiesContainer)
