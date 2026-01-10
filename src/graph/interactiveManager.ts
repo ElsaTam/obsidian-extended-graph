@@ -97,10 +97,10 @@ export class InteractiveManager extends Component {
         const colorsMaps = new Map<string, Color.Color>();
         const settings = this.instances.settings.interactiveSettings[this.name];
         const allTypes = new Set<string>([...this.interactives.keys(), ...types].sort());
-        const allTypesWithoutNone = new Set<string>(allTypes);
-        allTypesWithoutNone.delete(settings.noneType);
+        const allTypesWithoutSentinels = new Set<string>(allTypes);
+        allTypesWithoutSentinels.delete(settings.noneType);
         if (settings.undefinedType) {
-            allTypesWithoutNone.delete(settings.undefinedType);
+            allTypesWithoutSentinels.delete(settings.undefinedType);
         }
         types.forEach(type => {
             if (SettingQuery.excludeType(this.instances.settings, this.name, type)) {
@@ -110,8 +110,8 @@ export class InteractiveManager extends Component {
 
             let color = this.tryComputeColorFromType(type);
             if (!color) {
-                const nColors = allTypesWithoutNone.size;
-                const i = [...allTypesWithoutNone].indexOf(type);
+                const nColors = allTypesWithoutSentinels.size;
+                const i = [...allTypesWithoutSentinels].indexOf(type);
                 color = this.computeColorFromIndex(i, nColors);
             }
 
@@ -134,7 +134,7 @@ export class InteractiveManager extends Component {
         return Array.from(this.interactives.keys());
     }
 
-    getTypesWithoutNone(): string[] {
+    getTypesWithoutSentinels(): string[] {
         const types = this.getTypes();
         const settings = this.instances.settings.interactiveSettings[this.name];
         types.remove(settings.noneType);
@@ -144,15 +144,19 @@ export class InteractiveManager extends Component {
         return types;
     }
 
+    isSentinel(type: string) {
+        const settings = this.instances.settings.interactiveSettings[this.name];
+        return type === settings.noneType || (settings.undefinedType && type === settings.undefinedType);
+    }
+
     /**
      * Check if a sentinel type (noneType/undefinedType) has a user-defined color setting.
      */
     hasSentinelColorSetting(type: string): boolean {
-        const settings = this.instances.settings.interactiveSettings[this.name];
-        const isSentinel = type === settings.noneType || (settings.undefinedType && type === settings.undefinedType);
+        const isSentinel = this.isSentinel(type);
         if (!isSentinel) return false;
 
-        return settings.colors.some(
+        return this.instances.settings.interactiveSettings[this.name].colors.some(
             p => p.type === type || (p.recursive && type.startsWith(p.type.endsWith("/") ? p.type : (p.type + "/")))
         );
     }
@@ -188,7 +192,7 @@ export class InteractiveManager extends Component {
             color = hex2int(colorSettings);
         }
         // Else, check if it's the "none" type or "undefined" type
-        else if (type === settings.noneType || (settings.undefinedType && type === settings.undefinedType)) {
+        else if (this.isSentinel(type)) {
             if (this.name === LINK_KEY) {
                 color = this.instances.renderer.colors.line.rgb;
             }
