@@ -313,6 +313,7 @@ export default class ExtendedGraphPlugin extends Plugin {
             delete settings['invertNodeStats'];
         }
 
+        // 2.7.7 --> 2.8.0
         // Add undefinedType to existing property settings (for properties only, not tag/link/folder)
         if ('additionalProperties' in settings && 'interactiveSettings' in settings) {
             for (const propertyKey of Object.keys(settings['additionalProperties'])) {
