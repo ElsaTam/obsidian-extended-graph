@@ -349,7 +349,7 @@ export class RadialMenuManager {
         if (!manager) return;
 
         let types = [...extendedNode.getTypes(key)].reduce((acc: { text: string, id?: string }[], type: string) => {
-            if (type !== this.instances.settings.interactiveSettings[key].noneType) {
+            if (!manager.isSentinel(type)) {
                 acc.push({ text: type });
             }
             return acc;
