@@ -202,13 +202,9 @@ export class InteractiveManager extends Component {
         }
         // Else, apply the palette
         else {
-            const allTypesWithoutNone = [...this.interactives.keys()];
-            allTypesWithoutNone.remove(settings.noneType);
-            if (settings.undefinedType) {
-                allTypesWithoutNone.remove(settings.undefinedType);
-            }
-            const nColors = allTypesWithoutNone.length;
-            const i = allTypesWithoutNone.indexOf(type);
+            const allTypesWithoutSentinels = this.getTypesWithoutSentinels();
+            const nColors = allTypesWithoutSentinels.length;
+            const i = allTypesWithoutSentinels.indexOf(type);
             if (i < 0) {
                 return null;
             }
