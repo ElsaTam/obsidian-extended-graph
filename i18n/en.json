@@ -376,7 +376,7 @@
         "removeSources": "Remove sources",
         "removeSourcesDesc": "When disabling a link type, also disable the source nodes",
         "removeTargets": "Remove targets",
-        "removeTargetsDesc": "When disabling a link type, also disable the source nodes",
+        "removeTargetsDesc": "When disabling a link type, also disable the target nodes",
         "shape": "Shape",
         "shapes": "Shapes",
         "shapesDesc": "Use nodes of various shapes",
