@@ -5,7 +5,7 @@ export class BacklinkCountCalculator extends NodeStatCalculator {
     countDuplicates: boolean;
 
     constructor(stat: NodeStat, countDuplicates: boolean, graphologyGraph?: GraphologyGraph) {
-        super(stat, "backlinksCount", graphologyGraph);
+        super(stat, countDuplicates ? "backlinksCount" : "backUniquelinksCount", graphologyGraph);
         this.countDuplicates = countDuplicates;
     }
 

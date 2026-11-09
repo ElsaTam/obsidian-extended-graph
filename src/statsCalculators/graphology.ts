@@ -16,10 +16,11 @@ export class GraphologyGraph {
         this.buildGraphology = this.buildGraphology.bind(this);
         this.instances = instances;
 
-        if (ExtendedGraphInstances.app.metadataCache.isCacheClean()) {
-            this.buildGraphology();
-        }
-        else {
+        // Build right away so that listeners registered with triggerIfPossible
+        // are always served. If the metadata cache is still resolving, rebuild
+        // once it is done.
+        this.buildGraphology();
+        if (!ExtendedGraphInstances.app.metadataCache.isCacheClean()) {
             ExtendedGraphInstances.app.metadataCache.on("resolved", this.buildGraphology);
         }
     }
