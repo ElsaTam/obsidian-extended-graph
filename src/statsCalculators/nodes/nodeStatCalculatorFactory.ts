@@ -29,13 +29,13 @@ export class NodeStatCalculatorFactory {
             case 'constant':
                 return new ConstantCalculator(stat, g);
             case 'backlinksCount':
-                return settings.graphStatsDirection === "reversed" ? new BacklinkCountCalculator(stat, true, g) : new ForwardlinkCountCalculator(stat, true, g);
-            case 'backUniquelinksCount':
-                return settings.graphStatsDirection === "reversed" ? new BacklinkCountCalculator(stat, false, g) : new ForwardlinkCountCalculator(stat, false, g);
-            case 'forwardlinksCount':
                 return settings.graphStatsDirection === "reversed" ? new ForwardlinkCountCalculator(stat, true, g) : new BacklinkCountCalculator(stat, true, g);
-            case 'forwardUniquelinksCount':
+            case 'backUniquelinksCount':
                 return settings.graphStatsDirection === "reversed" ? new ForwardlinkCountCalculator(stat, false, g) : new BacklinkCountCalculator(stat, false, g);
+            case 'forwardlinksCount':
+                return settings.graphStatsDirection === "reversed" ? new BacklinkCountCalculator(stat, true, g) : new ForwardlinkCountCalculator(stat, true, g);
+            case 'forwardUniquelinksCount':
+                return settings.graphStatsDirection === "reversed" ? new BacklinkCountCalculator(stat, false, g) : new ForwardlinkCountCalculator(stat, false, g);
             case 'totallinksCount':
                 return new TotallinkCountCalculator(stat, true, g);
             case 'totalUniquelinksCount':
